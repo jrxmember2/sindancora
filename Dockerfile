@@ -12,6 +12,7 @@ RUN apk add --no-cache \
     oniguruma-dev \
     icu-dev \
     shadow \
+    bash \
     nginx \
     supervisor \
     nodejs \
