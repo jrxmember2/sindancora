@@ -49,6 +49,15 @@ FROM base AS production
 
 WORKDIR /var/www/html
 
+# Diretórios usados em runtime por supervisor/nginx/php
+RUN mkdir -p \
+    /var/log/supervisor \
+    /var/log/nginx \
+    /run/nginx \
+    /var/lib/nginx/tmp \
+    /var/www/html/storage/logs \
+    /var/www/html/bootstrap/cache
+
 # Copiar arquivos da aplicação
 COPY --from=builder /var/www/html /var/www/html
 
