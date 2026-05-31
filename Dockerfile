@@ -49,10 +49,11 @@ FROM base AS production
 
 WORKDIR /var/www/html
 
-# Diretórios usados em runtime por supervisor/nginx/php
+# Diretórios usados em runtime por supervisor/nginx/php-fpm/laravel
 RUN mkdir -p \
     /var/log/supervisor \
     /var/log/nginx \
+    /var/log/php-fpm \
     /run/nginx \
     /var/lib/nginx/tmp \
     /var/www/html/storage/logs \
@@ -65,8 +66,18 @@ COPY --from=builder /var/www/html /var/www/html
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-ansi
 
 # Permissões
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chown -R www-data:www-data \
+    /var/www/html/storage \
+    /var/www/html/bootstrap/cache \
+    /var/log/php-fpm \
+    /var/log/supervisor \
+    /var/log/nginx \
+    && chmod -R 755 \
+    /var/www/html/storage \
+    /var/www/html/bootstrap/cache \
+    /var/log/php-fpm \
+    /var/log/supervisor \
+    /var/log/nginx
 
 # Nginx
 COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf
