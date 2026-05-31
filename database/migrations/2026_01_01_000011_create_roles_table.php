@@ -33,14 +33,17 @@ return new class extends Migration
         });
 
         Schema::create('role_permissions', function (Blueprint $table) {
-            $table->uuid('id')->primary();
             $table->uuid('role_id');
             $table->uuid('permission_id');
 
             $table->foreign('role_id')->references('id')->on('roles')->cascadeOnDelete();
             $table->foreign('permission_id')->references('id')->on('permissions')->cascadeOnDelete();
-            $table->unique(['role_id', 'permission_id']);
+
+            // Pivot table: o Laravel insere apenas role_id e permission_id via attach/sync.
+            // Por isso não deve existir coluna id obrigatória aqui.
+            $table->primary(['role_id', 'permission_id']);
             $table->index('role_id');
+            $table->index('permission_id');
         });
 
         Schema::create('user_roles', function (Blueprint $table) {
