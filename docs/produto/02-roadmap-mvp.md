@@ -1,0 +1,428 @@
+# 02 — Roadmap e Fases de Desenvolvimento do SindÂncora
+
+> Versão: 1.0 — 31/05/2026
+> Metodologia: Desenvolvimento em fases incrementais com entregas funcionais ao fim de cada fase
+
+---
+
+## Visão Geral do Roadmap
+
+```
+Fase 1 — Base SaaS          ████████░░░░░░░░░░░░░░░░  [ 6 semanas ]
+Fase 2 — Cadastros           ░░░░░░░░████████░░░░░░░░  [ 4 semanas ]
+Fase 3 — Operação            ░░░░░░░░░░░░░░░░████████  [ 5 semanas ]
+Fase 4 — Portal do Morador   ░░░░░░░░░░░░░░░░░░░░████  [ 4 semanas ]
+Fase 5 — Financeiro          ░░░░░░░░░░░░░░░░░░░░░░░░  [ 6 semanas ]
+Fase 6 — Integrações e IA    ░░░░░░░░░░░░░░░░░░░░░░░░  [ contínuo  ]
+```
+
+**Estimativa total até MVP completo (Fases 1-4):** 4-5 meses com dedicação integral
+**Estimativa com Fase 5 (Financeiro):** 6-7 meses
+
+---
+
+## Fase 1 — Base SaaS
+
+**Objetivo:** Ter um sistema funcional com autenticação, tenants, planos, usuários e RBAC. A Fase 1 é o alicerce de todo o produto — sem ela, nada mais funciona.
+
+**Duração estimada:** 6 semanas
+
+### Entregas desta fase
+
+#### 1.1 Infraestrutura Base
+- [ ] Estrutura do projeto Laravel 12 com Docker
+- [ ] docker-compose.yml para desenvolvimento local (app, postgres, redis, minio, mailpit)
+- [ ] Dockerfile de produção (PHP-FPM 8.4 + Nginx)
+- [ ] `.env.example` com todas as variáveis necessárias
+- [ ] Pipeline de migrations automatizadas
+- [ ] Seeds de dados iniciais (planos, roles, permissões)
+- [ ] Configuração do Laravel Horizon (filas)
+- [ ] Configuração do Laravel Scheduler
+- [ ] Healthcheck endpoint (`/health`)
+
+#### 1.2 Multitenancy
+- [ ] Tabela `tenants` com configurações e status
+- [ ] Tabela `tenant_domains` para subdomínios e domínios customizados
+- [ ] Middleware `ResolveTenant` — resolução por subdomínio
+- [ ] Global Scope `BelongsToTenant` em todos os models operacionais
+- [ ] Onboarding de novo tenant (formulário de cadastro do cliente)
+- [ ] Tabela `tenant_settings` (logo, cores, white-label)
+- [ ] Painel Super Admin para gerenciar tenants
+
+#### 1.3 Planos e Limites
+- [ ] Tabela `plans` com configurações de limite
+- [ ] Tabela `plan_modules` (módulos habilitados por plano)
+- [ ] Tabela `tenant_plan_subscriptions` (plano ativo por tenant)
+- [ ] Tabela `tenant_limits` (limites configurados por tenant)
+- [ ] Tabela `tenant_usage_counters` (uso atual por tenant)
+- [ ] `PlanLimitService` — verificação antes de criar recursos
+- [ ] Seed de 4 planos iniciais (Starter, Profissional, Business, Enterprise)
+- [ ] Painel de limites no dashboard do tenant
+
+#### 1.4 Autenticação e Segurança
+- [ ] Login com e-mail e senha (Laravel Sanctum)
+- [ ] Logout com revogação de sessão
+- [ ] Recuperação de senha por e-mail (token seguro)
+- [ ] Rate limit nas rotas de auth (proteção brute force)
+- [ ] Middleware de verificação de tenant ativo
+- [ ] Refresh de sessão automático
+
+#### 1.5 Usuários e RBAC
+- [ ] Tabela `users` com `tenant_id` obrigatório
+- [ ] Tabela `roles` (sistema + customizáveis por tenant)
+- [ ] Tabela `permissions` (module:action)
+- [ ] Tabela `role_permissions`
+- [ ] Tabela `user_roles` (com escopo por condomínio opcional)
+- [ ] CRUD de usuários pelo admin do tenant
+- [ ] Seed de roles padrão: super_admin, admin, sindico, subsindico, conselheiro, morador
+- [ ] Seed de permissões granulares para cada módulo
+- [ ] Laravel Policies para autorização
+- [ ] Middleware `CheckPermission`
+- [ ] Interface de gerenciamento de usuários e roles
+
+#### 1.6 Storage — Controle de Quota
+- [ ] Tabela `storage_objects` (metadados de cada arquivo)
+- [ ] Tabela `storage_usage_snapshots` (snapshots periódicos de uso)
+- [ ] Tabela `storage_quota_packages` (pacotes de armazenamento)
+- [ ] Tabela `tenant_storage_addons` (pacotes contratados por tenant)
+- [ ] `StorageService` — validação de quota antes de upload
+- [ ] Dashboard de uso de armazenamento por tenant
+- [ ] Configuração do filesystem (MinIO local / R2 produção)
+
+#### 1.7 Auditoria
+- [ ] Tabela `audit_logs` com tenant_id, user_id, action, entity, old/new values
+- [ ] Trait `HasAuditLog` para registrar automaticamente
+- [ ] Interface de auditoria no painel admin
+- [ ] Filtros por entidade, usuário e período
+
+#### 1.8 Dashboard Inicial
+- [ ] Rota `/dashboard` com cards de KPIs por tenant
+- [ ] Cards: condomínios ativos, total de unidades, total de usuários, uso de storage
+- [ ] Layout principal com menu lateral e topbar
+- [ ] Componentes base do design system (botões, inputs, tabelas, modais, toasts)
+
+#### 1.9 API Base
+- [ ] Estrutura de rotas em `/api/v1`
+- [ ] Autenticação via Bearer token (Sanctum)
+- [ ] Padrão de resposta JSON (success, error, pagination)
+- [ ] Middleware de throttle para a API
+- [ ] Configuração do OpenAPI/Swagger (l5-swagger)
+- [ ] Endpoint `GET /api/v1/me`
+- [ ] Endpoints de autenticação (login, logout, refresh, forgot, reset)
+
+#### 1.10 Deploy e Documentação
+- [ ] Documentação de deploy no EasyPanel (`docs/deploy/easypanel.md`)
+- [ ] README.md com instruções de desenvolvimento local
+- [ ] Documentação da API (`docs/api/`)
+- [ ] Configuração de variáveis de ambiente em produção
+
+### Critérios de Aceite da Fase 1
+
+Fase 1 considera-se **concluída** quando:
+
+- [ ] Um Super Admin consegue criar um novo tenant pelo painel
+- [ ] O tenant tem um subdomínio funcional
+- [ ] Um usuário admin do tenant consegue fazer login
+- [ ] Roles e permissões funcionam (admin não consegue fazer o que não tem permissão)
+- [ ] Um usuário de tenant A não consegue ver dados do tenant B
+- [ ] O tenant tem um plano com limites configurados
+- [ ] O sistema rejeita operações que excedem os limites do plano
+- [ ] Upload de arquivo registra uso de storage e bloqueia ao atingir quota
+- [ ] Todas as ações sensíveis aparecem no log de auditoria
+- [ ] A aplicação roda via Docker com um único `docker-compose up`
+- [ ] Deploy no EasyPanel documentado e funcional
+
+---
+
+## Fase 2 — Cadastros Condominiais
+
+**Objetivo:** Cadastro completo da estrutura física e de pessoas do condomínio.
+
+**Duração estimada:** 4 semanas
+**Dependência:** Fase 1 concluída
+
+### Entregas
+
+#### 2.1 Condomínios
+- [ ] CRUD de condomínios com dados completos (nome, CNPJ, endereço com CEP autocomplete)
+- [ ] Wizard step-by-step para criação (dados básicos → endereço → configurações)
+- [ ] Configurações por condomínio (JSONB com configurações específicas)
+- [ ] Verificação de limite de condomínios do plano
+- [ ] Soft delete de condomínio
+
+#### 2.2 Blocos e Torres
+- [ ] CRUD de blocos/torres vinculados ao condomínio
+- [ ] Número de andares por bloco
+- [ ] Listagem de unidades por bloco
+
+#### 2.3 Unidades
+- [ ] CRUD de unidades (número, bloco, andar, tipo, área, fração ideal)
+- [ ] Status da unidade: Ocupada / Vazia / Em Obras
+- [ ] Verificação de limite de unidades do plano
+- [ ] Importação de unidades via CSV (com validação e preview antes de confirmar)
+- [ ] Copiar configuração de outra unidade
+- [ ] Listagem com busca, filtros por bloco/status/tipo
+
+#### 2.4 Pessoas e Vínculos
+- [ ] CRUD de pessoas (nome, CPF único no tenant, e-mail, telefone, data de nascimento, endereço)
+- [ ] Busca por CPF com prevenção de duplicidade
+- [ ] Vínculo pessoa ↔ unidade com tipo (Proprietário, Locatário, Morador, Dependente)
+- [ ] Data de início e fim do vínculo
+- [ ] Histórico de moradores por unidade (vínculos passados)
+- [ ] Morador principal (is_primary)
+- [ ] Múltiplas unidades por pessoa (proprietário com vários imóveis)
+- [ ] Convite por e-mail para ativar acesso ao portal do morador
+- [ ] Importação de pessoas via CSV
+
+#### 2.5 Síndicos e Conselheiros
+- [ ] Marcação de pessoa como Síndico, Subsíndico ou Conselheiro do condomínio
+- [ ] Mandato com data de início e fim
+- [ ] Role automático ao marcar como síndico
+
+### Critérios de Aceite da Fase 2
+
+- [ ] Admin cria condomínio com wizard completo
+- [ ] Admin cria blocos e unidades manualmente
+- [ ] Admin importa planilha de unidades sem erro
+- [ ] Admin cadastra pessoa e vincula à unidade com tipo definido
+- [ ] Sistema impede CPF duplicado no tenant
+- [ ] Histórico de moradores acessível por unidade
+- [ ] Convidado recebe e-mail com link de ativação do portal
+
+---
+
+## Fase 3 — Operação Condominial
+
+**Objetivo:** Módulos operacionais do dia a dia do condomínio.
+
+**Duração estimada:** 5 semanas
+**Dependência:** Fase 2 concluída
+
+### Entregas
+
+#### 3.1 Comunicados
+- [ ] CRUD de comunicados (título, corpo rico, categoria, nível de urgência)
+- [ ] Segmentação de público: todos, bloco, unidade, perfil
+- [ ] Publicação imediata ou agendada
+- [ ] Anexos (upload de arquivos via storage)
+- [ ] Expiração automática por data
+- [ ] Registro de leituras por morador (confirmação de leitura)
+- [ ] Notificação por e-mail ao publicar comunicado
+- [ ] Templates de comunicados (reutilizáveis)
+
+#### 3.2 Ocorrências / Chamados
+- [ ] CRUD de ocorrências (título, categoria, descrição, prioridade, anexos)
+- [ ] Categorias configuráveis por condomínio
+- [ ] Ciclo de vida: Aberta → Em Andamento → Encerrada
+- [ ] Histórico de atualizações com comentários
+- [ ] Atribuição a responsável
+- [ ] Notificações a cada mudança de status
+- [ ] Morador só vê suas próprias ocorrências (no portal)
+- [ ] Admin/síndico vê todas as ocorrências do condomínio
+- [ ] SLA opcional por categoria (prazo esperado de resolução)
+- [ ] Filtros: status, categoria, prioridade, unidade, data
+
+#### 3.3 Áreas Comuns e Reservas
+- [ ] CRUD de áreas comuns (nome, descrição, capacidade, regras, fotos)
+- [ ] Configuração: requer aprovação, taxa, caução, antecedência mínima, horários
+- [ ] Calendário visual de disponibilidade (visualização mensal e semanal)
+- [ ] Solicitação de reserva pelo morador (com preenchimento de horário)
+- [ ] Fluxo de aprovação: Pendente → Aprovada / Recusada
+- [ ] Cancelamento com motivo
+- [ ] Prevenção de conflito de horários (lock no banco)
+- [ ] Notificações: solicitação, aprovação, recusa, cancelamento
+- [ ] Regras automáticas: bloqueio de inadimplente (futura integração financeiro)
+
+#### 3.4 Documentos
+- [ ] Upload de documentos (PDF, imagens, Word, Excel)
+- [ ] Categorias: Ata, Regulamento, Contrato, Comprovante, Outro
+- [ ] Visibilidade: público (moradores) ou restrito (admin/síndico)
+- [ ] Busca por nome, categoria, data
+- [ ] Controle de storage por arquivo (registrar tamanho, path, hash)
+- [ ] Download com URL assinada e expiração
+- [ ] Soft delete com lixeira temporária (30 dias antes de remover do storage)
+
+#### 3.5 Notificações
+- [ ] Tabela de notificações in-app por usuário
+- [ ] Sino no topbar com contador de não lidas
+- [ ] Painel de notificações com listagem e marcação de leitura
+- [ ] Envio de e-mail via fila (Laravel Horizon)
+- [ ] Templates de e-mail por tipo de evento
+- [ ] Configuração por usuário: quais notificações receber por e-mail
+
+### Critérios de Aceite da Fase 3
+
+- [ ] Admin publica comunicado e moradores recebem e-mail
+- [ ] Morador abre ocorrência e acompanha atualizações
+- [ ] Área comum configurada com disponibilidade no calendário
+- [ ] Morador faz reserva e síndico aprova/recusa com notificação
+- [ ] Documento uploadado com visibilidade correta e download funcional
+- [ ] Notificações in-app e por e-mail funcionando nos eventos principais
+
+---
+
+## Fase 4 — Portal do Morador
+
+**Objetivo:** Interface dedicada ao morador — autônoma e com UX impecável.
+
+**Duração estimada:** 4 semanas
+**Dependência:** Fase 3 concluída
+
+### Entregas
+
+#### 4.1 Autenticação do Morador
+- [ ] Login separado por subdomínio (portal.tenant.sindancora.com.br)
+- [ ] Cadastro via link de convite enviado pelo admin
+- [ ] Recuperação de senha independente
+- [ ] Sessão isolada do painel admin
+
+#### 4.2 Dashboard do Morador
+- [ ] Boas-vindas com dados da unidade
+- [ ] Resumo de comunicados não lidos
+- [ ] Reservas pendentes/aprovadas
+- [ ] Ocorrências em aberto
+- [ ] Documentos disponíveis (contagem)
+
+#### 4.3 Módulos do Portal
+- [ ] Comunicados: listagem com leitura completa e confirmação
+- [ ] Ocorrências: abrir nova + acompanhar histórico das próprias
+- [ ] Reservas: visualizar disponibilidade + fazer reserva + cancelar própria
+- [ ] Documentos: listar e baixar documentos públicos
+- [ ] Dados da unidade: ver informações da unidade e histórico de vínculos
+- [ ] Meu perfil: atualizar dados de contato e senha
+
+#### 4.4 UX do Portal
+- [ ] Layout responsivo (mobile-first)
+- [ ] Modo claro com identidade visual do tenant (white-label)
+- [ ] Notificações in-app
+- [ ] PWA básico (instalável no celular)
+
+### Critérios de Aceite da Fase 4
+
+- [ ] Morador ativa conta via e-mail de convite
+- [ ] Morador acessa o portal em dispositivo móvel sem dificuldades
+- [ ] Morador consegue fazer reserva completa sem ajuda do admin
+- [ ] Morador consegue abrir e acompanhar ocorrência
+- [ ] Morador não consegue ver dados de outros moradores
+
+---
+
+## Fase 5 — Financeiro
+
+**Objetivo:** Controle financeiro do condomínio, cobranças e inadimplência.
+
+**Duração estimada:** 6 semanas
+**Dependência:** Fase 4 concluída
+
+### Entregas
+
+#### 5.1 Cobranças Manuais
+- [ ] CRUD de cobranças por unidade (taxa condominial, extra, multa)
+- [ ] Definição de mês de referência, vencimento e valor
+- [ ] Registro manual de pagamento (com data, forma e comprovante)
+- [ ] Multa e juros configuráveis por plano de cobranças
+- [ ] Histórico de cobranças por unidade
+
+#### 5.2 Inadimplência
+- [ ] Listagem de unidades inadimplentes
+- [ ] Relatório de inadimplência por período
+- [ ] Notificação automática ao morador sobre cobranças vencidas
+
+#### 5.3 Relatórios Financeiros
+- [ ] Relatório de receitas e despesas por período
+- [ ] Prestação de contas mensal
+- [ ] Exportação para PDF e XLSX
+
+#### 5.4 Integração com Gateway (Asaas)
+- [ ] Configuração de conta Asaas por tenant
+- [ ] Geração de boleto bancário por cobrança
+- [ ] Geração de QR Code PIX por cobrança
+- [ ] Webhook de retorno de pagamento (conciliação automática)
+- [ ] Envio de segunda via por e-mail
+
+### Critérios de Aceite da Fase 5
+
+- [ ] Admin gera cobrança mensal para todas as unidades
+- [ ] Morador recebe boleto/PIX por e-mail
+- [ ] Pagamento confirmado automaticamente via webhook
+- [ ] Relatório de inadimplência correto e exportável
+
+---
+
+## Fase 6 — Integrações e IA (Contínuo)
+
+**Objetivo:** Diferenciais de mercado — automações, WhatsApp, IA e API pública.
+
+**Dependência:** Fase 5 concluída
+
+### Entregas
+
+#### 6.1 API Pública com API Keys
+- [ ] Tabela `api_keys` por tenant com escopos
+- [ ] Middleware de autenticação por API Key
+- [ ] Rate limit por tenant e por key
+- [ ] Logs de requisições (`api_request_logs`)
+- [ ] Documentação Swagger atualizada
+
+#### 6.2 Webhooks
+- [ ] CRUD de webhooks por tenant
+- [ ] Envio de payload a cada evento configurado
+- [ ] Tabela `webhook_deliveries` com logs de envio e retry
+
+#### 6.3 WhatsApp (Evolution API)
+- [ ] Configuração de instância WhatsApp por tenant
+- [ ] Notificações via WhatsApp: comunicado, vencimento, ocorrência
+- [ ] Segunda via de boleto/PIX via WhatsApp
+
+#### 6.4 IA Assistente (Claude API)
+- [ ] Chat IA para síndico (Anthropic Claude API)
+- [ ] RAG com documentos do condomínio (busca semântica)
+- [ ] Análise de inadimplência com sugestões automáticas
+
+#### 6.5 Assembleias Digitais
+- [ ] Criação de assembleia com pauta
+- [ ] Votação online por unidade (um voto por unidade)
+- [ ] Ata gerada automaticamente
+- [ ] Registro de presença digital
+
+#### 6.6 Portaria Digital
+- [ ] Controle de visitantes com QR Code
+- [ ] Cadastro de visitantes autorizados por unidade
+- [ ] Perfil porteiro com acesso restrito
+- [ ] Log de entradas e saídas
+
+---
+
+## Marcos de Lançamento
+
+| Marco | Fase | Quando | O que entrega |
+|---|---|---|---|
+| **Alpha interno** | Fase 1 | Semana 6 | Sistema funcional para testes internos |
+| **Beta fechado** | Fase 2+3 | Semana 15 | Primeiros clientes pilotos |
+| **MVP público** | Fase 4 | Semana 19 | Lançamento com portal do morador |
+| **Produto completo** | Fase 5 | Semana 25 | Financeiro integrado |
+| **Produto premium** | Fase 6 | Contínuo | Diferenciais IA e WhatsApp |
+
+---
+
+## Prioridades no Desenvolvimento
+
+### Regras gerais de priorização
+
+1. **Nunca quebrar o que já funciona** — toda mudança passa por testes antes de ir para produção
+2. **Segurança e isolamento de tenant primeiro** — qualquer funcionalidade que comprometesse o isolamento é bloqueante
+3. **UX antes de quantidade de features** — menos funcionalidades feitas com excelência é melhor que muitas mal-feitas
+4. **Documentação acompanha implementação** — toda feature implementada tem documentação atualizada
+
+### O que NÃO entra no MVP
+
+- Portaria digital (Fase 6)
+- Assembleias online (Fase 6)
+- WhatsApp (Fase 6)
+- IA (Fase 6)
+- App mobile nativo (futuro)
+- Integração CNAB bancária (somente gateway na Fase 5)
+
+---
+
+*Documento de roadmap interno. Atualizar ao início de cada nova fase.*
