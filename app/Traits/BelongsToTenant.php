@@ -12,9 +12,9 @@ trait BelongsToTenant
         static::addGlobalScope('tenant', function (Builder $query) {
             $tenantId = app()->bound('tenant_id') ? app('tenant_id') : null;
             if ($tenantId) {
-                $query->where(function (Builder $q) use ($tenantId) {
-                    $q->where(static::getTenantColumn(), $tenantId)
-                      ->orWhereNull(static::getTenantColumn());
+                $column = static::getTenantColumn();
+                $query->where(function (Builder $q) use ($tenantId, $column) {
+                    $q->where($column, $tenantId)->orWhereNull($column);
                 });
             }
         });
