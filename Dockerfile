@@ -66,21 +66,18 @@ COPY --from=builder /var/www/html /var/www/html
 # Instalar dependências PHP sem pacotes de desenvolvimento
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-ansi
 
-# Permissões
-RUN chown -R www-data:www-data \
-    /var/www/html/storage \
-    /var/www/html/bootstrap/cache \
-    /var/log/php-fpm \
-    /var/log/supervisor \
-    /var/log/nginx \
-    && chmod -R 755 \
-    /var/www/html/storage \
-    /var/www/html/bootstrap/cache \
-    /var/log/php-fpm \
-    /var/log/supervisor \
-    /var/log/nginx
+# Permissões — nginx e php-fpm rodam como www-data
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chown -R www-data:www-data \
+        /var/log/php-fpm \
+        /var/log/supervisor \
+        /var/log/nginx \
+        /run/nginx \
+        /var/lib/nginx
 
-# Nginx
+# Nginx rodando como www-data (mesmo usuário do PHP-FPM)
+RUN sed -i 's/user nginx;/user www-data;/g' /etc/nginx/nginx.conf
 COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf
 
 # Supervisor
