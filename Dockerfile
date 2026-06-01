@@ -1,7 +1,6 @@
-FROM php:8.4-fpm-alpine AS base
+FROM php:8.4-fpm-alpine
 
-# Extensões PHP e dependências do sistema
-# $PHPIZE_DEPS é necessário para instalar extensões via PECL, como redis.
+# Dependências do sistema e extensões PHP
 RUN apk add --no-cache \
     $PHPIZE_DEPS \
     postgresql-dev \
@@ -15,8 +14,7 @@ RUN apk add --no-cache \
     bash \
     nginx \
     supervisor \
-    nodejs \
-    npm \
+    wget \
     && docker-php-ext-install \
         pdo_pgsql \
         mbstring \
@@ -36,21 +34,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# ---- Build stage: assets ----
-FROM base AS builder
-
-COPY package*.json ./
-RUN npm ci --legacy-peer-deps
-
-COPY . .
-RUN npm run build
-
-# ---- Production stage ----
-FROM base AS production
-
-WORKDIR /var/www/html
-
-# Diretórios usados em runtime (git não rastreia diretórios vazios)
+# Diretórios de runtime (git não rastreia diretórios vazios)
 RUN mkdir -p \
     /var/log/supervisor \
     /var/log/nginx \
@@ -65,13 +49,13 @@ RUN mkdir -p \
     /var/www/html/storage/framework/views \
     /var/www/html/bootstrap/cache
 
-# Copiar arquivos da aplicação
-COPY --from=builder /var/www/html /var/www/html
+# Copiar código da aplicação (inclui public/build/ já buildado)
+COPY . .
 
-# Instalar dependências PHP sem pacotes de desenvolvimento
+# Instalar dependências PHP de produção
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-ansi
 
-# Permissões — nginx e php-fpm rodam como www-data
+# Permissões
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache \
     && chown -R www-data:www-data \
@@ -81,7 +65,7 @@ RUN chown -R www-data:www-data /var/www/html \
         /run/nginx \
         /var/lib/nginx
 
-# Nginx rodando como www-data (mesmo usuário do PHP-FPM)
+# Nginx rodando como www-data
 RUN sed -i 's/user nginx;/user www-data;/g' /etc/nginx/nginx.conf
 COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf
 
@@ -95,6 +79,12 @@ COPY docker/php/php.ini /usr/local/etc/php/conf.d/sindancora.ini
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+# Health check — aguarda 40s antes da primeira verificação
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD wget -qO- http://localhost/up || exit 1
+
 EXPOSE 80
+
+STOPSIGNAL SIGTERM
 
 ENTRYPOINT ["/entrypoint.sh"]
