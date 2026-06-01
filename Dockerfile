@@ -89,6 +89,10 @@ COPY docker/supervisor/supervisord.conf /etc/supervisord.conf
 # PHP config
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/sindancora.ini
 
+# Entrypoint
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 80
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+ENTRYPOINT ["/entrypoint.sh"]

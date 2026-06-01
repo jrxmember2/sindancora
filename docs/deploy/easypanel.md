@@ -111,11 +111,13 @@ SUPER_ADMIN_EMAIL=admin@sindancora.com.br
 SUPER_ADMIN_PASSWORD=SENHA_SUPER_FORTE_AQUI
 ```
 
-**IMPORTANTE:** Gere a `APP_KEY` rodando:
+**IMPORTANTE — APP_KEY obrigatória:** Gere a chave antes de configurar:
 ```bash
+# Rode localmente no projeto para gerar a chave
 php artisan key:generate --show
 ```
-E adicione o valor às variáveis do EasyPanel.
+Copie o valor gerado (ex: `base64:ABC123...`) e adicione como variável `APP_KEY` no EasyPanel.
+O container **não sobe** sem APP_KEY definida.
 
 ---
 
@@ -135,30 +137,23 @@ CNAME *.sindancora.com.br      → app.sindancora.com.br
 
 ---
 
-## 5. Comandos de Deploy
+## 5. Deploy
 
-O EasyPanel executa o `Dockerfile` automaticamente. Após o primeiro deploy:
+O EasyPanel executa o `Dockerfile` automaticamente ao fazer push.
 
-### 5.1 Migrations e Seeds (primeiro deploy)
+O **entrypoint do container** (`docker/entrypoint.sh`) já cuida de tudo na ordem certa:
+1. Valida que `APP_KEY` está definida
+2. Cacheia configurações, rotas e views
+3. Roda `php artisan migrate --force`
+4. Roda `php artisan db:seed --force` (todos os seeders usam `updateOrCreate` — seguro rodar sempre)
+5. Gera a documentação Swagger
+6. Inicia nginx + php-fpm + queue workers + scheduler via supervisor
 
-No terminal do EasyPanel (ou via SSH):
+**Não é necessário rodar nenhum comando manual após o deploy.**
+
+Se precisar acessar o container para diagnóstico:
 ```bash
-docker exec -it sindancora-app php artisan migrate --seed --force
-```
-
-### 5.2 Migrations em atualizações subsequentes
-
-```bash
-docker exec -it sindancora-app php artisan migrate --force
-```
-
-### 5.3 Limpar caches após deploy
-
-```bash
-docker exec -it sindancora-app php artisan optimize
-docker exec -it sindancora-app php artisan config:cache
-docker exec -it sindancora-app php artisan route:cache
-docker exec -it sindancora-app php artisan view:cache
+docker exec -it sindancora-app sh
 ```
 
 ---

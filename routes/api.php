@@ -26,7 +26,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // Rotas autenticadas
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::get('me', [AuthController::class, 'me'])->name('api.v1.me');
 
         // Tenant

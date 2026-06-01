@@ -13,6 +13,8 @@ import {
     Menu,
     X,
     Bell,
+    Shield,
+    ClipboardList,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -24,6 +26,11 @@ const navigation = [
     { name: 'Ocorrências', href: '/ocorrencias', icon: AlertCircle },
     { name: 'Reservas', href: '/reservas', icon: CalendarRange },
     { name: 'Documentos', href: '/documentos', icon: FileText },
+];
+
+const adminNavigation = [
+    { name: 'Perfis', href: '/roles', icon: Shield },
+    { name: 'Auditoria', href: '/auditoria', icon: ClipboardList },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -95,6 +102,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             );
                         })}
                     </ul>
+                    <div className="mt-4 px-2">
+                        <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Administração</p>
+                        <ul className="space-y-1">
+                            {adminNavigation.map((item) => {
+                                const Icon = item.icon;
+                                const isActive = window.location.pathname.startsWith(item.href);
+                                return (
+                                    <li key={item.name}>
+                                        <Link
+                                            href={item.href}
+                                            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                                                isActive
+                                                    ? 'bg-blue-50 text-blue-700'
+                                                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                            }`}
+                                        >
+                                            <Icon className="h-5 w-5 flex-shrink-0" />
+                                            {item.name}
+                                        </Link>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
                 </nav>
 
                 {/* User Menu */}
