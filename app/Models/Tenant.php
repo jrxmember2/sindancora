@@ -36,7 +36,11 @@ class Tenant extends Model
 
     public function activeSubscription(): HasOne
     {
-        return $this->hasOne(TenantPlanSubscription::class)->where('status', 'active')->latestOfMany();
+        // Não usar latestOfMany(): em Postgres com PK UUID ele gera MAX(uuid) como
+        // critério de desempate, e não existe a função max(uuid). Ordenar por starts_at resolve.
+        return $this->hasOne(TenantPlanSubscription::class)
+            ->where('status', 'active')
+            ->latest('starts_at');
     }
 
     public function activePlan(): ?Plan
