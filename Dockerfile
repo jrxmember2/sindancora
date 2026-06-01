@@ -50,7 +50,7 @@ FROM base AS production
 
 WORKDIR /var/www/html
 
-# Diretórios usados em runtime por supervisor/nginx/php-fpm/laravel
+# Diretórios usados em runtime (git não rastreia diretórios vazios)
 RUN mkdir -p \
     /var/log/supervisor \
     /var/log/nginx \
@@ -58,6 +58,11 @@ RUN mkdir -p \
     /run/nginx \
     /var/lib/nginx/tmp \
     /var/www/html/storage/logs \
+    /var/www/html/storage/app/public \
+    /var/www/html/storage/framework/cache/data \
+    /var/www/html/storage/framework/sessions \
+    /var/www/html/storage/framework/testing \
+    /var/www/html/storage/framework/views \
     /var/www/html/bootstrap/cache
 
 # Copiar arquivos da aplicação
