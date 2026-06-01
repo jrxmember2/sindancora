@@ -39,6 +39,11 @@ class PlanLimitService
             ->increment('current_value', $by);
     }
 
+    public function incrementBy(Tenant $tenant, string $resource, int $by): void
+    {
+        $this->increment($tenant, $resource, $by);
+    }
+
     public function decrement(Tenant $tenant, string $resource, int $by = 1): void
     {
         TenantUsageCounter::where('tenant_id', $tenant->id)

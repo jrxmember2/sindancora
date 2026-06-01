@@ -4,6 +4,7 @@ import {
     LayoutDashboard,
     Building2,
     Users,
+    UserRound,
     Megaphone,
     AlertCircle,
     CalendarRange,
@@ -21,6 +22,7 @@ import type { PageProps } from '@/types';
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Condomínios', href: '/condominios', icon: Building2 },
+    { name: 'Pessoas', href: '/pessoas', icon: UserRound },
     { name: 'Usuários', href: '/usuarios', icon: Users },
     { name: 'Comunicados', href: '/comunicados', icon: Megaphone },
     { name: 'Ocorrências', href: '/ocorrencias', icon: AlertCircle },
