@@ -16,7 +16,9 @@ fi
 echo "==> Cacheando configurações..."
 php artisan config:cache
 php artisan route:cache
-php artisan view:cache
+# view:cache não é necessário em apps Inertia (único template é app.blade.php)
+mkdir -p resources/views
+php artisan view:cache || true
 
 echo "==> Rodando migrations..."
 php artisan migrate --force
