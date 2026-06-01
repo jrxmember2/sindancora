@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Plan;
+use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantDomain;
 use App\Models\User;
@@ -43,15 +44,21 @@ class DemoTenantSeeder extends Seeder
         }
 
         // Usuário admin do tenant demo
-        if (! User::where('email', env('DEMO_ADMIN_EMAIL', 'admin@demo.com'))->exists()) {
-            User::create([
+        $demoAdmin = User::firstOrCreate(
+            ['email' => env('DEMO_ADMIN_EMAIL', 'admin@demo.com')],
+            [
                 'name' => 'Admin Demo',
-                'email' => env('DEMO_ADMIN_EMAIL', 'admin@demo.com'),
                 'password' => Hash::make(env('DEMO_ADMIN_PASSWORD', 'Demo@2026!')),
                 'tenant_id' => $tenant->id,
                 'status' => 'active',
                 'email_verified_at' => now(),
-            ]);
+            ]
+        );
+
+        // Garante o perfil admin (necessário para o RBAC das rotas do painel).
+        $adminRole = Role::where('name', 'admin')->whereNull('tenant_id')->first();
+        if ($adminRole && ! $demoAdmin->userRoles()->where('role_id', $adminRole->id)->exists()) {
+            $demoAdmin->userRoles()->create(['role_id' => $adminRole->id]);
         }
     }
 }

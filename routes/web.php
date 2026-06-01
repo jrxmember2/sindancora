@@ -21,70 +21,114 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Dashboard — acessível a qualquer usuário autenticado do tenant.
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Usuários
-    Route::resource('usuarios', UserController::class)->parameters(['usuarios' => 'user'])->names([
-        'index' => 'users.index',
-        'create' => 'users.create',
-        'store' => 'users.store',
-        'edit' => 'users.edit',
-        'update' => 'users.update',
-        'destroy' => 'users.destroy',
-    ]);
+    Route::middleware('permission:users:read')->group(function () {
+        Route::get('usuarios', [UserController::class, 'index'])->name('users.index');
+    });
+    Route::middleware('permission:users:create')->group(function () {
+        Route::get('usuarios/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('usuarios', [UserController::class, 'store'])->name('users.store');
+    });
+    Route::middleware('permission:users:update')->group(function () {
+        Route::get('usuarios/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::match(['put', 'patch'], 'usuarios/{user}', [UserController::class, 'update'])->name('users.update');
+    });
+    Route::middleware('permission:users:delete')->group(function () {
+        Route::delete('usuarios/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
 
-    // Roles
-    Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
-    Route::patch('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+    // Perfis (roles) — gestão de perfis exige users:manage
+    Route::middleware('permission:users:manage')->group(function () {
+        Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
+        Route::patch('/roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+    });
 
     // Auditoria
-    Route::get('/auditoria', [AuditController::class, 'index'])->name('audit.index');
+    Route::middleware('permission:audit:read')->group(function () {
+        Route::get('/auditoria', [AuditController::class, 'index'])->name('audit.index');
+    });
 
-    // Condomínios
-    Route::resource('condominios', CondominiumController::class)->parameters(['condominios' => 'condominium'])->names([
-        'index' => 'condominiums.index',
-        'create' => 'condominiums.create',
-        'store' => 'condominiums.store',
-        'show' => 'condominiums.show',
-        'edit' => 'condominiums.edit',
-        'update' => 'condominiums.update',
-        'destroy' => 'condominiums.destroy',
-    ]);
+    // Condomínios — rotas estáticas (create) antes da dinâmica {condominium} (show).
+    Route::middleware('permission:condominiums:read')->group(function () {
+        Route::get('condominios', [CondominiumController::class, 'index'])->name('condominiums.index');
+    });
+    Route::middleware('permission:condominiums:create')->group(function () {
+        Route::get('condominios/create', [CondominiumController::class, 'create'])->name('condominiums.create');
+        Route::post('condominios', [CondominiumController::class, 'store'])->name('condominiums.store');
+    });
+    Route::middleware('permission:condominiums:update')->group(function () {
+        Route::get('condominios/{condominium}/edit', [CondominiumController::class, 'edit'])->name('condominiums.edit');
+        Route::match(['put', 'patch'], 'condominios/{condominium}', [CondominiumController::class, 'update'])->name('condominiums.update');
+    });
+    Route::middleware('permission:condominiums:delete')->group(function () {
+        Route::delete('condominios/{condominium}', [CondominiumController::class, 'destroy'])->name('condominiums.destroy');
+    });
 
-    // Blocos (dentro do condomínio)
-    Route::prefix('condominios/{condominium}')->name('condominiums.')->group(function () {
+    // Blocos e gestores (estrutura do condomínio → condominiums:update)
+    Route::middleware('permission:condominiums:update')->prefix('condominios/{condominium}')->name('condominiums.')->group(function () {
         Route::post('blocos', [CondominiumController::class, 'storeBlock'])->name('blocks.store');
         Route::patch('blocos/{block}', [CondominiumController::class, 'updateBlock'])->name('blocks.update');
         Route::delete('blocos/{block}', [CondominiumController::class, 'destroyBlock'])->name('blocks.destroy');
 
         Route::post('gestores', [CondominiumController::class, 'storeManager'])->name('managers.store');
         Route::delete('gestores/{manager}', [CondominiumController::class, 'destroyManager'])->name('managers.destroy');
-
-        // Unidades
-        Route::get('unidades', [UnitController::class, 'index'])->name('units.index');
-        Route::get('unidades/criar', [UnitController::class, 'create'])->name('units.create');
-        Route::post('unidades', [UnitController::class, 'store'])->name('units.store');
-        Route::get('unidades/importar', [UnitController::class, 'importForm'])->name('units.import');
-        Route::post('unidades/importar/preview', [UnitController::class, 'importPreview'])->name('units.import.preview');
-        Route::post('unidades/importar/confirmar', [UnitController::class, 'importConfirm'])->name('units.import.confirm');
-        Route::get('unidades/{unit}/editar', [UnitController::class, 'edit'])->name('units.edit');
-        Route::patch('unidades/{unit}', [UnitController::class, 'update'])->name('units.update');
-        Route::delete('unidades/{unit}', [UnitController::class, 'destroy'])->name('units.destroy');
     });
 
-    // Pessoas (busca por CPF antes do resource para não conflitar com {person})
-    Route::get('pessoas/buscar-cpf', [PersonController::class, 'searchByCpf'])->name('persons.search-cpf');
-    Route::resource('pessoas', PersonController::class)->parameters(['pessoas' => 'person'])->names([
-        'index' => 'persons.index',
-        'create' => 'persons.create',
-        'store' => 'persons.store',
-        'show' => 'persons.show',
-        'edit' => 'persons.edit',
-        'update' => 'persons.update',
-        'destroy' => 'persons.destroy',
-    ]);
-    Route::post('pessoas/{person}/vinculos', [PersonController::class, 'storeLink'])->name('persons.links.store');
-    Route::delete('pessoas/{person}/vinculos/{link}', [PersonController::class, 'destroyLink'])->name('persons.links.destroy');
+    // Unidades (dentro do condomínio)
+    Route::prefix('condominios/{condominium}')->name('condominiums.')->group(function () {
+        Route::middleware('permission:units:import')->group(function () {
+            Route::get('unidades/importar', [UnitController::class, 'importForm'])->name('units.import');
+            Route::post('unidades/importar/preview', [UnitController::class, 'importPreview'])->name('units.import.preview');
+            Route::post('unidades/importar/confirmar', [UnitController::class, 'importConfirm'])->name('units.import.confirm');
+        });
+        Route::middleware('permission:units:create')->group(function () {
+            Route::get('unidades/criar', [UnitController::class, 'create'])->name('units.create');
+            Route::post('unidades', [UnitController::class, 'store'])->name('units.store');
+        });
+        Route::middleware('permission:units:read')->group(function () {
+            Route::get('unidades', [UnitController::class, 'index'])->name('units.index');
+        });
+        Route::middleware('permission:units:update')->group(function () {
+            Route::get('unidades/{unit}/editar', [UnitController::class, 'edit'])->name('units.edit');
+            Route::patch('unidades/{unit}', [UnitController::class, 'update'])->name('units.update');
+        });
+        Route::middleware('permission:units:delete')->group(function () {
+            Route::delete('unidades/{unit}', [UnitController::class, 'destroy'])->name('units.destroy');
+        });
+    });
+
+    // Condomínio — detalhe (dinâmica, registrada após as estáticas acima)
+    Route::middleware('permission:condominiums:read')->group(function () {
+        Route::get('condominios/{condominium}', [CondominiumController::class, 'show'])->name('condominiums.show');
+    });
+
+    // Pessoas — rotas estáticas (buscar-cpf, create) antes da dinâmica {person} (show).
+    Route::middleware('permission:persons:read')->group(function () {
+        Route::get('pessoas/buscar-cpf', [PersonController::class, 'searchByCpf'])->name('persons.search-cpf');
+        Route::get('pessoas', [PersonController::class, 'index'])->name('persons.index');
+    });
+    Route::middleware('permission:persons:create')->group(function () {
+        Route::get('pessoas/create', [PersonController::class, 'create'])->name('persons.create');
+        Route::post('pessoas', [PersonController::class, 'store'])->name('persons.store');
+    });
+    Route::middleware('permission:persons:update')->group(function () {
+        Route::get('pessoas/{person}/edit', [PersonController::class, 'edit'])->name('persons.edit');
+        Route::match(['put', 'patch'], 'pessoas/{person}', [PersonController::class, 'update'])->name('persons.update');
+    });
+    Route::middleware('permission:persons:delete')->group(function () {
+        Route::delete('pessoas/{person}', [PersonController::class, 'destroy'])->name('persons.destroy');
+    });
+    Route::middleware('permission:persons:link')->group(function () {
+        Route::post('pessoas/{person}/vinculos', [PersonController::class, 'storeLink'])->name('persons.links.store');
+        Route::delete('pessoas/{person}/vinculos/{link}', [PersonController::class, 'destroyLink'])->name('persons.links.destroy');
+    });
+    // Pessoa — detalhe (dinâmica, registrada após as estáticas acima)
+    Route::middleware('permission:persons:read')->group(function () {
+        Route::get('pessoas/{person}', [PersonController::class, 'show'])->name('persons.show');
+    });
 });
 
 require __DIR__.'/auth.php';

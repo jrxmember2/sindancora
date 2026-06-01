@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\PlanController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'super_admin'])->group(function () {
@@ -16,5 +17,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'super_admin'])->gro
         Route::patch('/{tenant}/suspend', [TenantController::class, 'suspend'])->name('suspend');
         Route::patch('/{tenant}/activate', [TenantController::class, 'activate'])->name('activate');
         Route::patch('/{tenant}/plan', [TenantController::class, 'changePlan'])->name('change-plan');
+    });
+
+    Route::prefix('planos')->name('plans.')->group(function () {
+        Route::get('/', [PlanController::class, 'index'])->name('index');
+        Route::get('/create', [PlanController::class, 'create'])->name('create');
+        Route::post('/', [PlanController::class, 'store'])->name('store');
+        Route::get('/{plan}/edit', [PlanController::class, 'edit'])->name('edit');
+        Route::match(['put', 'patch'], '/{plan}', [PlanController::class, 'update'])->name('update');
+        Route::patch('/{plan}/toggle', [PlanController::class, 'toggleActive'])->name('toggle');
     });
 });

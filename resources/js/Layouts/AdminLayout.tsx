@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import {
-    LayoutDashboard, Building2, Settings, LogOut, Menu, X, Shield,
+    LayoutDashboard, Building2, LogOut, Menu, X, Shield, Package,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
 const navigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Tenants', href: '/admin/tenants', icon: Building2 },
+    { name: 'Planos', href: '/admin/planos', icon: Package },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

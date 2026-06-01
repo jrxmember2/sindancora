@@ -21,23 +21,28 @@ import type { PageProps } from '@/types';
 
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Condomínios', href: '/condominios', icon: Building2 },
-    { name: 'Pessoas', href: '/pessoas', icon: UserRound },
-    { name: 'Usuários', href: '/usuarios', icon: Users },
-    { name: 'Comunicados', href: '/comunicados', icon: Megaphone },
-    { name: 'Ocorrências', href: '/ocorrencias', icon: AlertCircle },
-    { name: 'Reservas', href: '/reservas', icon: CalendarRange },
-    { name: 'Documentos', href: '/documentos', icon: FileText },
+    { name: 'Condomínios', href: '/condominios', icon: Building2, permission: 'condominiums:read' },
+    { name: 'Pessoas', href: '/pessoas', icon: UserRound, permission: 'persons:read' },
+    { name: 'Usuários', href: '/usuarios', icon: Users, permission: 'users:read' },
+    { name: 'Comunicados', href: '/comunicados', icon: Megaphone, permission: 'announcements:read' },
+    { name: 'Ocorrências', href: '/ocorrencias', icon: AlertCircle, permission: 'occurrences:read' },
+    { name: 'Reservas', href: '/reservas', icon: CalendarRange, permission: 'reservations:read' },
+    { name: 'Documentos', href: '/documentos', icon: FileText, permission: 'documents:read' },
 ];
 
 const adminNavigation = [
-    { name: 'Perfis', href: '/roles', icon: Shield },
-    { name: 'Auditoria', href: '/auditoria', icon: ClipboardList },
+    { name: 'Perfis', href: '/roles', icon: Shield, permission: 'users:manage' },
+    { name: 'Auditoria', href: '/auditoria', icon: ClipboardList, permission: 'audit:read' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const { auth, tenant, flash } = usePage<PageProps>().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    const perms = auth.user?.permissions ?? [];
+    const can = (permission?: string) => !permission || perms.includes('*') || perms.includes(permission);
+    const visibleNav = navigation.filter((item) => can(item.permission));
+    const visibleAdminNav = adminNavigation.filter((item) => can(item.permission));
 
     const brandName = tenant?.brand_name ?? 'SindÂncora';
     const primaryColor = tenant?.primary_color ?? '#1e40af';
@@ -84,7 +89,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 {/* Navigation */}
                 <nav className="flex-1 overflow-y-auto py-4">
                     <ul className="space-y-1 px-2">
-                        {navigation.map((item) => {
+                        {visibleNav.map((item) => {
                             const Icon = item.icon;
                             const isActive = window.location.pathname.startsWith(item.href);
                             return (
@@ -104,10 +109,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             );
                         })}
                     </ul>
+                    {visibleAdminNav.length > 0 && (
                     <div className="mt-4 px-2">
                         <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Administração</p>
                         <ul className="space-y-1">
-                            {adminNavigation.map((item) => {
+                            {visibleAdminNav.map((item) => {
                                 const Icon = item.icon;
                                 const isActive = window.location.pathname.startsWith(item.href);
                                 return (
@@ -128,6 +134,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             })}
                         </ul>
                     </div>
+                    )}
                 </nav>
 
                 {/* User Menu */}

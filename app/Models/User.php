@@ -63,12 +63,27 @@ class User extends Authenticatable
             return true;
         }
 
+        return in_array($permission, $this->permissionNames(), true);
+    }
+
+    /**
+     * Lista de nomes de permissão do usuário (ex: ['users:read', ...]).
+     * Super admin recebe ['*'] (acesso total).
+     */
+    public function permissionNames(): array
+    {
+        if ($this->is_super_admin) {
+            return ['*'];
+        }
+
         return $this->userRoles()
             ->with('role.permissions')
             ->get()
-            ->flatMap(fn ($ur) => $ur->role->permissions ?? collect())
+            ->flatMap(fn ($ur) => $ur->role?->permissions ?? collect())
             ->pluck('name')
-            ->contains($permission);
+            ->unique()
+            ->values()
+            ->all();
     }
 
     public function isSuperAdmin(): bool

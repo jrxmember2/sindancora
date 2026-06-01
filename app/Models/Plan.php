@@ -41,6 +41,11 @@ class Plan extends Model
         return $this->hasMany(TenantPlanSubscription::class);
     }
 
+    public function tenants(): HasMany
+    {
+        return $this->hasMany(Tenant::class);
+    }
+
     public function getLimit(string $resource): int
     {
         return $this->limits()->where('resource', $resource)->value('limit_value') ?? -1;

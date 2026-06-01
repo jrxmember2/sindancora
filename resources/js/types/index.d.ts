@@ -3,6 +3,7 @@ export interface AuthUser {
     name: string;
     email: string;
     is_super_admin: boolean;
+    permissions: string[];
 }
 
 export interface TenantData {

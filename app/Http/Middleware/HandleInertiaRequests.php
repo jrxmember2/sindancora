@@ -28,6 +28,7 @@ class HandleInertiaRequests extends Middleware
                     'name' => $user->name,
                     'email' => $user->email,
                     'is_super_admin' => $user->is_super_admin,
+                    'permissions' => $user->permissionNames(),
                 ] : null,
             ],
             'tenant' => $tenant ? [
