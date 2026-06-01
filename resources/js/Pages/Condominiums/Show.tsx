@@ -50,7 +50,7 @@ function BlockModal({ condo, onClose }: { condo: Condominium; onClose: () => voi
 }
 
 function ManagerModal({ condo, persons, roles, onClose }: { condo: Condominium; persons: Person[]; roles: Record<string, string>; onClose: () => void }) {
-    const { data, setData, post, processing, errors, reset } = useForm({ person_id: '', role: 'sindico', start_date: new Date().toISOString().slice(0, 10) });
+    const { data, setData, post, processing, errors, reset } = useForm({ person_id: '', role: 'sindico', start_date: new Date().toISOString().slice(0, 10), end_date: '' });
     const submit = () => post(route('condominiums.managers.store', condo.id), { onSuccess: () => { reset(); onClose(); } });
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -73,9 +73,17 @@ function ManagerModal({ condo, persons, roles, onClose }: { condo: Condominium; 
                         {Object.entries(roles).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                     </select>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Início do Mandato *</label>
-                    <input type="date" value={data.start_date} onChange={e => setData('start_date', e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                <div className="grid grid-cols-2 gap-3">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Início do Mandato *</label>
+                        <input type="date" value={data.start_date} onChange={e => setData('start_date', e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                        {errors.start_date && <p className="mt-1 text-xs text-red-600">{errors.start_date}</p>}
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Fim do Mandato</label>
+                        <input type="date" value={data.end_date} min={data.start_date} onChange={e => setData('end_date', e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                        {errors.end_date && <p className="mt-1 text-xs text-red-600">{errors.end_date}</p>}
+                    </div>
                 </div>
                 <div className="flex gap-2 pt-2">
                     <button onClick={onClose} className="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>

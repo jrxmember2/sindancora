@@ -1,4 +1,5 @@
 import AppLayout from '@/Layouts/AppLayout';
+import { isValidCnpj, maskCnpj, maskPhone } from '@/lib/masks';
 import { Head, useForm, Link } from '@inertiajs/react';
 import { Building2, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import { useState } from 'react';
@@ -90,11 +91,11 @@ export default function CondominiumCreate() {
                                 <Input value={data.name} onChange={e => setData('name', e.target.value)} placeholder="Ex: Condomínio Residencial Parque Verde" />
                             </Field>
                             <div className="grid grid-cols-2 gap-4">
-                                <Field label="CNPJ" error={errors.cnpj}>
-                                    <Input value={data.cnpj} onChange={e => setData('cnpj', e.target.value)} placeholder="00.000.000/0000-00" />
+                                <Field label="CNPJ" error={errors.cnpj ?? (data.cnpj.length > 0 && !isValidCnpj(data.cnpj) ? 'CNPJ inválido.' : undefined)}>
+                                    <Input value={data.cnpj} onChange={e => setData('cnpj', maskCnpj(e.target.value))} placeholder="00.000.000/0000-00" />
                                 </Field>
                                 <Field label="Telefone" error={errors.phone}>
-                                    <Input value={data.phone} onChange={e => setData('phone', e.target.value)} placeholder="(11) 99999-9999" />
+                                    <Input value={data.phone} onChange={e => setData('phone', maskPhone(e.target.value))} placeholder="(11) 99999-9999" />
                                 </Field>
                             </div>
                             <Field label="E-mail" error={errors.email}>

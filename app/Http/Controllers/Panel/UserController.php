@@ -9,12 +9,37 @@ use App\Services\PlanLimitService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class UserController extends Controller
 {
     public function __construct(private readonly PlanLimitService $planLimitService) {}
+
+    /**
+     * Roles que um usuário do tenant pode atribuir. O role super_admin (acesso total
+     * ao SaaS) nunca pode ser concedido a partir do painel do tenant.
+     */
+    private function assignableRoles(string $tenantId)
+    {
+        return Role::forTenant($tenantId)
+            ->where('name', '!=', 'super_admin')
+            ->orderBy('display_name')
+            ->get(['id', 'name', 'display_name']);
+    }
+
+    /**
+     * Regra de validação garantindo que o role exista, pertença ao tenant (ou seja de
+     * sistema) e não seja super_admin.
+     */
+    private function roleIdRule(string $tenantId): array
+    {
+        return ['nullable', 'uuid', Rule::exists('roles', 'id')->where(function ($q) use ($tenantId) {
+            $q->where('name', '!=', 'super_admin')
+                ->where(fn ($q2) => $q2->whereNull('tenant_id')->orWhere('tenant_id', $tenantId));
+        })];
+    }
 
     public function index(Request $request): Response
     {
@@ -40,7 +65,7 @@ class UserController extends Controller
         $this->planLimitService->check($tenant, 'users');
 
         return Inertia::render('Users/Create', [
-            'roles' => Role::forTenant($tenant->id)->orderBy('display_name')->get(['id', 'name', 'display_name']),
+            'roles' => $this->assignableRoles($tenant->id),
         ]);
     }
 
@@ -54,7 +79,7 @@ class UserController extends Controller
             'email' => "required|email|unique:users,email,NULL,id,tenant_id,{$tenant->id}",
             'phone' => 'nullable|string|max:20',
             'password' => 'required|string|min:8',
-            'role_id' => 'nullable|uuid|exists:roles,id',
+            'role_id' => $this->roleIdRule($tenant->id),
             'status' => 'in:active,inactive',
         ]);
 
@@ -85,7 +110,7 @@ class UserController extends Controller
 
         return Inertia::render('Users/Edit', [
             'user' => $user,
-            'roles' => Role::forTenant($tenant->id)->orderBy('display_name')->get(['id', 'name', 'display_name']),
+            'roles' => $this->assignableRoles($tenant->id),
         ]);
     }
 
@@ -99,7 +124,7 @@ class UserController extends Controller
             'email' => "required|email|unique:users,email,{$user->id},id,tenant_id,{$tenant->id}",
             'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:8',
-            'role_id' => 'nullable|uuid|exists:roles,id',
+            'role_id' => $this->roleIdRule($tenant->id),
             'status' => 'in:active,inactive',
         ]);
 

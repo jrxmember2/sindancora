@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\Tenant;
+use App\Rules\CpfCnpj;
 use App\Services\TenantService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,10 +41,12 @@ class TenantController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $request->merge(['document' => preg_replace('/\D/', '', (string) $request->input('document')) ?: null]);
+
         $data = $request->validate([
             'name' => 'required|string|max:100',
             'slug' => 'nullable|string|max:50|alpha_dash|unique:tenants,slug',
-            'document' => 'nullable|string|max:18',
+            'document' => ['nullable', 'string', 'max:18', new CpfCnpj],
             'email' => 'required|email',
             'phone' => 'nullable|string|max:20',
             'plan_id' => 'required|uuid|exists:plans,id',

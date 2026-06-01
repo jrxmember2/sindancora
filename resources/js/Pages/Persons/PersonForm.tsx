@@ -1,3 +1,4 @@
+import { isValidCpf, maskCpf, maskPhone } from '@/lib/masks';
 import { Link } from '@inertiajs/react';
 
 interface PersonFormData {
@@ -59,8 +60,8 @@ export default function PersonForm({ data, setData, errors, processing, onSubmit
                     <Input value={data.name} onChange={e => setData('name', e.target.value)} />
                 </Field>
                 <div className="grid grid-cols-2 gap-4">
-                    <Field label="CPF" error={errors.cpf}>
-                        <Input value={data.cpf} onChange={e => setData('cpf', e.target.value)} placeholder="000.000.000-00" />
+                    <Field label="CPF" error={errors.cpf ?? (data.cpf.length > 0 && !isValidCpf(data.cpf) ? 'CPF inválido.' : undefined)}>
+                        <Input value={maskCpf(data.cpf)} onChange={e => setData('cpf', maskCpf(e.target.value))} placeholder="000.000.000-00" />
                     </Field>
                     <Field label="Data de Nascimento" error={errors.birth_date}>
                         <Input type="date" value={data.birth_date} onChange={e => setData('birth_date', e.target.value)} />
@@ -71,11 +72,11 @@ export default function PersonForm({ data, setData, errors, processing, onSubmit
                         <Input type="email" value={data.email} onChange={e => setData('email', e.target.value)} />
                     </Field>
                     <Field label="Telefone" error={errors.phone}>
-                        <Input value={data.phone} onChange={e => setData('phone', e.target.value)} placeholder="(11) 99999-9999" />
+                        <Input value={maskPhone(data.phone)} onChange={e => setData('phone', maskPhone(e.target.value))} placeholder="(11) 99999-9999" />
                     </Field>
                 </div>
                 <Field label="Telefone 2" error={errors.phone2}>
-                    <Input value={data.phone2} onChange={e => setData('phone2', e.target.value)} placeholder="(11) 99999-9999" />
+                    <Input value={maskPhone(data.phone2)} onChange={e => setData('phone2', maskPhone(e.target.value))} placeholder="(11) 99999-9999" />
                 </Field>
 
                 <div className="border-t border-gray-100 pt-5">

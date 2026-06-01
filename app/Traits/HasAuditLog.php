@@ -24,7 +24,7 @@ trait HasAuditLog
             $newValues = array_diff_key($newValues, array_flip($hidden));
 
             AuditLog::create([
-                'tenant_id'  => $model->{static::getAuditTenantId($model)},
+                'tenant_id'  => static::getAuditTenantId($model),
                 'user_id'    => Auth::id(),
                 'action'     => $action,
                 'entity'     => class_basename($model),
@@ -35,8 +35,9 @@ trait HasAuditLog
                 'user_agent' => Request::userAgent(),
                 'url'        => Request::fullUrl(),
             ]);
-        } catch (\Exception) {
-            // Nunca deixar auditoria quebrar a operação principal
+        } catch (\Throwable $e) {
+            // Nunca deixar auditoria quebrar a operação principal, mas registrar a falha.
+            report($e);
         }
     }
 

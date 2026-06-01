@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Person;
 use App\Models\PersonUnitLink;
 use App\Models\Unit;
+use App\Rules\CpfCnpj;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -165,7 +166,13 @@ class PersonController extends Controller
 
     private function validated(Request $request, string $tenantId, ?string $excludeId = null): array
     {
-        $cpfRule = "nullable|string|max:14|unique:persons,cpf,{$excludeId},id,tenant_id,{$tenantId}";
+        // Normaliza o CPF para apenas dígitos antes de validar, para que unicidade e
+        // busca (searchByCpf) sejam consistentes independentemente da máscara enviada.
+        $request->merge([
+            'cpf' => preg_replace('/\D/', '', (string) $request->input('cpf')) ?: null,
+        ]);
+
+        $cpfRule = ['nullable', 'string', 'max:14', new CpfCnpj, "unique:persons,cpf,{$excludeId},id,tenant_id,{$tenantId}"];
 
         return $request->validate([
             'name' => 'required|string|max:150',

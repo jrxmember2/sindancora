@@ -122,7 +122,8 @@ export default function UsersIndex({ users, filters }: Props) {
                                         </div>
                                     </td>
                                     <td className="px-4 py-3">
-                                        <span className={`text-xs font-medium ${user.status === 'active' ? 'text-green-600' : 'text-gray-400'}`}>
+                                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                                            <span className={`h-2.5 w-2.5 rounded-full ${user.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`} />
                                             {user.status === 'active' ? 'Ativo' : 'Inativo'}
                                         </span>
                                     </td>

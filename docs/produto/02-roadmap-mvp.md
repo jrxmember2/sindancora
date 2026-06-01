@@ -171,13 +171,13 @@ Fase 1 considera-se **concluída** quando:
 - [ ] Histórico de moradores por unidade (vínculos passados)
 - [ ] Morador principal (is_primary)
 - [ ] Múltiplas unidades por pessoa (proprietário com vários imóveis)
-- [ ] Convite por e-mail para ativar acesso ao portal do morador
+- [→ Fase 4] Convite por e-mail para ativar acesso ao portal do morador — adiado: depende do Portal do Morador (Fase 4.1, cadastro via link de convite). Sem o portal não há destino para o convite.
 - [ ] Importação de pessoas via CSV
 
 #### 2.5 Síndicos e Conselheiros
-- [ ] Marcação de pessoa como Síndico, Subsíndico ou Conselheiro do condomínio
-- [ ] Mandato com data de início e fim
-- [ ] Role automático ao marcar como síndico
+- [x] Marcação de pessoa como Síndico, Subsíndico ou Conselheiro do condomínio
+- [x] Mandato com data de início e fim
+- [→ Fase 4] Role automático ao marcar como síndico — adiado: Person e User são entidades separadas (sem FK). A atribuição automática de role só faz sentido quando a pessoa vira usuário (via convite do portal, Fase 4).
 
 ### Critérios de Aceite da Fase 2
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Condominium;
 use App\Models\Person;
 use App\Models\CondominiumManager;
+use App\Rules\CpfCnpj;
 use App\Services\PlanLimitService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,9 +49,11 @@ class CondominiumController extends Controller
         $tenant = app('tenant');
         $this->planLimitService->check($tenant, 'condominiums');
 
+        $request->merge(['cnpj' => preg_replace('/\D/', '', (string) $request->input('cnpj')) ?: null]);
+
         $data = $request->validate([
             'name' => 'required|string|max:200',
-            'cnpj' => ["nullable", "string", "max:18", "unique:condominiums,cnpj,NULL,id,tenant_id,{$tenant->id}"],
+            'cnpj' => ["nullable", "string", "max:18", new CpfCnpj, "unique:condominiums,cnpj,NULL,id,tenant_id,{$tenant->id}"],
             'email' => 'nullable|email|max:150',
             'phone' => 'nullable|string|max:20',
             'zip_code' => 'nullable|string|max:9',
@@ -109,9 +112,11 @@ class CondominiumController extends Controller
         $tenant = app('tenant');
         abort_unless($condominium->tenant_id === $tenant->id, 403);
 
+        $request->merge(['cnpj' => preg_replace('/\D/', '', (string) $request->input('cnpj')) ?: null]);
+
         $data = $request->validate([
             'name' => 'required|string|max:200',
-            'cnpj' => ["nullable", "string", "max:18", "unique:condominiums,cnpj,{$condominium->id},id,tenant_id,{$tenant->id}"],
+            'cnpj' => ["nullable", "string", "max:18", new CpfCnpj, "unique:condominiums,cnpj,{$condominium->id},id,tenant_id,{$tenant->id}"],
             'email' => 'nullable|email|max:150',
             'phone' => 'nullable|string|max:20',
             'zip_code' => 'nullable|string|max:9',
@@ -194,6 +199,7 @@ class CondominiumController extends Controller
             'person_id' => 'required|uuid|exists:persons,id',
             'role' => 'required|in:sindico,subsindico,conselheiro',
             'start_date' => 'required|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
         // Encerra mandato anterior do mesmo cargo no condomínio
