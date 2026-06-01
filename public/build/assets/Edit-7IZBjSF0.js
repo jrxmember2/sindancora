@@ -1,0 +1,1 @@
+import{j as o}from"./app-C5MFSh4h.js";import i from"./Form-Cbw9XrDy.js";import"./AppLayout-CVK3iouh.js";import"./x-VvDPcYUs.js";import"./createLucideIcon-C70d70UV.js";import"./users-BIspSPfz.js";import"./circle-alert-BxwWDqSq.js";import"./arrow-left-CE9AxkDV.js";function a({user:r,roles:t}){return o.jsx(i,{user:r,roles:t,isEdit:!0})}export{a as default};
