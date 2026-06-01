@@ -19,7 +19,7 @@ class ResolveTenant
     {
         $host = $this->extractHost($request);
 
-        if ($this->isSuperAdminDomain($host)) {
+        if ($this->isSuperAdminDomain($host) || $request->is('admin', 'admin/*')) {
             return $next($request);
         }
 
