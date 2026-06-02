@@ -13,7 +13,10 @@ use Illuminate\Support\Str;
 
 class ChargeService
 {
-    public function __construct(private readonly StorageService $storage) {}
+    public function __construct(
+        private readonly StorageService $storage,
+        private readonly WebhookService $webhooks,
+    ) {}
 
     /**
      * Gera um lote de cobranças para um condomínio. Cada linha em $rows traz a unidade e o valor
@@ -85,6 +88,8 @@ class ChargeService
         }
 
         $charge->save();
+
+        $this->webhooks->dispatch($charge->tenant_id, 'charge.paid', $charge->toWebhookArray());
 
         return $charge;
     }

@@ -376,15 +376,19 @@ Fase 1 considera-se **concluída** quando:
 
 > Detalhes técnicos em `docs/tecnico/api-publica.md`. DELETE via API e escopos por condomínio adiados.
 
-#### 6.2 Webhooks
-- [ ] CRUD de webhooks por tenant
-- [ ] Envio de payload a cada evento configurado
-- [ ] Tabela `webhook_deliveries` com logs de envio e retry
+#### 6.2 Webhooks — [x] entregue
+- [x] CRUD de webhooks por tenant (`/configuracoes/webhooks`, permissão `webhooks:manage`)
+- [x] Envio de payload assinado (HMAC-SHA256) a cada evento configurado (9 eventos no catálogo)
+- [x] Tabela `webhook_deliveries` com logs de envio e retry (backoff, até 4 tentativas)
 
-#### 6.3 WhatsApp (Evolution API)
-- [ ] Configuração de instância WhatsApp por tenant
-- [ ] Notificações via WhatsApp: comunicado, vencimento, ocorrência
-- [ ] Segunda via de boleto/PIX via WhatsApp
+> Detalhes em `docs/tecnico/webhooks.md`.
+
+#### 6.3 WhatsApp (Evolution API) — [x] entregue (núcleo)
+- [x] Configuração de instância WhatsApp por tenant (`tenant_whatsapp_settings`, `/configuracoes/whatsapp`)
+- [x] Notificações via WhatsApp: comunicado, vencimento, ocorrência, reserva (canal de notificação reusando as notificações existentes)
+- [→ adiado] Segunda via de boleto/PIX via WhatsApp sob demanda (o aviso de vencimento já sai por WhatsApp)
+
+> Detalhes em `docs/tecnico/whatsapp.md`. Pré-requisito: instância Evolution API.
 
 #### 6.4 IA Assistente (Claude API)
 - [ ] Chat IA para síndico (Anthropic Claude API)

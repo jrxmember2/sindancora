@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Notification;
 
 class ReservationService
 {
+    public function __construct(private readonly WebhookService $webhooks) {}
+
     /**
      * Cria uma solicitação de reserva. Se a área não exige aprovação, já aprova
      * (com verificação de conflito). Caso contrário, fica pendente.
@@ -21,7 +23,7 @@ class ReservationService
      */
     public function request(CommonArea $area, array $data, ?string $requesterId): Reservation
     {
-        return DB::transaction(function () use ($area, $data, $requesterId) {
+        $reservation = DB::transaction(function () use ($area, $data, $requesterId) {
             $autoApprove = ! $area->requires_approval;
 
             if ($autoApprove) {
@@ -50,11 +52,18 @@ class ReservationService
 
             return $reservation;
         });
+
+        $this->webhooks->dispatch($reservation->tenant_id, 'reservation.created', $reservation->toWebhookArray());
+        if ($reservation->status === 'approved') {
+            $this->webhooks->dispatch($reservation->tenant_id, 'reservation.approved', $reservation->toWebhookArray());
+        }
+
+        return $reservation;
     }
 
     public function approve(Reservation $reservation): Reservation
     {
-        return DB::transaction(function () use ($reservation) {
+        $approved = DB::transaction(function () use ($reservation) {
             $this->assertNoConflict(
                 $reservation->common_area_id,
                 $reservation->date->toDateString(),
@@ -74,6 +83,10 @@ class ReservationService
 
             return $reservation;
         });
+
+        $this->webhooks->dispatch($approved->tenant_id, 'reservation.approved', $approved->toWebhookArray());
+
+        return $approved;
     }
 
     public function reject(Reservation $reservation, ?string $reason): Reservation
@@ -86,6 +99,8 @@ class ReservationService
         ])->save();
 
         $this->notifyRequester($reservation, 'Sua reserva foi recusada.'.($reason ? " Motivo: {$reason}" : ''));
+
+        $this->webhooks->dispatch($reservation->tenant_id, 'reservation.rejected', $reservation->toWebhookArray());
 
         return $reservation;
     }

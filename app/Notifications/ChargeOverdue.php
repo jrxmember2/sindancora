@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Charge;
+use App\Notifications\Channels\WhatsAppChannel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -14,10 +15,18 @@ class ChargeOverdue extends Notification implements ShouldQueue
 
     public function __construct(public Charge $charge) {}
 
-    /** @return array<int, string> */
+    /** @return array<int, string|class-string> */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['database', 'mail', WhatsAppChannel::class];
+    }
+
+    public function toWhatsapp(object $notifiable): string
+    {
+        $value = number_format($this->charge->currentAmount(), 2, ',', '.');
+        $due = $this->charge->due_date?->format('d/m/Y');
+
+        return "*Cobrança vencida*\n{$this->charge->description}\nVenceu em {$due} — valor atualizado R$ {$value}.";
     }
 
     public function toMail(object $notifiable): MailMessage

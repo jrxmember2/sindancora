@@ -73,6 +73,11 @@ class Tenant extends Model
         return $this->hasOne(TenantPaymentSetting::class)->where('provider', 'asaas');
     }
 
+    public function whatsappSetting(): HasOne
+    {
+        return $this->hasOne(TenantWhatsappSetting::class);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', 'active');

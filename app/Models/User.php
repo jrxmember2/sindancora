@@ -125,6 +125,27 @@ class User extends Authenticatable
         return $this->status === 'active';
     }
 
+    /**
+     * Número para o canal WhatsApp (Evolution API): dígitos com DDI.
+     * Usa o telefone da Pessoa vinculada (morador) ou o do próprio usuário.
+     */
+    public function routeNotificationForWhatsapp(): ?string
+    {
+        $raw = $this->person?->phone ?: $this->phone;
+        $digits = preg_replace('/\D/', '', (string) $raw);
+
+        if (blank($digits)) {
+            return null;
+        }
+
+        // Telefone BR sem DDI (10–11 dígitos) → prefixa 55.
+        if (strlen($digits) <= 11) {
+            $digits = '55'.$digits;
+        }
+
+        return $digits;
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', 'active');

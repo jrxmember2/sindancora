@@ -47,6 +47,27 @@ class Occurrence extends Model
         'closed' => 'Encerrada',
     ];
 
+    protected static function booted(): void
+    {
+        static::created(function (Occurrence $occurrence) {
+            app(\App\Services\WebhookService::class)->dispatch($occurrence->tenant_id, 'occurrence.created', $occurrence->toWebhookArray());
+        });
+    }
+
+    /** Payload compacto para webhooks de saída. */
+    public function toWebhookArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'condominium_id' => $this->condominium_id,
+            'unit_id' => $this->unit_id,
+            'title' => $this->title,
+            'category' => $this->category,
+            'priority' => $this->priority,
+            'status' => $this->status,
+        ];
+    }
+
     public function condominium(): BelongsTo
     {
         return $this->belongsTo(Condominium::class);

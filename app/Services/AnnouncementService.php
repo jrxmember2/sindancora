@@ -7,11 +7,14 @@ use App\Models\Announcement;
 use App\Models\Person;
 use App\Models\User;
 use App\Notifications\AnnouncementPublished;
+use App\Services\WebhookService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 
 class AnnouncementService
 {
+    public function __construct(private readonly WebhookService $webhooks) {}
+
     /**
      * Marca o comunicado como publicado e enfileira o e-mail aos moradores
      * com endereço cadastrado no condomínio-alvo. Idempotente: não republica
@@ -30,6 +33,15 @@ class AnnouncementService
 
         $this->notifyResidents($announcement);
         $this->notifyPanelUsers($announcement);
+
+        $this->webhooks->dispatch($announcement->tenant_id, 'announcement.published', [
+            'id' => $announcement->id,
+            'condominium_id' => $announcement->condominium_id,
+            'title' => $announcement->title,
+            'category' => $announcement->category,
+            'urgency' => $announcement->urgency,
+            'published_at' => $announcement->published_at?->toIso8601String(),
+        ]);
 
         return $announcement;
     }

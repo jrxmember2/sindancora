@@ -3,20 +3,30 @@
 namespace App\Notifications;
 
 use App\Models\Occurrence;
+use App\Notifications\Channels\WhatsAppChannel;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class OccurrenceUpdated extends Notification
+class OccurrenceUpdated extends Notification implements ShouldQueue
 {
+    use Queueable;
+
     public function __construct(
         public Occurrence $occurrence,
         public string $summary,
     ) {
     }
 
-    /** @return array<int, string> */
+    /** @return array<int, string|class-string> */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', WhatsAppChannel::class];
+    }
+
+    public function toWhatsapp(object $notifiable): string
+    {
+        return "*Ocorrência: {$this->occurrence->title}*\n{$this->summary}";
     }
 
     /** @return array<string, mixed> */
