@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Portal;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Portal\Concerns\InteractsWithResident;
 use App\Models\Charge;
+use App\Services\Payments\AsaasException;
+use App\Services\Payments\AsaasService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -14,6 +16,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ChargeController extends Controller
 {
     use InteractsWithResident;
+
+    public function __construct(private readonly AsaasService $asaas) {}
 
     public function index(): Response
     {
@@ -50,7 +54,23 @@ class ChargeController extends Controller
             'charge' => array_merge($charge->toArray(), ['current_amount' => $charge->currentAmount()]),
             'types' => Charge::TYPES,
             'statuses' => Charge::STATUSES,
+            'gatewayEnabled' => (bool) $this->asaas->settingFor(app('tenant')),
         ]);
+    }
+
+    /** Solicita a 2ª via (boleto/PIX) por e-mail. Emite no gateway se ainda não houver. */
+    public function secondCopy(Charge $charge): RedirectResponse
+    {
+        $this->authorizeOwner($charge);
+        abort_if($charge->status === 'paid', 422, 'Cobrança já está paga.');
+
+        try {
+            $this->asaas->sendSecondCopy($charge);
+        } catch (AsaasException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Enviamos a 2ª via para o seu e-mail.');
     }
 
     public function download(Charge $charge): RedirectResponse|StreamedResponse

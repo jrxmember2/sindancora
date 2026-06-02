@@ -17,7 +17,7 @@ class Person extends Model
     protected $fillable = [
         'tenant_id', 'name', 'cpf', 'email', 'phone', 'phone2',
         'birth_date', 'zip_code', 'street', 'number', 'complement',
-        'neighborhood', 'city', 'state', 'notes',
+        'neighborhood', 'city', 'state', 'notes', 'gateway_customer_id',
     ];
 
     protected function casts(): array

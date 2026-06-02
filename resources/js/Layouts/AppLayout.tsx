@@ -38,6 +38,7 @@ const navigation = [
 
 const adminNavigation = [
     { name: 'Perfis', href: '/roles', icon: Shield, permission: 'users:manage' },
+    { name: 'Pagamentos', href: '/configuracoes/pagamentos', icon: Settings, permission: 'settings:payments' },
     { name: 'Auditoria', href: '/auditoria', icon: ClipboardList, permission: 'audit:read' },
 ];
 
@@ -170,13 +171,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         </div>
                     </div>
                     <div className="mt-3 space-y-1">
-                        <Link
-                            href="/configuracoes"
-                            className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100"
-                        >
-                            <Settings className="h-4 w-4" />
-                            Configurações
-                        </Link>
+                        {can('settings:payments') && (
+                            <Link
+                                href="/configuracoes/pagamentos"
+                                className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100"
+                            >
+                                <Settings className="h-4 w-4" />
+                                Configurações
+                            </Link>
+                        )}
                         <Link
                             href="/logout"
                             method="post"

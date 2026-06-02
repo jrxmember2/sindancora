@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'asaas' => [
+        'sandbox' => env('ASAAS_SANDBOX_URL', 'https://sandbox.asaas.com/api/v3'),
+        'production' => env('ASAAS_PRODUCTION_URL', 'https://api.asaas.com/v3'),
+    ],
+
 ];

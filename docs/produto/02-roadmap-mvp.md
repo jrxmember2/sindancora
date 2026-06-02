@@ -339,21 +339,21 @@ Fase 1 considera-se **concluída** quando:
 - [x] Prestação de contas mensal (saldo = recebido − despesas; quebra mensal)
 - [x] Exportação para PDF (dompdf) e XLSX (maatwebsite/excel)
 
-#### 5.4 Integração com Gateway (Asaas) — [→ ADIADO: fatia dedicada]
-- [ ] Configuração de conta Asaas por tenant
-- [ ] Geração de boleto bancário por cobrança
-- [ ] Geração de QR Code PIX por cobrança
-- [ ] Webhook de retorno de pagamento (conciliação automática)
-- [ ] Envio de segunda via por e-mail
+#### 5.4 Integração com Gateway (Asaas) — [x] entregue
+- [x] Configuração de conta Asaas por tenant (`tenant_payment_settings`, tela `/configuracoes/pagamentos`)
+- [x] Geração de boleto bancário por cobrança (linha digitável + PDF)
+- [x] Geração de QR Code PIX por cobrança (QR + copia-e-cola; fatura única `billingType: UNDEFINED`)
+- [x] Webhook de retorno de pagamento (conciliação automática, `POST /api/webhooks/asaas`)
+- [x] Envio de segunda via por e-mail (`ChargeIssuedMail`, painel e portal)
 
-> **Decisão:** o financeiro **manual** (5.1–5.3) foi entregue primeiro. A integração Asaas (5.4)
-> depende de credenciais/sandbox e endpoint público de webhook — fica para fatia dedicada.
+> **Decisão:** o financeiro **manual** (5.1–5.3) foi entregue primeiro; a integração Asaas (5.4) veio
+> em fatia dedicada. Detalhes técnicos em `docs/tecnico/financeiro-asaas.md`.
 
 ### Critérios de Aceite da Fase 5
 
 - [x] Admin gera cobrança mensal para todas as unidades (geração em lote)
-- [→ Asaas] Morador recebe boleto/PIX por e-mail — depende da 5.4 (adiada); morador vê "Minhas cobranças" no portal
-- [→ Asaas] Pagamento confirmado automaticamente via webhook — depende da 5.4 (adiada); pagamento é registrado manualmente
+- [x] Morador recebe boleto/PIX por e-mail (5.4 — `ChargeIssuedMail`, 2ª via no painel e no portal)
+- [x] Pagamento confirmado automaticamente via webhook (5.4 — `POST /api/webhooks/asaas`); registro manual segue como fallback
 - [x] Relatório de inadimplência correto e exportável (PDF/XLSX)
 
 ---

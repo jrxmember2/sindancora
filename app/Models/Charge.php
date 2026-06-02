@@ -20,6 +20,8 @@ class Charge extends Model
         'type', 'description', 'reference_month', 'amount', 'due_date',
         'fine_rate', 'interest_rate', 'status', 'paid_at', 'paid_amount',
         'payment_method', 'receipt_storage_object_id', 'notes', 'created_by',
+        'gateway', 'gateway_payment_id', 'gateway_status', 'invoice_url',
+        'bank_slip_url', 'bank_slip_line', 'pix_payload', 'pix_qrcode', 'gateway_synced_at',
     ];
 
     protected function casts(): array
@@ -27,6 +29,7 @@ class Charge extends Model
         return [
             'due_date' => 'date',
             'paid_at' => 'datetime',
+            'gateway_synced_at' => 'datetime',
             'amount' => 'decimal:2',
             'paid_amount' => 'decimal:2',
             'fine_rate' => 'decimal:2',
@@ -47,6 +50,11 @@ class Charge extends Model
         'overdue' => 'Vencido',
         'cancelled' => 'Cancelado',
     ];
+
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
+    }
 
     public function condominium(): BelongsTo
     {
@@ -85,6 +93,12 @@ class Charge extends Model
     public function scopeOpen(Builder $query): Builder
     {
         return $query->whereIn('status', ['pending', 'overdue']);
+    }
+
+    /** True quando a cobrança já tem boleto/PIX emitido no gateway. */
+    public function hasGatewayCharge(): bool
+    {
+        return $this->gateway_payment_id !== null;
     }
 
     public function isOverdue(): bool

@@ -82,8 +82,9 @@ class PermissionSeeder extends Seeder
             ['module' => 'users', 'action' => 'manage', 'description' => 'Gerenciar roles de usuários'],
 
             // Configurações
-            ['module' => 'settings', 'action' => 'read',   'description' => 'Visualizar configurações'],
-            ['module' => 'settings', 'action' => 'update', 'description' => 'Editar configurações'],
+            ['module' => 'settings', 'action' => 'read',     'description' => 'Visualizar configurações'],
+            ['module' => 'settings', 'action' => 'update',   'description' => 'Editar configurações'],
+            ['module' => 'settings', 'action' => 'payments', 'description' => 'Configurar integração de pagamento'],
 
             // API e Webhooks
             ['module' => 'api_keys',  'action' => 'manage', 'description' => 'Gerenciar chaves de API'],

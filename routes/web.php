@@ -11,6 +11,7 @@ use App\Http\Controllers\Panel\DocumentController;
 use App\Http\Controllers\Panel\ExpenseController;
 use App\Http\Controllers\Panel\NotificationController;
 use App\Http\Controllers\Panel\OccurrenceController;
+use App\Http\Controllers\Panel\PaymentSettingController;
 use App\Http\Controllers\Panel\PersonController;
 use App\Http\Controllers\Panel\ReportController;
 use App\Http\Controllers\Panel\ReservationController;
@@ -255,6 +256,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('permission:charges:update')->group(function () {
         Route::get('cobrancas/{charge}/editar', [ChargeController::class, 'edit'])->name('charges.edit');
         Route::match(['put', 'patch'], 'cobrancas/{charge}', [ChargeController::class, 'update'])->name('charges.update');
+        Route::post('cobrancas/{charge}/boleto', [ChargeController::class, 'issueGateway'])->name('charges.issue');
+        Route::post('cobrancas/{charge}/segunda-via', [ChargeController::class, 'secondCopy'])->name('charges.second-copy');
     });
     Route::middleware('permission:charges:mark_paid')->group(function () {
         Route::post('cobrancas/{charge}/pagar', [ChargeController::class, 'registerPayment'])->name('charges.pay');
@@ -293,6 +296,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('permission:reports:export')->group(function () {
         Route::get('relatorios/financeiro/pdf', [ReportController::class, 'exportPdf'])->name('reports.pdf');
         Route::get('relatorios/financeiro/xlsx', [ReportController::class, 'exportXlsx'])->name('reports.xlsx');
+    });
+
+    // Configurações > Pagamentos (integração Asaas por tenant)
+    Route::middleware('permission:settings:payments')->group(function () {
+        Route::get('configuracoes/pagamentos', [PaymentSettingController::class, 'edit'])->name('settings.payments.edit');
+        Route::match(['put', 'patch'], 'configuracoes/pagamentos', [PaymentSettingController::class, 'update'])->name('settings.payments.update');
+        Route::post('configuracoes/pagamentos/testar', [PaymentSettingController::class, 'test'])->name('settings.payments.test');
     });
     }); // fim do painel administrativo (middleware 'panel')
 });

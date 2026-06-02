@@ -29,7 +29,7 @@ class RoleSeeder extends Seeder
                 'expenses:create', 'expenses:read', 'expenses:update', 'expenses:delete',
                 'reports:read', 'reports:export',
                 'users:create', 'users:read', 'users:update', 'users:delete', 'users:manage',
-                'settings:read', 'settings:update',
+                'settings:read', 'settings:update', 'settings:payments',
                 'api_keys:manage', 'webhooks:manage',
                 'audit:read',
             ],

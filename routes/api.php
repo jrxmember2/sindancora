@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\TenantController;
+use App\Http\Controllers\Api\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 // Health check (sem autenticação)
@@ -10,6 +11,9 @@ Route::get('/health', fn () => response()->json([
     'version' => config('app.version', '1.0.0'),
     'timestamp' => now()->toIso8601String(),
 ]));
+
+// Webhooks de gateways (públicos, sem tenant por host — resolvido no controller pelo payload)
+Route::post('/webhooks/asaas', [WebhookController::class, 'asaas'])->name('webhooks.asaas');
 
 // API v1
 Route::prefix('v1')->group(function () {
