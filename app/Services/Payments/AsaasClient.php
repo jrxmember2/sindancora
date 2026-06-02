@@ -47,6 +47,12 @@ class AsaasClient
         return $this->get("/payments/{$id}/identificationField");
     }
 
+    /** Remove (cancela) uma cobrança no Asaas. */
+    public function deletePayment(string $id): array
+    {
+        return $this->handle($this->request()->delete("/payments/{$id}"));
+    }
+
     /** Verifica a credencial (usado pelo "Testar conexão"). */
     public function myAccount(): array
     {

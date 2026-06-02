@@ -5,12 +5,12 @@ import { useState } from 'react';
 
 interface Option { value: string; label: string }
 interface Row { unit_id: string; unit_label: string; person_id: string | null; person_name: string | null; amount: number; include: boolean }
-interface Props { condominiums: Option[]; types: Record<string, string> }
+interface Props { condominiums: Option[]; types: Record<string, string>; gatewayEnabled: boolean }
 
 const brl = (v: number) => Number(v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const field = 'mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500';
 
-export default function ChargeGenerate({ condominiums, types }: Props) {
+export default function ChargeGenerate({ condominiums, types, gatewayEnabled }: Props) {
     const [meta, setMeta] = useState({
         condominium_id: '', type: 'condo_fee', description: '', reference_month: '',
         due_date: '', amount: '', fine_rate: '2', interest_rate: '1',
@@ -18,6 +18,7 @@ export default function ChargeGenerate({ condominiums, types }: Props) {
     const [rows, setRows] = useState<Row[] | null>(null);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [issueGateway, setIssueGateway] = useState(false);
     const set = (k: string, v: string) => setMeta((m) => ({ ...m, [k]: v }));
 
     const loadPreview = async () => {
@@ -55,6 +56,7 @@ export default function ChargeGenerate({ condominiums, types }: Props) {
             due_date: meta.due_date,
             fine_rate: meta.fine_rate || 0,
             interest_rate: meta.interest_rate || 0,
+            issue_gateway: gatewayEnabled && issueGateway,
             rows: included as any,
         }, { onFinish: () => setSubmitting(false) });
     };
@@ -157,8 +159,16 @@ export default function ChargeGenerate({ condominiums, types }: Props) {
                         </table>
                     )}
                     {rows.length > 0 && (
-                        <div className="flex items-center justify-between gap-3 border-t border-gray-100 p-4">
-                            <p className="flex items-center gap-1.5 text-xs text-gray-500"><AlertTriangle className="h-3.5 w-3.5" /> Confira a descrição e o vencimento antes de confirmar.</p>
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 p-4">
+                            <div className="space-y-2">
+                                <p className="flex items-center gap-1.5 text-xs text-gray-500"><AlertTriangle className="h-3.5 w-3.5" /> Confira a descrição e o vencimento antes de confirmar.</p>
+                                {gatewayEnabled && (
+                                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                                        <input type="checkbox" checked={issueGateway} onChange={(e) => setIssueGateway(e.target.checked)} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                        Emitir boleto/PIX no Asaas automaticamente (em segundo plano)
+                                    </label>
+                                )}
+                            </div>
                             <button onClick={confirm} disabled={submitting || includedCount === 0 || !meta.description || !meta.due_date} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">
                                 {submitting ? 'Gerando…' : `Gerar ${includedCount} cobrança(s)`}
                             </button>

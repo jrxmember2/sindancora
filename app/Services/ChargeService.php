@@ -21,16 +21,17 @@ class ChargeService
      *
      * @param  array{type:string,reference_month:?string,due_date:string,fine_rate:float,interest_rate:float,description:string}  $meta
      * @param  array<int,array{unit_id:string,amount:float|string,person_id?:?string}>  $rows
+     * @return array<int,Charge> cobranças criadas
      */
-    public function generateBatch(Condominium $condominium, array $meta, array $rows): int
+    public function generateBatch(Condominium $condominium, array $meta, array $rows): array
     {
         $batchId = (string) Str::uuid();
 
         return DB::transaction(function () use ($condominium, $meta, $rows, $batchId) {
-            $count = 0;
+            $created = [];
 
             foreach ($rows as $row) {
-                Charge::create([
+                $created[] = Charge::create([
                     'tenant_id' => $condominium->tenant_id,
                     'condominium_id' => $condominium->id,
                     'unit_id' => $row['unit_id'],
@@ -46,10 +47,9 @@ class ChargeService
                     'status' => 'pending',
                     'created_by' => Auth::id(),
                 ]);
-                $count++;
             }
 
-            return $count;
+            return $created;
         });
     }
 

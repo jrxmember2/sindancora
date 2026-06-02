@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\IssueGatewayCharge;
 use App\Models\Charge;
 use App\Models\Condominium;
 use App\Models\PersonUnitLink;
@@ -133,7 +134,7 @@ class ChargeController extends Controller
         $tenant = app('tenant');
 
         return Inertia::render('Charges/Edit', array_merge(
-            ['charge' => $charge],
+            ['charge' => $charge, 'lockFinancial' => $charge->hasGatewayCharge()],
             $this->formData($tenant->id),
         ));
     }
@@ -144,6 +145,18 @@ class ChargeController extends Controller
         abort_if($charge->status === 'paid', 422, 'Cobrança paga não pode ser editada.');
 
         $data = $this->validated($request, $charge->tenant_id);
+
+        // Com boleto/PIX já emitido, valor e vencimento não podem divergir do Asaas.
+        if ($charge->hasGatewayCharge()) {
+            $amountChanged = round((float) $data['amount'], 2) !== round((float) $charge->amount, 2);
+            $dueChanged = $data['due_date'] !== $charge->due_date->toDateString();
+            abort_if(
+                $amountChanged || $dueChanged,
+                422,
+                'Esta cobrança já tem boleto/PIX emitido. Para alterar valor ou vencimento, cancele e gere uma nova.',
+            );
+        }
+
         $charge->update($data);
 
         return redirect()->route('charges.show', $charge)->with('success', 'Cobrança atualizada.');
@@ -157,6 +170,9 @@ class ChargeController extends Controller
         if ($charge->status === 'paid') {
             abort(422, 'Cobrança paga não pode ser removida.');
         }
+
+        // Cancela o boleto/PIX no Asaas para deixar de ser pagável antes de remover localmente.
+        $this->asaas->cancelCharge($charge);
 
         $charge->update(['status' => 'cancelled']);
         $charge->delete();
@@ -206,6 +222,7 @@ class ChargeController extends Controller
         return Inertia::render('Charges/Generate', [
             'condominiums' => $this->condominiumOptions($tenant->id),
             'types' => Charge::TYPES,
+            'gatewayEnabled' => (bool) $this->asaas->settingFor($tenant),
         ]);
     }
 
@@ -262,11 +279,12 @@ class ChargeController extends Controller
             'rows.*.unit_id' => "required|uuid|exists:units,id,tenant_id,{$tenant->id}",
             'rows.*.amount' => 'required|numeric|min:0',
             'rows.*.person_id' => 'nullable|uuid',
+            'issue_gateway' => 'boolean',
         ]);
 
         $condominium = Condominium::where('tenant_id', $tenant->id)->findOrFail($data['condominium_id']);
 
-        $count = $this->service->generateBatch($condominium, [
+        $charges = $this->service->generateBatch($condominium, [
             'type' => $data['type'],
             'description' => $data['description'],
             'reference_month' => $data['reference_month'] ?? null,
@@ -275,7 +293,18 @@ class ChargeController extends Controller
             'interest_rate' => $data['interest_rate'] ?? 0,
         ], $data['rows']);
 
-        return redirect()->route('charges.index')->with('success', "{$count} cobrança(s) gerada(s).");
+        $count = count($charges);
+        $message = "{$count} cobrança(s) gerada(s).";
+
+        // Emite boleto/PIX em background (uma chamada ao Asaas por cobrança) se solicitado.
+        if (($data['issue_gateway'] ?? false) && $this->asaas->settingFor($tenant)) {
+            foreach ($charges as $charge) {
+                IssueGatewayCharge::dispatch($charge);
+            }
+            $message .= ' Boletos/PIX sendo emitidos em segundo plano.';
+        }
+
+        return redirect()->route('charges.index')->with('success', $message);
     }
 
     private function validated(Request $request, string $tenantId): array

@@ -44,7 +44,21 @@
   copia-e-cola, linha digitável, links de fatura/boleto e "Enviar 2ª via".
 - `Portal\ChargeController`: `secondCopy` (POST `portal.charges.second-copy`) + `gatewayEnabled` no
   `show`. `Portal/Charges/Show.tsx`: QR/PIX/boleto + "Receber 2ª via por e-mail".
-- `App\Jobs\IssueGatewayCharge` (queued): encapsula `issueCharge` para emissão em background/lote.
+- **Emissão em lote**: `generateConfirm` aceita `issue_gateway`; quando marcado (checkbox no
+  `Generate.tsx`, só visível com gateway ligado) dispara `App\Jobs\IssueGatewayCharge` (queued) por
+  cobrança criada — uma chamada ao Asaas por cobrança, fora do request. `generateBatch` retorna as
+  cobranças criadas.
+
+## Consistência valor/cancelamento
+
+- **Edição travada**: com boleto/PIX já emitido (`hasGatewayCharge()`), `update()` rejeita alteração
+  de `amount`/`due_date` (422); o `Charges/Edit.tsx` desabilita esses campos. Evita divergência com
+  o valor registrado no Asaas. Para mudar, cancele e gere uma nova cobrança.
+- **Cancelamento**: `destroy()` chama `AsaasService::cancelCharge` (→ `DELETE /payments/{id}`) antes
+  de cancelar/soft-deletar localmente, para o boleto deixar de ser pagável. Falha do gateway só
+  registra aviso (não bloqueia o cancelamento local).
+- **Pagamento em corrida**: `resolveCharge` (webhook e service) usa `withTrashed()`, então um
+  pagamento que chegue para uma cobrança já cancelada/soft-deletada ainda é conciliado.
 
 ## Webhook (conciliação automática)
 

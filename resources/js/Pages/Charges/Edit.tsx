@@ -8,9 +8,9 @@ interface Charge {
     reference_month: string | null; amount: string; due_date: string;
     fine_rate: string; interest_rate: string; notes: string | null;
 }
-interface Props { charge: Charge; condominiums: Option[]; units: UnitOption[]; types: Record<string, string> }
+interface Props { charge: Charge; condominiums: Option[]; units: UnitOption[]; types: Record<string, string>; lockFinancial: boolean }
 
-export default function ChargeEdit({ charge, condominiums, units, types }: Props) {
+export default function ChargeEdit({ charge, condominiums, units, types, lockFinancial }: Props) {
     const { data, setData, patch, processing, errors } = useForm({
         condominium_id: charge.condominium_id,
         unit_id: charge.unit_id,
@@ -39,6 +39,7 @@ export default function ChargeEdit({ charge, condominiums, units, types }: Props
                 data={data} setData={setData} errors={errors} processing={processing}
                 condominiums={condominiums} units={units} types={types}
                 onSubmit={submit} submitLabel="Salvar" cancelHref={route('charges.show', charge.id)}
+                lockFinancial={lockFinancial}
             />
         </AppLayout>
     );
