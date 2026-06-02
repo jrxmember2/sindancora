@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     LayoutDashboard,
     Building2,
@@ -35,9 +35,24 @@ const adminNavigation = [
     { name: 'Auditoria', href: '/auditoria', icon: ClipboardList, permission: 'audit:read' },
 ];
 
+function timeAgo(iso: string | null): string {
+    if (!iso) return '';
+    const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (diff < 60) return 'agora';
+    if (diff < 3600) return `há ${Math.floor(diff / 60)} min`;
+    if (diff < 86400) return `há ${Math.floor(diff / 3600)} h`;
+    return `há ${Math.floor(diff / 86400)} d`;
+}
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-    const { auth, tenant, flash } = usePage<PageProps>().props;
+    const { auth, tenant, flash, notifications } = usePage<PageProps>().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [notifOpen, setNotifOpen] = useState(false);
+
+    const unread = notifications?.unread_count ?? 0;
+    const recent = notifications?.recent ?? [];
+    const openNotification = (id: string) => router.post(route('notifications.read', id), {}, { preserveScroll: true });
+    const markAllRead = () => router.post(route('notifications.read-all'), {}, { preserveScroll: true, onSuccess: () => setNotifOpen(false) });
 
     const perms = auth.user?.permissions ?? [];
     const can = (permission?: string) => !permission || perms.includes('*') || perms.includes(permission);
@@ -182,10 +197,64 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
                     <div className="flex-1" />
 
-                    <button className="relative rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
-                        <Bell className="h-5 w-5" />
-                        <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
-                    </button>
+                    {/* Sino de notificações */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setNotifOpen((o) => !o)}
+                            className="relative rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                        >
+                            <Bell className="h-5 w-5" />
+                            {unread > 0 && (
+                                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
+                                    {unread > 9 ? '9+' : unread}
+                                </span>
+                            )}
+                        </button>
+
+                        {notifOpen && (
+                            <>
+                                <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
+                                <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg">
+                                    <div className="flex items-center justify-between border-b border-gray-100 px-4 py-2.5">
+                                        <span className="text-sm font-semibold text-gray-900">Notificações</span>
+                                        {unread > 0 && (
+                                            <button onClick={markAllRead} className="text-xs text-blue-600 hover:text-blue-700">
+                                                Marcar todas como lidas
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="max-h-80 overflow-y-auto">
+                                        {recent.length === 0 && (
+                                            <p className="px-4 py-6 text-center text-sm text-gray-400">Nenhuma notificação.</p>
+                                        )}
+                                        {recent.map((n) => (
+                                            <button
+                                                key={n.id}
+                                                onClick={() => openNotification(n.id)}
+                                                className={`flex w-full items-start gap-2 border-b border-gray-50 px-4 py-3 text-left transition-colors hover:bg-gray-50 ${
+                                                    n.read_at ? '' : 'bg-blue-50/40'
+                                                }`}
+                                            >
+                                                {!n.read_at && <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />}
+                                                <span className={`min-w-0 flex-1 ${n.read_at ? 'pl-4' : ''}`}>
+                                                    <span className="block text-sm font-medium text-gray-900">{n.data.title}</span>
+                                                    <span className="block truncate text-xs text-gray-500">{n.data.message}</span>
+                                                    <span className="mt-0.5 block text-[11px] text-gray-400">{timeAgo(n.created_at)}</span>
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <Link
+                                        href="/notificacoes"
+                                        onClick={() => setNotifOpen(false)}
+                                        className="block border-t border-gray-100 px-4 py-2.5 text-center text-sm font-medium text-blue-600 hover:bg-gray-50"
+                                    >
+                                        Ver todas
+                                    </Link>
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </header>
 
                 {/* Flash Messages */}
