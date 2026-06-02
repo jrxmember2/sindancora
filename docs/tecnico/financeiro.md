@@ -1,8 +1,8 @@
 # Financeiro (Fase 5 — núcleo manual)
 
 > Status: implementado o financeiro **manual** (cobranças, despesas, inadimplência, relatórios e
-> "minhas cobranças" no portal). Integração com gateway **Asaas (boleto/PIX/webhook) adiada** para
-> fatia dedicada.
+> "minhas cobranças" no portal). A integração com gateway **Asaas (boleto/PIX/webhook)** foi
+> entregue na Fase 5.4 — ver `docs/tecnico/financeiro-asaas.md`.
 
 ## Modelo de dados
 
@@ -75,10 +75,15 @@ XLSX/PDF só é exercida em runtime, onde o container tem as extensões).
 unidades do morador, separadas em aberto/pagas), `show`, `download` do comprovante. Item "Cobranças"
 no `PortalLayout` e card de total em aberto no `Portal/Dashboard`. Sem boleto/PIX (Asaas adiado).
 
+## Integração Asaas (Fase 5.4)
+
+Entregue em fatia dedicada: config por tenant, boleto/PIX por cobrança, webhook de conciliação e 2ª
+via por e-mail. Documentação completa em `docs/tecnico/financeiro-asaas.md`.
+
 ## Fora de escopo (adiado)
 
-Asaas (config por tenant, boleto/PIX por cobrança, webhook de conciliação), bloqueio de inadimplente
-em reservas. Estes entram em fatia dedicada quando houver credenciais Asaas + endpoint de webhook.
+Bloqueio de inadimplente em reservas; split/repasse por wallet; assinaturas recorrentes nativas do
+Asaas; estornos parciais.
 
 ## Validação
 

@@ -19,7 +19,9 @@ class ResolveTenant
     {
         $host = $this->extractHost($request);
 
-        if ($this->isSuperAdminDomain($host) || $request->is('admin', 'admin/*', 'up')) {
+        // Webhooks de gateways chegam sem sessão e em domínio arbitrário; o tenant é
+        // resolvido dentro do controller a partir do payload, não pelo host.
+        if ($this->isSuperAdminDomain($host) || $request->is('admin', 'admin/*', 'up', 'api/webhooks/*')) {
             return $next($request);
         }
 

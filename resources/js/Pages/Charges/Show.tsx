@@ -1,6 +1,6 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, Pencil, Ban, CheckCircle2, Download, X } from 'lucide-react';
+import { ArrowLeft, Pencil, Ban, CheckCircle2, Download, X, QrCode, FileText, Mail, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 
 interface Charge {
@@ -10,6 +10,9 @@ interface Charge {
     paid_at: string | null; paid_amount: string | null; payment_method: string | null; notes: string | null;
     condominium: { name: string } | null; unit: { number: string } | null; person: { name: string } | null;
     creator: { name: string } | null; receipt: { id: string } | null;
+    gateway_payment_id: string | null; invoice_url: string | null;
+    bank_slip_url: string | null; bank_slip_line: string | null;
+    pix_payload: string | null; pix_qrcode: string | null;
 }
 interface Props {
     charge: Charge;
@@ -17,6 +20,7 @@ interface Props {
     statuses: Record<string, string>;
     canMarkPaid: boolean;
     canUpdate: boolean;
+    gatewayEnabled: boolean;
 }
 
 const brl = (v: string | number | null) => Number(v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -90,13 +94,37 @@ function PaymentModal({ charge, onClose }: { charge: Charge; onClose: () => void
     );
 }
 
-export default function ChargeShow({ charge, types, statuses, canMarkPaid, canUpdate }: Props) {
+function CopyLine({ value, label }: { value: string; label: string }) {
+    const [copied, setCopied] = useState(false);
+    const copy = () => {
+        navigator.clipboard.writeText(value);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+    };
+    return (
+        <div>
+            <p className="text-xs text-gray-500">{label}</p>
+            <div className="mt-1 flex gap-2">
+                <input readOnly value={value} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-xs text-gray-700" />
+                <button onClick={copy} className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50">
+                    {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+export default function ChargeShow({ charge, types, statuses, canMarkPaid, canUpdate, gatewayEnabled }: Props) {
     const [payOpen, setPayOpen] = useState(false);
     const open = ['pending', 'overdue'].includes(charge.status);
+    const hasGateway = !!charge.gateway_payment_id;
 
     const cancel = () => {
         if (confirm('Cancelar esta cobrança?')) router.delete(route('charges.destroy', charge.id));
     };
+
+    const issue = () => router.post(route('charges.issue', charge.id), {}, { preserveScroll: true });
+    const secondCopy = () => router.post(route('charges.second-copy', charge.id), {}, { preserveScroll: true });
 
     return (
         <AppLayout>
@@ -144,13 +172,54 @@ export default function ChargeShow({ charge, types, statuses, canMarkPaid, canUp
                             {charge.notes && <div className="col-span-2"><dt className="text-gray-500">Observações</dt><dd className="text-gray-700">{charge.notes}</dd></div>}
                         </dl>
                     </div>
+
+                    {hasGateway && open && (
+                        <div className="mt-6 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+                            <div className="flex items-center gap-2 border-b border-gray-100 p-5">
+                                <QrCode className="h-4 w-4 text-blue-600" />
+                                <h2 className="text-sm font-semibold text-gray-900">Boleto + PIX (Asaas)</h2>
+                            </div>
+                            <div className="space-y-4 p-5">
+                                {charge.pix_qrcode && (
+                                    <div className="flex flex-col items-center gap-2">
+                                        <img src={`data:image/png;base64,${charge.pix_qrcode}`} alt="QR Code PIX" className="h-44 w-44" />
+                                        <p className="text-xs text-gray-500">Aponte a câmera do app do banco</p>
+                                    </div>
+                                )}
+                                {charge.pix_payload && <CopyLine label="PIX copia-e-cola" value={charge.pix_payload} />}
+                                {charge.bank_slip_line && <CopyLine label="Linha digitável do boleto" value={charge.bank_slip_line} />}
+                                <div className="flex flex-wrap gap-2 pt-1">
+                                    {charge.invoice_url && (
+                                        <a href={charge.invoice_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                            <FileText className="h-4 w-4" /> Abrir fatura
+                                        </a>
+                                    )}
+                                    {charge.bank_slip_url && (
+                                        <a href={charge.bank_slip_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                            <Download className="h-4 w-4" /> Baixar boleto (PDF)
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Ações */}
                 <div className="space-y-3">
+                    {canUpdate && gatewayEnabled && open && (
+                        <button onClick={issue} className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700">
+                            <QrCode className="h-4 w-4" /> {hasGateway ? 'Atualizar boleto/PIX' : 'Gerar boleto/PIX'}
+                        </button>
+                    )}
+                    {canUpdate && gatewayEnabled && open && hasGateway && (
+                        <button onClick={secondCopy} className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            <Mail className="h-4 w-4" /> Enviar 2ª via por e-mail
+                        </button>
+                    )}
                     {canMarkPaid && open && (
                         <button onClick={() => setPayOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700">
-                            <CheckCircle2 className="h-4 w-4" /> Registrar pagamento
+                            <CheckCircle2 className="h-4 w-4" /> Registrar pagamento manual
                         </button>
                     )}
                     {charge.receipt && (

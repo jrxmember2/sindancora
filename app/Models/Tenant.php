@@ -68,6 +68,11 @@ class Tenant extends Model
         return $this->hasMany(TenantStorageAddon::class)->where('active', true);
     }
 
+    public function paymentSetting(): HasOne
+    {
+        return $this->hasOne(TenantPaymentSetting::class)->where('provider', 'asaas');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', 'active');

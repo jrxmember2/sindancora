@@ -8,6 +8,8 @@ use App\Models\Condominium;
 use App\Models\PersonUnitLink;
 use App\Models\Unit;
 use App\Services\ChargeService;
+use App\Services\Payments\AsaasException;
+use App\Services\Payments\AsaasService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,7 +21,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ChargeController extends Controller
 {
-    public function __construct(private readonly ChargeService $service) {}
+    public function __construct(
+        private readonly ChargeService $service,
+        private readonly AsaasService $asaas,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -88,7 +93,38 @@ class ChargeController extends Controller
             'statuses' => Charge::STATUSES,
             'canMarkPaid' => Auth::user()->hasPermission('charges:mark_paid'),
             'canUpdate' => Auth::user()->hasPermission('charges:update'),
+            'gatewayEnabled' => (bool) $this->asaas->settingFor(app('tenant')),
         ]);
+    }
+
+    /** Emite (ou ressincroniza) boleto + PIX da cobrança no Asaas. */
+    public function issueGateway(Charge $charge): RedirectResponse
+    {
+        $charge = $this->authorizeTenant($charge);
+        abort_if($charge->status === 'paid', 422, 'Cobrança já está paga.');
+
+        try {
+            $this->asaas->issueCharge($charge);
+        } catch (AsaasException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Boleto/PIX gerado no Asaas.');
+    }
+
+    /** Reenvia a 2ª via (boleto/PIX) por e-mail ao morador responsável. */
+    public function secondCopy(Charge $charge): RedirectResponse
+    {
+        $charge = $this->authorizeTenant($charge);
+        abort_if($charge->status === 'paid', 422, 'Cobrança já está paga.');
+
+        try {
+            $this->asaas->sendSecondCopy($charge);
+        } catch (AsaasException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Segunda via enviada por e-mail.');
     }
 
     public function edit(Charge $charge): Response

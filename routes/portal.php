@@ -42,6 +42,7 @@ Route::middleware(['auth', 'verified', 'resident'])
         // Minhas cobranças
         Route::get('cobrancas', [ChargeController::class, 'index'])->name('charges.index');
         Route::get('cobrancas/{charge}/comprovante', [ChargeController::class, 'download'])->name('charges.download');
+        Route::post('cobrancas/{charge}/segunda-via', [ChargeController::class, 'secondCopy'])->name('charges.second-copy');
         Route::get('cobrancas/{charge}', [ChargeController::class, 'show'])->name('charges.show');
 
         // Minha unidade
