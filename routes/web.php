@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Panel\AnnouncementController;
+use App\Http\Controllers\Panel\ApiKeyController;
 use App\Http\Controllers\Panel\AuditController;
 use App\Http\Controllers\Panel\ChargeController;
 use App\Http\Controllers\Panel\CommonAreaController;
@@ -303,6 +304,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('configuracoes/pagamentos', [PaymentSettingController::class, 'edit'])->name('settings.payments.edit');
         Route::match(['put', 'patch'], 'configuracoes/pagamentos', [PaymentSettingController::class, 'update'])->name('settings.payments.update');
         Route::post('configuracoes/pagamentos/testar', [PaymentSettingController::class, 'test'])->name('settings.payments.test');
+    });
+
+    // Configurações > API (chaves de API por tenant)
+    Route::middleware('permission:api_keys:manage')->group(function () {
+        Route::get('configuracoes/api', [ApiKeyController::class, 'index'])->name('api-keys.index');
+        Route::post('configuracoes/api', [ApiKeyController::class, 'store'])->name('api-keys.store');
+        Route::delete('configuracoes/api/{apiKey}', [ApiKeyController::class, 'destroy'])->name('api-keys.destroy');
     });
     }); // fim do painel administrativo (middleware 'panel')
 });

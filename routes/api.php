@@ -1,7 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\ChargeController;
+use App\Http\Controllers\Api\V1\CondominiumController;
+use App\Http\Controllers\Api\V1\PersonController;
 use App\Http\Controllers\Api\V1\TenantController;
+use App\Http\Controllers\Api\V1\UnitController;
 use App\Http\Controllers\Api\WebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,5 +43,31 @@ Route::prefix('v1')->group(function () {
             Route::get('current/usage', [TenantController::class, 'usage'])->name('usage');
             Route::get('current/storage', [TenantController::class, 'storageStats'])->name('storage');
         });
+    });
+
+    // API pública por API Key (Bearer sk_...). Tenant resolvido pelo host + asserção na chave.
+    Route::middleware(['api.key', 'api.log'])->name('api.v1.')->group(function () {
+        // Condomínios
+        Route::get('condominiums', [CondominiumController::class, 'index'])->middleware('api.scope:condominiums:read')->name('condominiums.index');
+        Route::post('condominiums', [CondominiumController::class, 'store'])->middleware('api.scope:condominiums:write')->name('condominiums.store');
+        Route::get('condominiums/{id}', [CondominiumController::class, 'show'])->middleware('api.scope:condominiums:read')->name('condominiums.show');
+        Route::put('condominiums/{id}', [CondominiumController::class, 'update'])->middleware('api.scope:condominiums:write')->name('condominiums.update');
+
+        // Unidades
+        Route::get('units', [UnitController::class, 'index'])->middleware('api.scope:units:read')->name('units.index');
+        Route::post('units', [UnitController::class, 'store'])->middleware('api.scope:units:write')->name('units.store');
+        Route::get('units/{id}', [UnitController::class, 'show'])->middleware('api.scope:units:read')->name('units.show');
+        Route::put('units/{id}', [UnitController::class, 'update'])->middleware('api.scope:units:write')->name('units.update');
+
+        // Pessoas
+        Route::get('persons', [PersonController::class, 'index'])->middleware('api.scope:persons:read')->name('persons.index');
+        Route::post('persons', [PersonController::class, 'store'])->middleware('api.scope:persons:write')->name('persons.store');
+        Route::get('persons/{id}', [PersonController::class, 'show'])->middleware('api.scope:persons:read')->name('persons.show');
+        Route::put('persons/{id}', [PersonController::class, 'update'])->middleware('api.scope:persons:write')->name('persons.update');
+
+        // Cobranças
+        Route::get('charges', [ChargeController::class, 'index'])->middleware('api.scope:charges:read')->name('charges.index');
+        Route::post('charges', [ChargeController::class, 'store'])->middleware('api.scope:charges:write')->name('charges.store');
+        Route::get('charges/{id}', [ChargeController::class, 'show'])->middleware('api.scope:charges:read')->name('charges.show');
     });
 });

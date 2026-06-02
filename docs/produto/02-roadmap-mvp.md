@@ -366,12 +366,15 @@ Fase 1 considera-se **concluída** quando:
 
 ### Entregas
 
-#### 6.1 API Pública com API Keys
-- [ ] Tabela `api_keys` por tenant com escopos
-- [ ] Middleware de autenticação por API Key
-- [ ] Rate limit por tenant e por key
-- [ ] Logs de requisições (`api_request_logs`)
-- [ ] Documentação Swagger atualizada
+#### 6.1 API Pública com API Keys — [x] entregue
+- [x] Tabela `api_keys` por tenant com escopos (já criada na Fase 1; models/UI/middleware na 6.1)
+- [x] Middleware de autenticação por API Key (`Authorization: Bearer sk_...`, tenant pelo host + asserção)
+- [x] Rate limit por tenant e por key (120/min key, 600/min tenant; 429 + `X-RateLimit-*`)
+- [x] Logs de requisições (`api_request_logs` via middleware terminable; últimas 50 na tela)
+- [x] Documentação Swagger atualizada (anotações OA nos controllers `Api\V1\*`)
+- [x] Endpoints de leitura+escrita do core: condomínios, unidades, pessoas, cobranças
+
+> Detalhes técnicos em `docs/tecnico/api-publica.md`. DELETE via API e escopos por condomínio adiados.
 
 #### 6.2 Webhooks
 - [ ] CRUD de webhooks por tenant

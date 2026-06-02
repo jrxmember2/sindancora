@@ -44,6 +44,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'super_admin' => \App\Http\Middleware\IsSuperAdmin::class,
             'panel' => \App\Http\Middleware\EnsurePanelAccess::class,
             'resident' => \App\Http\Middleware\EnsureResident::class,
+            'api.key' => \App\Http\Middleware\ApiKeyAuth::class,
+            'api.scope' => \App\Http\Middleware\CheckApiScope::class,
+            'api.log' => \App\Http\Middleware\LogApiRequest::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
