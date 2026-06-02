@@ -88,6 +88,9 @@ class DocumentController extends Controller
 
         $document->update(['storage_object_id' => $object->id]);
 
+        // Indexa o texto para o RAG do assistente de IA (em fila).
+        \App\Jobs\IndexDocument::dispatch($document->id);
+
         return redirect()->route('documents.index')->with('success', "Documento \"{$document->title}\" enviado.");
     }
 
@@ -129,6 +132,8 @@ class DocumentController extends Controller
         if ($document->storageObject) {
             $this->storage->delete($document->storageObject);
         }
+        // Remove os trechos indexados para o RAG (soft delete não dispara o cascade do FK).
+        \App\Models\DocumentChunk::where('document_id', $document->id)->delete();
         $document->delete();
 
         return redirect()->route('documents.index')->with('success', 'Documento removido.');

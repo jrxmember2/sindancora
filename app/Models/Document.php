@@ -7,6 +7,7 @@ use App\Traits\HasAuditLog;
 use App\Traits\HasUuidKey;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Document extends Model
@@ -45,6 +46,11 @@ class Document extends Model
     public function storageObject(): BelongsTo
     {
         return $this->belongsTo(StorageObject::class);
+    }
+
+    public function chunks(): HasMany
+    {
+        return $this->hasMany(DocumentChunk::class);
     }
 
     public function uploader(): BelongsTo

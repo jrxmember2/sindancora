@@ -40,4 +40,11 @@ return [
         'production' => env('ASAAS_PRODUCTION_URL', 'https://api.asaas.com/v3'),
     ],
 
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+        'model' => env('ANTHROPIC_MODEL', 'claude-opus-4-8'),
+        'base_url' => env('ANTHROPIC_BASE_URL', 'https://api.anthropic.com/v1'),
+        'version' => env('ANTHROPIC_VERSION', '2023-06-01'),
+    ],
+
 ];

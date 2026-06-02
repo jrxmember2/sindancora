@@ -390,10 +390,12 @@ Fase 1 considera-se **concluída** quando:
 
 > Detalhes em `docs/tecnico/whatsapp.md`. Pré-requisito: instância Evolution API.
 
-#### 6.4 IA Assistente (Claude API)
-- [ ] Chat IA para síndico (Anthropic Claude API)
-- [ ] RAG com documentos do condomínio (busca semântica)
-- [ ] Análise de inadimplência com sugestões automáticas
+#### 6.4 IA Assistente (Claude API) — [x] entregue
+- [x] Chat IA para síndico (Anthropic Claude API, Messages API por HTTP; permissão `ai:use`)
+- [x] RAG com documentos do condomínio (full-text do PostgreSQL sobre o texto extraído — a Claude API não tem embeddings; busca vetorial adiada)
+- [x] Análise de inadimplência com sugestões automáticas (+ rascunho de comunicado)
+
+> Detalhes em `docs/tecnico/ia-assistente.md`. Requer `ANTHROPIC_API_KEY` (custo da plataforma).
 
 #### 6.5 Assembleias Digitais
 - [ ] Criação de assembleia com pauta
