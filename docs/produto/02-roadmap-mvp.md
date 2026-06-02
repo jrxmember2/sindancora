@@ -201,63 +201,67 @@ Fase 1 considera-se **concluída** quando:
 ### Entregas
 
 #### 3.1 Comunicados
-- [ ] CRUD de comunicados (título, corpo rico, categoria, nível de urgência)
-- [ ] Segmentação de público: todos, bloco, unidade, perfil
-- [ ] Publicação imediata ou agendada
-- [ ] Anexos (upload de arquivos via storage)
-- [ ] Expiração automática por data
-- [ ] Registro de leituras por morador (confirmação de leitura)
-- [ ] Notificação por e-mail ao publicar comunicado
-- [ ] Templates de comunicados (reutilizáveis)
+- [x] CRUD de comunicados (título, corpo rico via TipTap, categoria, nível de urgência)
+- [ ] Segmentação de público: todos, bloco, unidade, perfil — [→ Fase 4] depende de moradores como usuários (portal)
+- [x] Publicação imediata ou agendada (comando `announcements:publish-scheduled` no scheduler)
+- [ ] Anexos (upload de arquivos via storage) — adiado para junto do módulo Documentos (3.4)
+- [x] Expiração automática por data (scope `visible()` filtra; status "Expirado" na UI)
+- [ ] Registro de leituras por morador (confirmação de leitura) — [→ Fase 4] depende do portal do morador
+- [x] Notificação por e-mail ao publicar comunicado (Mailable enfileirado aos moradores com e-mail do condomínio)
+- [ ] Templates de comunicados (reutilizáveis) — adiado
 
 #### 3.2 Ocorrências / Chamados
-- [ ] CRUD de ocorrências (título, categoria, descrição, prioridade, anexos)
-- [ ] Categorias configuráveis por condomínio
-- [ ] Ciclo de vida: Aberta → Em Andamento → Encerrada
-- [ ] Histórico de atualizações com comentários
-- [ ] Atribuição a responsável
-- [ ] Notificações a cada mudança de status
-- [ ] Morador só vê suas próprias ocorrências (no portal)
-- [ ] Admin/síndico vê todas as ocorrências do condomínio
-- [ ] SLA opcional por categoria (prazo esperado de resolução)
-- [ ] Filtros: status, categoria, prioridade, unidade, data
+- [x] CRUD de ocorrências (título, categoria, descrição, prioridade) — anexos adiados (junto do módulo Documentos 3.4)
+- [ ] Categorias configuráveis por condomínio — usando lista fixa (`Occurrence::CATEGORIES`) por enquanto
+- [x] Ciclo de vida: Aberta → Em Andamento → Encerrada (encerrar exige `occurrences:close`)
+- [x] Histórico de atualizações com comentários (tabela `occurrence_comments`, timeline)
+- [x] Atribuição a responsável (via serviço, com histórico e notificação)
+- [x] Notificações a cada mudança de status (in-app, `OccurrenceUpdated`)
+- [ ] Morador só vê suas próprias ocorrências (no portal) — [→ Fase 4]
+- [x] Admin/síndico vê todas as ocorrências do condomínio
+- [ ] SLA opcional por categoria (prazo esperado de resolução) — adiado
+- [x] Filtros: status, categoria, prioridade, condomínio (filtros por unidade/data adiados)
 
 #### 3.3 Áreas Comuns e Reservas
-- [ ] CRUD de áreas comuns (nome, descrição, capacidade, regras, fotos)
-- [ ] Configuração: requer aprovação, taxa, caução, antecedência mínima, horários
-- [ ] Calendário visual de disponibilidade (visualização mensal e semanal)
-- [ ] Solicitação de reserva pelo morador (com preenchimento de horário)
-- [ ] Fluxo de aprovação: Pendente → Aprovada / Recusada
-- [ ] Cancelamento com motivo
-- [ ] Prevenção de conflito de horários (lock no banco)
-- [ ] Notificações: solicitação, aprovação, recusa, cancelamento
+- [x] CRUD de áreas comuns (nome, descrição, capacidade, regras) — fotos adiadas (reusar StorageService)
+- [x] Configuração: requer aprovação, taxa, caução, antecedência mínima, horários
+- [x] Calendário visual de disponibilidade (mensal) — visão semanal adiada
+- [x] Solicitação de reserva com preenchimento de horário — pelo painel; pelo morador na Fase 4 (portal)
+- [x] Fluxo de aprovação: Pendente → Aprovada / Recusada
+- [x] Cancelamento com motivo
+- [x] Prevenção de conflito de horários (lock no banco — `lockForUpdate` em transação)
+- [x] Notificações: solicitação, aprovação, recusa, cancelamento (in-app)
 - [ ] Regras automáticas: bloqueio de inadimplente (futura integração financeiro)
 
 #### 3.4 Documentos
-- [ ] Upload de documentos (PDF, imagens, Word, Excel)
-- [ ] Categorias: Ata, Regulamento, Contrato, Comprovante, Outro
-- [ ] Visibilidade: público (moradores) ou restrito (admin/síndico)
-- [ ] Busca por nome, categoria, data
-- [ ] Controle de storage por arquivo (registrar tamanho, path, hash)
-- [ ] Download com URL assinada e expiração
-- [ ] Soft delete com lixeira temporária (30 dias antes de remover do storage)
+- [x] Upload de documentos (PDF, imagens, Word, Excel) — via `StorageService`
+- [x] Categorias: Ata, Regulamento, Contrato, Comprovante, Outro
+- [x] Visibilidade: público (moradores) ou restrito (admin/síndico) — armazenada; enforcement do morador na Fase 4
+- [x] Busca por nome, categoria, condomínio (filtro por data adiado)
+- [x] Controle de storage por arquivo (tamanho, path, hash sha256) — `StorageObject` + cota por plano
+- [x] Download com URL assinada e expiração (R2/S3/MinIO; streaming como fallback local)
+- [x] Soft delete com lixeira temporária (30 dias antes de remover do storage)
 
 #### 3.5 Notificações
-- [ ] Tabela de notificações in-app por usuário
-- [ ] Sino no topbar com contador de não lidas
-- [ ] Painel de notificações com listagem e marcação de leitura
-- [ ] Envio de e-mail via fila (Laravel Horizon)
-- [ ] Templates de e-mail por tipo de evento
-- [ ] Configuração por usuário: quais notificações receber por e-mail
+- [x] Tabela de notificações in-app por usuário (tabela `notifications` do Laravel, canal database)
+- [x] Sino no topbar com contador de não lidas (dropdown com as recentes)
+- [x] Painel de notificações com listagem e marcação de leitura (`/notificacoes`)
+- [x] Envio de e-mail via fila (Laravel Horizon) — `AnnouncementPublishedMail implements ShouldQueue`
+- [ ] Templates de e-mail por tipo de evento — só o template de comunicado por enquanto
+- [ ] Configuração por usuário: quais notificações receber por e-mail — adiado
 
 ### Critérios de Aceite da Fase 3
 
-- [ ] Admin publica comunicado e moradores recebem e-mail
-- [ ] Morador abre ocorrência e acompanha atualizações
-- [ ] Área comum configurada com disponibilidade no calendário
-- [ ] Morador faz reserva e síndico aprova/recusa com notificação
-- [ ] Documento uploadado com visibilidade correta e download funcional
-- [ ] Notificações in-app e por e-mail funcionando nos eventos principais
+- [x] Admin publica comunicado e moradores recebem e-mail
+- [x] Ocorrência aberta com acompanhamento (histórico/timeline e atualizações)
+- [x] Área comum configurada com disponibilidade no calendário
+- [x] Reserva criada e síndico aprova/recusa com notificação
+- [x] Documento uploadado com visibilidade definida e download funcional
+- [x] Notificações in-app e por e-mail funcionando nos eventos principais
+
+> Itens dependentes do **Portal do Morador** (morador abrir/acompanhar as próprias ocorrências e
+> fazer reservas diretamente) foram movidos para a **Fase 4**. No painel (Fases 3) o fluxo é operado
+> por admin/síndico. Anexos de Comunicados/Ocorrências e fotos de áreas seguem adiados (reusar `StorageService`).
 
 ---
 

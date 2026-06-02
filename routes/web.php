@@ -1,10 +1,16 @@
 <?php
 
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\Panel\AnnouncementController;
 use App\Http\Controllers\Panel\AuditController;
+use App\Http\Controllers\Panel\CommonAreaController;
 use App\Http\Controllers\Panel\CondominiumController;
 use App\Http\Controllers\Panel\DashboardController;
+use App\Http\Controllers\Panel\DocumentController;
+use App\Http\Controllers\Panel\NotificationController;
+use App\Http\Controllers\Panel\OccurrenceController;
 use App\Http\Controllers\Panel\PersonController;
+use App\Http\Controllers\Panel\ReservationController;
 use App\Http\Controllers\Panel\RoleController;
 use App\Http\Controllers\Panel\UnitController;
 use App\Http\Controllers\Panel\UserController;
@@ -23,6 +29,11 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard — acessível a qualquer usuário autenticado do tenant.
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Notificações in-app — disponíveis a qualquer usuário autenticado.
+    Route::get('/notificacoes', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notificacoes/marcar-todas', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+    Route::post('/notificacoes/{id}/lida', [NotificationController::class, 'markAsRead'])->name('notifications.read');
 
     // Usuários
     Route::middleware('permission:users:read')->group(function () {
@@ -128,6 +139,100 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Pessoa — detalhe (dinâmica, registrada após as estáticas acima)
     Route::middleware('permission:persons:read')->group(function () {
         Route::get('pessoas/{person}', [PersonController::class, 'show'])->name('persons.show');
+    });
+
+    // Comunicados — rotas estáticas (create) antes da dinâmica {announcement} (show).
+    Route::middleware('permission:announcements:read')->group(function () {
+        Route::get('comunicados', [AnnouncementController::class, 'index'])->name('announcements.index');
+    });
+    Route::middleware('permission:announcements:create')->group(function () {
+        Route::get('comunicados/create', [AnnouncementController::class, 'create'])->name('announcements.create');
+        Route::post('comunicados', [AnnouncementController::class, 'store'])->name('announcements.store');
+    });
+    Route::middleware('permission:announcements:update')->group(function () {
+        Route::get('comunicados/{announcement}/edit', [AnnouncementController::class, 'edit'])->name('announcements.edit');
+        Route::match(['put', 'patch'], 'comunicados/{announcement}', [AnnouncementController::class, 'update'])->name('announcements.update');
+    });
+    Route::middleware('permission:announcements:publish')->group(function () {
+        Route::post('comunicados/{announcement}/publicar', [AnnouncementController::class, 'publish'])->name('announcements.publish');
+    });
+    Route::middleware('permission:announcements:delete')->group(function () {
+        Route::delete('comunicados/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+    });
+    // Comunicado — detalhe (dinâmica, registrada após as estáticas acima)
+    Route::middleware('permission:announcements:read')->group(function () {
+        Route::get('comunicados/{announcement}', [AnnouncementController::class, 'show'])->name('announcements.show');
+    });
+
+    // Ocorrências — rotas estáticas (create) antes da dinâmica {occurrence} (show).
+    Route::middleware('permission:occurrences:read')->group(function () {
+        Route::get('ocorrencias', [OccurrenceController::class, 'index'])->name('occurrences.index');
+    });
+    Route::middleware('permission:occurrences:create')->group(function () {
+        Route::get('ocorrencias/create', [OccurrenceController::class, 'create'])->name('occurrences.create');
+        Route::post('ocorrencias', [OccurrenceController::class, 'store'])->name('occurrences.store');
+    });
+    Route::middleware('permission:occurrences:update')->group(function () {
+        Route::get('ocorrencias/{occurrence}/edit', [OccurrenceController::class, 'edit'])->name('occurrences.edit');
+        Route::match(['put', 'patch'], 'ocorrencias/{occurrence}', [OccurrenceController::class, 'update'])->name('occurrences.update');
+        Route::post('ocorrencias/{occurrence}/status', [OccurrenceController::class, 'changeStatus'])->name('occurrences.status');
+        Route::post('ocorrencias/{occurrence}/responsavel', [OccurrenceController::class, 'assign'])->name('occurrences.assign');
+        Route::post('ocorrencias/{occurrence}/comentarios', [OccurrenceController::class, 'addComment'])->name('occurrences.comments.store');
+    });
+    Route::middleware('permission:occurrences:delete')->group(function () {
+        Route::delete('ocorrencias/{occurrence}', [OccurrenceController::class, 'destroy'])->name('occurrences.destroy');
+    });
+    // Ocorrência — detalhe (dinâmica, registrada após as estáticas acima)
+    Route::middleware('permission:occurrences:read')->group(function () {
+        Route::get('ocorrencias/{occurrence}', [OccurrenceController::class, 'show'])->name('occurrences.show');
+    });
+
+    // Documentos — rotas estáticas (create) antes das dinâmicas {document}.
+    Route::middleware('permission:documents:read')->group(function () {
+        Route::get('documentos', [DocumentController::class, 'index'])->name('documents.index');
+    });
+    Route::middleware('permission:documents:upload')->group(function () {
+        Route::get('documentos/enviar', [DocumentController::class, 'create'])->name('documents.create');
+        Route::post('documentos', [DocumentController::class, 'store'])->name('documents.store');
+        Route::get('documentos/{document}/editar', [DocumentController::class, 'edit'])->name('documents.edit');
+        Route::match(['put', 'patch'], 'documentos/{document}', [DocumentController::class, 'update'])->name('documents.update');
+    });
+    Route::middleware('permission:documents:download')->group(function () {
+        Route::get('documentos/{document}/download', [DocumentController::class, 'download'])->name('documents.download');
+    });
+    Route::middleware('permission:documents:delete')->group(function () {
+        Route::delete('documentos/{document}', [DocumentController::class, 'destroy'])->name('documents.destroy');
+    });
+
+    // Reservas — rotas estáticas (areas, criar) antes da dinâmica {reservation} (show).
+    Route::middleware('permission:reservations:read')->group(function () {
+        Route::get('reservas', [ReservationController::class, 'index'])->name('reservations.index');
+        Route::get('reservas/areas', [CommonAreaController::class, 'index'])->name('areas.index');
+    });
+    // Gestão de áreas comuns — nível administrativo (quem aprova reservas).
+    Route::middleware('permission:reservations:approve')->group(function () {
+        Route::get('reservas/areas/criar', [CommonAreaController::class, 'create'])->name('areas.create');
+        Route::post('reservas/areas', [CommonAreaController::class, 'store'])->name('areas.store');
+        Route::get('reservas/areas/{area}/editar', [CommonAreaController::class, 'edit'])->name('areas.edit');
+        Route::match(['put', 'patch'], 'reservas/areas/{area}', [CommonAreaController::class, 'update'])->name('areas.update');
+        Route::delete('reservas/areas/{area}', [CommonAreaController::class, 'destroy'])->name('areas.destroy');
+    });
+    Route::middleware('permission:reservations:create')->group(function () {
+        Route::get('reservas/criar', [ReservationController::class, 'create'])->name('reservations.create');
+        Route::post('reservas', [ReservationController::class, 'store'])->name('reservations.store');
+    });
+    Route::middleware('permission:reservations:approve')->group(function () {
+        Route::post('reservas/{reservation}/aprovar', [ReservationController::class, 'approve'])->name('reservations.approve');
+    });
+    Route::middleware('permission:reservations:reject')->group(function () {
+        Route::post('reservas/{reservation}/recusar', [ReservationController::class, 'reject'])->name('reservations.reject');
+    });
+    Route::middleware('permission:reservations:cancel')->group(function () {
+        Route::post('reservas/{reservation}/cancelar', [ReservationController::class, 'cancel'])->name('reservations.cancel');
+    });
+    // Reserva — detalhe (dinâmica, registrada após as estáticas acima)
+    Route::middleware('permission:reservations:read')->group(function () {
+        Route::get('reservas/{reservation}', [ReservationController::class, 'show'])->name('reservations.show');
     });
 });
 

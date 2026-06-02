@@ -13,3 +13,6 @@ Schedule::command('storage:snapshot')->dailyAt('02:00');
 
 // Limpeza de tokens expirados do Sanctum
 Schedule::command('sanctum:prune-expired', ['--hours=24'])->daily();
+
+// Publica comunicados agendados quando a data marcada chega
+Schedule::command('announcements:publish-scheduled')->everyMinute()->withoutOverlapping();

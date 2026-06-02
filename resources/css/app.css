@@ -1,3 +1,42 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Conteúdo de texto rico (editor de comunicados e visualização) */
+@layer components {
+    .rich-content {
+        @apply text-sm leading-relaxed text-gray-700;
+    }
+    .rich-content p {
+        @apply my-2;
+    }
+    .rich-content h1,
+    .rich-content h2,
+    .rich-content h3 {
+        @apply mb-2 mt-4 font-semibold text-gray-900;
+    }
+    .rich-content h2 {
+        @apply text-lg;
+    }
+    .rich-content h3 {
+        @apply text-base;
+    }
+    .rich-content ul {
+        @apply my-2 list-disc pl-6;
+    }
+    .rich-content ol {
+        @apply my-2 list-decimal pl-6;
+    }
+    .rich-content li {
+        @apply my-0.5;
+    }
+    .rich-content blockquote {
+        @apply my-3 border-l-4 border-gray-200 pl-4 italic text-gray-500;
+    }
+    .rich-content a {
+        @apply text-blue-600 underline;
+    }
+    .rich-content strong {
+        @apply font-semibold;
+    }
+}

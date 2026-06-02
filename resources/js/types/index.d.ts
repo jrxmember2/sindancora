@@ -20,6 +20,25 @@ export interface FlashMessages {
     error: string | null;
 }
 
+export interface NotificationData {
+    title: string;
+    message: string;
+    url?: string;
+    icon?: string;
+}
+
+export interface AppNotification {
+    id: string;
+    data: NotificationData;
+    read_at: string | null;
+    created_at: string | null;
+}
+
+export interface SharedNotifications {
+    unread_count: number;
+    recent: AppNotification[];
+}
+
 export type PageProps<
     T extends Record<string, unknown> = Record<string, unknown>,
 > = T & {
@@ -28,4 +47,5 @@ export type PageProps<
     };
     tenant: TenantData | null;
     flash: FlashMessages;
+    notifications: SharedNotifications | null;
 };
