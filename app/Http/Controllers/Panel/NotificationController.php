@@ -12,13 +12,16 @@ class NotificationController extends Controller
 {
     public function index(Request $request): Response
     {
-        $notifications = $request->user()
-            ->notifications()
-            ->paginate(20);
+        $user = $request->user();
 
-        return Inertia::render('Notifications/Index', [
+        $notifications = $user->notifications()->paginate(20);
+
+        // Moradores veem a listagem dentro do layout do portal.
+        $page = $user->canAccessPanel() ? 'Notifications/Index' : 'Portal/Notifications';
+
+        return Inertia::render($page, [
             'notifications' => $notifications,
-            'unread_count' => $request->user()->unreadNotifications()->count(),
+            'unread_count' => $user->unreadNotifications()->count(),
         ]);
     }
 

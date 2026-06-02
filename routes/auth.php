@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
+use App\Http\Controllers\Auth\InvitationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
@@ -35,6 +36,14 @@ Route::middleware('guest')->group(function () {
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
+
+    // Ativação de acesso ao portal do morador (convite por e-mail)
+    Route::get('convite/{token}', [InvitationController::class, 'create'])
+        ->name('invitation.accept');
+
+    Route::post('convite', [InvitationController::class, 'store'])
+        ->middleware('throttle:5,1')
+        ->name('invitation.store');
 });
 
 Route::middleware('auth')->group(function () {

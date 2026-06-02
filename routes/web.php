@@ -27,13 +27,15 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Dashboard — acessível a qualquer usuário autenticado do tenant.
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-    // Notificações in-app — disponíveis a qualquer usuário autenticado.
+    // Notificações in-app — disponíveis a qualquer usuário autenticado (painel e portal).
     Route::get('/notificacoes', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notificacoes/marcar-todas', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::post('/notificacoes/{id}/lida', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+
+    // Painel administrativo — bloqueado para moradores "puros" (redirecionados ao portal).
+    Route::middleware('panel')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Usuários
     Route::middleware('permission:users:read')->group(function () {
@@ -128,6 +130,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('permission:persons:update')->group(function () {
         Route::get('pessoas/{person}/edit', [PersonController::class, 'edit'])->name('persons.edit');
         Route::match(['put', 'patch'], 'pessoas/{person}', [PersonController::class, 'update'])->name('persons.update');
+        Route::post('pessoas/{person}/convidar', [PersonController::class, 'invite'])->name('persons.invite');
     });
     Route::middleware('permission:persons:delete')->group(function () {
         Route::delete('pessoas/{person}', [PersonController::class, 'destroy'])->name('persons.destroy');
@@ -234,6 +237,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('permission:reservations:read')->group(function () {
         Route::get('reservas/{reservation}', [ReservationController::class, 'show'])->name('reservations.show');
     });
+    }); // fim do painel administrativo (middleware 'panel')
 });
 
 require __DIR__.'/auth.php';

@@ -7,6 +7,7 @@ use App\Models\Person;
 use App\Models\PersonUnitLink;
 use App\Models\Unit;
 use App\Rules\CpfCnpj;
+use App\Services\InvitationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -59,6 +60,7 @@ class PersonController extends Controller
 
         $person->load([
             'unitLinks' => fn ($q) => $q->with('unit.condominium', 'unit.block')->orderByDesc('start_date'),
+            'user:id,person_id,email,status',
         ]);
 
         $availableUnits = Unit::where('tenant_id', $tenant->id)
@@ -101,6 +103,17 @@ class PersonController extends Controller
         $person->delete();
 
         return redirect()->route('persons.index')->with('success', 'Pessoa excluída.');
+    }
+
+    /** Convida (ou reconvida) a pessoa para o portal do morador. */
+    public function invite(Person $person, InvitationService $invitations): RedirectResponse
+    {
+        $tenant = app('tenant');
+        abort_unless($person->tenant_id === $tenant->id, 403);
+
+        $invitations->invite($person);
+
+        return back()->with('success', "Convite enviado para {$person->email}.");
     }
 
     // --- Vínculos com unidades ---

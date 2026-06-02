@@ -7,6 +7,7 @@ use App\Traits\HasAuditLog;
 use App\Traits\HasUuidKey;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Person extends Model
@@ -37,6 +38,12 @@ class Person extends Model
     public function managerships(): HasMany
     {
         return $this->hasMany(CondominiumManager::class);
+    }
+
+    /** Usuário do portal vinculado a esta pessoa (se já convidada/ativada). */
+    public function user(): HasOne
+    {
+        return $this->hasOne(User::class);
     }
 
     public function getFormattedCpfAttribute(): ?string

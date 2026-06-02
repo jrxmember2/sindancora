@@ -1,6 +1,6 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { User, MapPin, Phone, Mail, Building2, Plus, X, Calendar } from 'lucide-react';
+import { User, MapPin, Phone, Mail, Building2, Plus, X, Calendar, KeyRound, Send } from 'lucide-react';
 import { useState } from 'react';
 
 interface UnitLink {
@@ -16,6 +16,7 @@ interface Person {
     phone2: string | null; birth_date: string | null; city: string | null; state: string | null;
     street: string | null; number: string | null; complement: string | null; neighborhood: string | null;
     notes: string | null; unit_links: UnitLink[];
+    user: { id: string; email: string; status: string } | null;
 }
 interface Props { person: Person; linkTypes: Record<string, string>; availableUnits: AvailableUnit[] }
 
@@ -74,10 +75,23 @@ function LinkModal({ person, availableUnits, linkTypes, onClose }: { person: Per
 
 export default function PersonShow({ person, linkTypes, availableUnits }: Props) {
     const [linkModal, setLinkModal] = useState(false);
+    const [inviting, setInviting] = useState(false);
 
     const endLink = (linkId: string) => {
         if (confirm('Encerrar este vínculo?')) router.delete(route('persons.links.destroy', [person.id, linkId]));
     };
+
+    const sendInvite = () => {
+        const isResend = person.user?.status === 'invited';
+        if (!confirm(isResend ? 'Reenviar o convite de acesso ao portal?' : `Enviar convite de acesso ao portal para ${person.email}?`)) return;
+        router.post(route('persons.invite', person.id), {}, {
+            preserveScroll: true,
+            onStart: () => setInviting(true),
+            onFinish: () => setInviting(false),
+        });
+    };
+
+    const portalStatus = person.user?.status; // 'active' | 'invited' | undefined
 
     const activeLinks = person.unit_links.filter(l => !l.end_date);
     const historyLinks = person.unit_links.filter(l => l.end_date);
@@ -123,6 +137,43 @@ export default function PersonShow({ person, linkTypes, availableUnits }: Props)
                                 </div>
                             )}
                             {person.notes && <p className="text-xs text-gray-500 border-t border-gray-100 pt-2">{person.notes}</p>}
+                        </div>
+
+                        {/* Acesso ao portal do morador */}
+                        <div className="rounded-xl bg-white border border-gray-100 shadow-sm p-4 space-y-3">
+                            <div className="flex items-center gap-2">
+                                <KeyRound className="h-4 w-4 text-gray-400" />
+                                <span className="text-sm font-semibold text-gray-700">Acesso ao portal</span>
+                            </div>
+
+                            {portalStatus === 'active' && (
+                                <p className="flex items-center gap-2 text-sm text-green-700">
+                                    <span className="h-2 w-2 rounded-full bg-green-500" /> Acesso ativo
+                                </p>
+                            )}
+                            {portalStatus === 'invited' && (
+                                <p className="flex items-center gap-2 text-sm text-amber-700">
+                                    <span className="h-2 w-2 rounded-full bg-amber-500" /> Convite enviado — aguardando ativação
+                                </p>
+                            )}
+                            {!portalStatus && (
+                                <p className="text-sm text-gray-500">Esta pessoa ainda não tem acesso ao portal.</p>
+                            )}
+
+                            {portalStatus !== 'active' && (
+                                person.email ? (
+                                    <button
+                                        onClick={sendInvite}
+                                        disabled={inviting}
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                                    >
+                                        <Send className="h-3.5 w-3.5" />
+                                        {inviting ? 'Enviando…' : portalStatus === 'invited' ? 'Reenviar convite' : 'Convidar para o portal'}
+                                    </button>
+                                ) : (
+                                    <p className="text-xs text-gray-400">Cadastre um e-mail para poder convidar.</p>
+                                )
+                            )}
                         </div>
                     </div>
 
