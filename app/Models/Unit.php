@@ -38,6 +38,11 @@ class Unit extends Model
         return $this->hasMany(PersonUnitLink::class)->whereNull('end_date');
     }
 
+    public function charges(): HasMany
+    {
+        return $this->hasMany(Charge::class);
+    }
+
     public function scopeOfCondominium($query, string $condominiumId)
     {
         return $query->where('condominium_id', $condominiumId);

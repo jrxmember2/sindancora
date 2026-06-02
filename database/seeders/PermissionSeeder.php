@@ -57,11 +57,18 @@ class PermissionSeeder extends Seeder
             ['module' => 'documents', 'action' => 'download', 'description' => 'Baixar documentos'],
             ['module' => 'documents', 'action' => 'delete',   'description' => 'Remover documentos'],
 
-            // Financeiro
+            // Financeiro — Cobranças
             ['module' => 'charges', 'action' => 'create',   'description' => 'Criar cobranças'],
             ['module' => 'charges', 'action' => 'read',     'description' => 'Visualizar cobranças'],
             ['module' => 'charges', 'action' => 'update',   'description' => 'Editar cobranças'],
+            ['module' => 'charges', 'action' => 'delete',   'description' => 'Cancelar/remover cobranças'],
             ['module' => 'charges', 'action' => 'mark_paid','description' => 'Registrar pagamento'],
+
+            // Financeiro — Despesas
+            ['module' => 'expenses', 'action' => 'create', 'description' => 'Lançar despesas'],
+            ['module' => 'expenses', 'action' => 'read',   'description' => 'Visualizar despesas'],
+            ['module' => 'expenses', 'action' => 'update', 'description' => 'Editar despesas'],
+            ['module' => 'expenses', 'action' => 'delete', 'description' => 'Remover despesas'],
 
             // Relatórios
             ['module' => 'reports', 'action' => 'read',   'description' => 'Visualizar relatórios'],

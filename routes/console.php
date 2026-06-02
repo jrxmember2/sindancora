@@ -16,3 +16,6 @@ Schedule::command('sanctum:prune-expired', ['--hours=24'])->daily();
 
 // Publica comunicados agendados quando a data marcada chega
 Schedule::command('announcements:publish-scheduled')->everyMinute()->withoutOverlapping();
+
+// Marca cobranças vencidas e notifica os moradores (uma vez por dia, de manhã)
+Schedule::command('charges:mark-overdue')->dailyAt('06:00')->withoutOverlapping();

@@ -2,6 +2,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { Users, Plus, Search, Eye, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { maskCpfCnpj } from '@/lib/masks';
 
 interface Link2 { unit: { number: string; condominium: { name: string } }; type: string }
 interface Person { id: string; name: string; cpf: string | null; email: string | null; phone: string | null; active_links: Link2[] }
@@ -54,7 +55,7 @@ export default function PersonsIndex({ persons, filters }: Props) {
                             {persons.data.map(p => (
                                 <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-4 py-3 font-medium text-gray-900">{p.name}</td>
-                                    <td className="px-4 py-3 text-gray-600 font-mono text-xs">{p.cpf ?? '—'}</td>
+                                    <td className="px-4 py-3 text-gray-600 font-mono text-xs">{p.cpf ? maskCpfCnpj(p.cpf) : '—'}</td>
                                     <td className="px-4 py-3 text-gray-600 text-xs">
                                         {p.email && <p>{p.email}</p>}
                                         {p.phone && <p>{p.phone}</p>}

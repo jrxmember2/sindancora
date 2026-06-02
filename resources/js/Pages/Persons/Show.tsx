@@ -2,6 +2,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { User, MapPin, Phone, Mail, Building2, Plus, X, Calendar, KeyRound, Send } from 'lucide-react';
 import { useState } from 'react';
+import { maskCpfCnpj } from '@/lib/masks';
 
 interface UnitLink {
     id: string; type: string; is_primary: boolean; start_date: string; end_date: string | null;
@@ -106,7 +107,7 @@ export default function PersonShow({ person, linkTypes, availableUnits }: Props)
                     <div>
                         <Link href={route('persons.index')} className="text-sm text-gray-500 hover:text-gray-700">← Pessoas</Link>
                         <h1 className="mt-1 text-2xl font-bold text-gray-900">{person.name}</h1>
-                        {person.cpf && <p className="text-sm text-gray-500 font-mono">{person.cpf}</p>}
+                        {person.cpf && <p className="text-sm text-gray-500 font-mono">{maskCpfCnpj(person.cpf)}</p>}
                     </div>
                     <Link href={route('persons.edit', person.id)} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                         Editar

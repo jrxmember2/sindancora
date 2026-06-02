@@ -39,6 +39,16 @@ class Condominium extends Model
         return $this->hasMany(CondominiumManager::class);
     }
 
+    public function charges(): HasMany
+    {
+        return $this->hasMany(Charge::class);
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
     public function activeManagers(): HasMany
     {
         return $this->hasMany(CondominiumManager::class)->whereNull('end_date');

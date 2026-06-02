@@ -1,6 +1,6 @@
 import PortalLayout from '@/Layouts/PortalLayout';
 import { Head, Link } from '@inertiajs/react';
-import { Megaphone, AlertCircle, FileText, CalendarRange, Building2, ChevronRight, Plus } from 'lucide-react';
+import { Megaphone, AlertCircle, FileText, CalendarRange, Building2, ChevronRight, Plus, Wallet } from 'lucide-react';
 
 interface Unit { id: string; number: string; block: string | null; condominium: string | null; type: string }
 interface Announcement { id: string; title: string; category: string; urgency: string; published_at: string }
@@ -8,7 +8,7 @@ interface Reservation { id: string; date: string; start_time: string; end_time: 
 
 interface Props {
     resident: { name: string; units: Unit[] };
-    stats: { unread_announcements: number; open_occurrences: number; documents: number };
+    stats: { unread_announcements: number; open_occurrences: number; documents: number; open_charges: number };
     recentAnnouncements: Announcement[];
     upcomingReservations: Reservation[];
     reservationStatuses: Record<string, string>;
@@ -41,7 +41,14 @@ export default function PortalDashboard({ resident, stats, recentAnnouncements, 
                 </div>
 
                 {/* Atalhos rápidos */}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <Link href="/portal/cobrancas" className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-colors hover:bg-gray-50">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 text-amber-600"><Wallet className="h-5 w-5" /></span>
+                        <div>
+                            <p className="text-base font-bold text-gray-900">{Number(stats.open_charges).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                            <p className="text-xs text-gray-500">Em aberto</p>
+                        </div>
+                    </Link>
                     <Link href="/portal/comunicados" className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-colors hover:bg-gray-50">
                         <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600"><Megaphone className="h-5 w-5" /></span>
                         <div>

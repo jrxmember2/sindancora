@@ -321,35 +321,40 @@ Fase 1 considera-se **concluída** quando:
 ### Entregas
 
 #### 5.1 Cobranças Manuais
-- [ ] CRUD de cobranças por unidade (taxa condominial, extra, multa)
-- [ ] Definição de mês de referência, vencimento e valor
-- [ ] Registro manual de pagamento (com data, forma e comprovante)
-- [ ] Multa e juros configuráveis por plano de cobranças
-- [ ] Histórico de cobranças por unidade
+- [x] CRUD de cobranças por unidade (taxa condominial, extra, multa)
+- [x] Definição de mês de referência, vencimento e valor
+- [x] Registro manual de pagamento (com data, forma e comprovante via StorageService)
+- [x] Multa e juros configuráveis por cobrança (cálculo de valor atualizado em `Charge::currentAmount()`)
+- [x] Histórico de cobranças por unidade
+- [x] Geração em lote por condomínio (valor base + ajuste por unidade na pré-visualização)
 
 #### 5.2 Inadimplência
-- [ ] Listagem de unidades inadimplentes
-- [ ] Relatório de inadimplência por período
-- [ ] Notificação automática ao morador sobre cobranças vencidas
+- [x] Listagem de unidades inadimplentes (na tela de Relatórios)
+- [x] Relatório de inadimplência por período
+- [x] Notificação automática ao morador sobre cobranças vencidas (comando `charges:mark-overdue` + `ChargeOverdue` in-app/e-mail)
+- [ ] Bloqueio de inadimplente em reservas — [→ adiado] (inadimplência informativa por ora)
 
 #### 5.3 Relatórios Financeiros
-- [ ] Relatório de receitas e despesas por período
-- [ ] Prestação de contas mensal
-- [ ] Exportação para PDF e XLSX
+- [x] Relatório de receitas e despesas por período (inclui CRUD de Despesas)
+- [x] Prestação de contas mensal (saldo = recebido − despesas; quebra mensal)
+- [x] Exportação para PDF (dompdf) e XLSX (maatwebsite/excel)
 
-#### 5.4 Integração com Gateway (Asaas)
+#### 5.4 Integração com Gateway (Asaas) — [→ ADIADO: fatia dedicada]
 - [ ] Configuração de conta Asaas por tenant
 - [ ] Geração de boleto bancário por cobrança
 - [ ] Geração de QR Code PIX por cobrança
 - [ ] Webhook de retorno de pagamento (conciliação automática)
 - [ ] Envio de segunda via por e-mail
 
+> **Decisão:** o financeiro **manual** (5.1–5.3) foi entregue primeiro. A integração Asaas (5.4)
+> depende de credenciais/sandbox e endpoint público de webhook — fica para fatia dedicada.
+
 ### Critérios de Aceite da Fase 5
 
-- [ ] Admin gera cobrança mensal para todas as unidades
-- [ ] Morador recebe boleto/PIX por e-mail
-- [ ] Pagamento confirmado automaticamente via webhook
-- [ ] Relatório de inadimplência correto e exportável
+- [x] Admin gera cobrança mensal para todas as unidades (geração em lote)
+- [→ Asaas] Morador recebe boleto/PIX por e-mail — depende da 5.4 (adiada); morador vê "Minhas cobranças" no portal
+- [→ Asaas] Pagamento confirmado automaticamente via webhook — depende da 5.4 (adiada); pagamento é registrado manualmente
+- [x] Relatório de inadimplência correto e exportável (PDF/XLSX)
 
 ---
 

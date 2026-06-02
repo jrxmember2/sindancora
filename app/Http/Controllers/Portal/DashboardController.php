@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Portal;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Portal\Concerns\InteractsWithResident;
 use App\Models\Announcement;
+use App\Models\Charge;
 use App\Models\Document;
 use App\Models\Occurrence;
 use App\Models\Reservation;
@@ -59,6 +60,11 @@ class DashboardController extends Controller
             ->where('visibility', 'residents')
             ->count();
 
+        $openCharges = Charge::query()
+            ->whereIn('unit_id', $this->unitIds() ?: ['-'])
+            ->whereIn('status', ['pending', 'overdue'])
+            ->sum('amount');
+
         return Inertia::render('Portal/Dashboard', [
             'resident' => [
                 'name' => $person->name,
@@ -74,6 +80,7 @@ class DashboardController extends Controller
                 'unread_announcements' => $unreadAnnouncements,
                 'open_occurrences' => $openOccurrences,
                 'documents' => $documentsCount,
+                'open_charges' => (float) $openCharges,
             ],
             'recentAnnouncements' => $recentAnnouncements,
             'upcomingReservations' => $reservations,

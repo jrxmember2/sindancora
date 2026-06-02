@@ -11,12 +11,14 @@ import {
     LogOut,
     UserRound,
     ChevronDown,
+    Wallet,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
 const nav = [
     { name: 'Início', href: '/portal', icon: Home, match: (p: string) => p === '/portal' },
     { name: 'Comunicados', href: '/portal/comunicados', icon: Megaphone, match: (p: string) => p.startsWith('/portal/comunicados') },
+    { name: 'Cobranças', href: '/portal/cobrancas', icon: Wallet, match: (p: string) => p.startsWith('/portal/cobrancas') },
     { name: 'Ocorrências', href: '/portal/ocorrencias', icon: AlertCircle, match: (p: string) => p.startsWith('/portal/ocorrencias') },
     { name: 'Reservas', href: '/portal/reservas', icon: CalendarRange, match: (p: string) => p.startsWith('/portal/reservas') },
     { name: 'Documentos', href: '/portal/documentos', icon: FileText, match: (p: string) => p.startsWith('/portal/documentos') },
@@ -132,6 +134,9 @@ export default function PortalLayout({ children, title }: { children: React.Reac
                                 </Link>
                                 <Link href="/portal/minha-unidade" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
                                     <Building2 className="h-4 w-4" /> Minha unidade
+                                </Link>
+                                <Link href="/portal/documentos" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                                    <FileText className="h-4 w-4" /> Documentos
                                 </Link>
                                 <Link href="/logout" method="post" as="button" className="flex w-full items-center gap-2 border-t border-gray-100 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50">
                                     <LogOut className="h-4 w-4" /> Sair
