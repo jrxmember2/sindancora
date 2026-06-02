@@ -19,6 +19,8 @@ use App\Http\Controllers\Panel\ReservationController;
 use App\Http\Controllers\Panel\RoleController;
 use App\Http\Controllers\Panel\UnitController;
 use App\Http\Controllers\Panel\UserController;
+use App\Http\Controllers\Panel\WebhookController;
+use App\Http\Controllers\Panel\WhatsappSettingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -311,6 +313,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('configuracoes/api', [ApiKeyController::class, 'index'])->name('api-keys.index');
         Route::post('configuracoes/api', [ApiKeyController::class, 'store'])->name('api-keys.store');
         Route::delete('configuracoes/api/{apiKey}', [ApiKeyController::class, 'destroy'])->name('api-keys.destroy');
+    });
+
+    // Configurações > Webhooks de saída
+    Route::middleware('permission:webhooks:manage')->group(function () {
+        Route::get('configuracoes/webhooks', [WebhookController::class, 'index'])->name('webhooks.index');
+        Route::post('configuracoes/webhooks', [WebhookController::class, 'store'])->name('webhooks.store');
+        Route::match(['put', 'patch'], 'configuracoes/webhooks/{webhook}', [WebhookController::class, 'update'])->name('webhooks.update');
+        Route::post('configuracoes/webhooks/{webhook}/testar', [WebhookController::class, 'test'])->name('webhooks.test');
+        Route::delete('configuracoes/webhooks/{webhook}', [WebhookController::class, 'destroy'])->name('webhooks.destroy');
+    });
+
+    // Configurações > WhatsApp (Evolution API por tenant)
+    Route::middleware('permission:settings:whatsapp')->group(function () {
+        Route::get('configuracoes/whatsapp', [WhatsappSettingController::class, 'edit'])->name('settings.whatsapp.edit');
+        Route::match(['put', 'patch'], 'configuracoes/whatsapp', [WhatsappSettingController::class, 'update'])->name('settings.whatsapp.update');
+        Route::post('configuracoes/whatsapp/testar', [WhatsappSettingController::class, 'test'])->name('settings.whatsapp.test');
     });
     }); // fim do painel administrativo (middleware 'panel')
 });

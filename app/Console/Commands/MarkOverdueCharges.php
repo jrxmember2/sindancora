@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Charge;
 use App\Notifications\ChargeOverdue;
+use App\Services\WebhookService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Notification;
 
@@ -13,7 +14,7 @@ class MarkOverdueCharges extends Command
 
     protected $description = 'Marca como vencidas as cobranças pendentes cuja data de vencimento passou e notifica os moradores.';
 
-    public function handle(): int
+    public function handle(WebhookService $webhooks): int
     {
         // Sem contexto de tenant: o global scope BelongsToTenant não filtra,
         // varrendo todos os tenants (comportamento desejado para o scheduler).
@@ -27,6 +28,8 @@ class MarkOverdueCharges extends Command
 
         foreach ($due as $charge) {
             $charge->update(['status' => 'overdue']);
+
+            $webhooks->dispatch($charge->tenant_id, 'charge.overdue', $charge->toWebhookArray());
 
             $user = $charge->person?->user;
             if ($user && $user->status === 'active') {

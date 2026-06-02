@@ -20,6 +20,8 @@ import {
     Receipt,
     BarChart3,
     KeyRound,
+    Webhook,
+    MessageCircle,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -41,6 +43,8 @@ const adminNavigation = [
     { name: 'Perfis', href: '/roles', icon: Shield, permission: 'users:manage' },
     { name: 'Pagamentos', href: '/configuracoes/pagamentos', icon: Settings, permission: 'settings:payments' },
     { name: 'API', href: '/configuracoes/api', icon: KeyRound, permission: 'api_keys:manage' },
+    { name: 'Webhooks', href: '/configuracoes/webhooks', icon: Webhook, permission: 'webhooks:manage' },
+    { name: 'WhatsApp', href: '/configuracoes/whatsapp', icon: MessageCircle, permission: 'settings:whatsapp' },
     { name: 'Auditoria', href: '/auditoria', icon: ClipboardList, permission: 'audit:read' },
 ];
 

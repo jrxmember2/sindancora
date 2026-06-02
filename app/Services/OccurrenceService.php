@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Notification;
 
 class OccurrenceService
 {
+    public function __construct(private readonly WebhookService $webhooks) {}
+
     /** Adiciona um comentário do usuário e notifica os participantes. */
     public function addComment(Occurrence $occurrence, string $body): OccurrenceComment
     {
@@ -39,6 +41,11 @@ class OccurrenceService
 
         $label = Occurrence::STATUSES[$newStatus] ?? $newStatus;
         $this->notifyParticipants($occurrence, "Status alterado para \"{$label}\".");
+
+        $this->webhooks->dispatch($occurrence->tenant_id, 'occurrence.status_changed', [
+            'from' => $from,
+            'to' => $newStatus,
+        ] + $occurrence->toWebhookArray());
 
         return $occurrence;
     }

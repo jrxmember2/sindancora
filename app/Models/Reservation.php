@@ -34,6 +34,20 @@ class Reservation extends Model
         'cancelled' => 'Cancelada',
     ];
 
+    /** Payload compacto para webhooks de saída. */
+    public function toWebhookArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'condominium_id' => $this->condominium_id,
+            'common_area_id' => $this->common_area_id,
+            'date' => $this->date?->toDateString(),
+            'start_time' => $this->start_time,
+            'end_time' => $this->end_time,
+            'status' => $this->status,
+        ];
+    }
+
     public function condominium(): BelongsTo
     {
         return $this->belongsTo(Condominium::class);

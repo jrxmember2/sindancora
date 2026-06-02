@@ -51,9 +51,33 @@ class Charge extends Model
         'cancelled' => 'Cancelado',
     ];
 
+    protected static function booted(): void
+    {
+        static::created(function (Charge $charge) {
+            app(\App\Services\WebhookService::class)->dispatch($charge->tenant_id, 'charge.created', $charge->toWebhookArray());
+        });
+    }
+
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    /** Payload compacto para webhooks de saída. */
+    public function toWebhookArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'condominium_id' => $this->condominium_id,
+            'unit_id' => $this->unit_id,
+            'person_id' => $this->person_id,
+            'type' => $this->type,
+            'description' => $this->description,
+            'reference_month' => $this->reference_month,
+            'amount' => (float) $this->amount,
+            'due_date' => $this->due_date?->toDateString(),
+            'status' => $this->status,
+        ];
     }
 
     public function condominium(): BelongsTo
