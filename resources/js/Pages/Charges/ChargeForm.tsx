@@ -27,11 +27,13 @@ interface Props {
     onSubmit: (e: React.FormEvent) => void;
     submitLabel: string;
     cancelHref: string;
+    lockFinancial?: boolean;
 }
 
 const field = 'mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500';
+const lockedField = `${field} bg-gray-50 text-gray-500`;
 
-export default function ChargeForm({ data, setData, errors, processing, condominiums, units, types, onSubmit, submitLabel, cancelHref }: Props) {
+export default function ChargeForm({ data, setData, errors, processing, condominiums, units, types, onSubmit, submitLabel, cancelHref, lockFinancial = false }: Props) {
     const unitsOfCondo = units.filter((u) => u.condominium_id === data.condominium_id);
 
     return (
@@ -74,15 +76,20 @@ export default function ChargeForm({ data, setData, errors, processing, condomin
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Valor (R$) *</label>
-                    <input type="number" step="0.01" min="0" value={data.amount} onChange={(e) => setData('amount', e.target.value)} className={field} />
+                    <input type="number" step="0.01" min="0" value={data.amount} onChange={(e) => setData('amount', e.target.value)} disabled={lockFinancial} className={lockFinancial ? lockedField : field} />
                     {errors.amount && <p className="mt-1 text-xs text-red-600">{errors.amount}</p>}
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Vencimento *</label>
-                    <input type="date" value={data.due_date} onChange={(e) => setData('due_date', e.target.value)} className={field} />
+                    <input type="date" value={data.due_date} onChange={(e) => setData('due_date', e.target.value)} disabled={lockFinancial} className={lockFinancial ? lockedField : field} />
                     {errors.due_date && <p className="mt-1 text-xs text-red-600">{errors.due_date}</p>}
                 </div>
             </div>
+            {lockFinancial && (
+                <p className="-mt-1 text-xs text-amber-600">
+                    Valor e vencimento estão travados porque esta cobrança já tem boleto/PIX emitido. Para alterá-los, cancele e gere uma nova.
+                </p>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
                 <div>

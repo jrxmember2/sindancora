@@ -44,7 +44,8 @@ class WebhookController extends Controller
 
     private function resolveCharge(array $payment): ?Charge
     {
-        $query = Charge::withoutGlobalScope('tenant')->with('tenant');
+        // withTrashed: pagamento pode chegar para uma cobrança já cancelada/soft-deletada.
+        $query = Charge::withoutGlobalScope('tenant')->withTrashed()->with('tenant');
 
         if (! empty($payment['externalReference'])) {
             $charge = (clone $query)->find($payment['externalReference']);

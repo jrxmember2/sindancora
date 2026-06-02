@@ -103,6 +103,29 @@ class AsaasService
         };
     }
 
+    /**
+     * Cancela no Asaas a cobrança correspondente (se houver), para o boleto/PIX deixar de ser
+     * pagável. Falha de gateway não bloqueia o cancelamento local — apenas registra o aviso.
+     */
+    public function cancelCharge(Charge $charge): void
+    {
+        if (! $charge->hasGatewayCharge()) {
+            return;
+        }
+
+        $setting = $this->settingFor($charge->tenant);
+        if (! $setting) {
+            return;
+        }
+
+        try {
+            $this->client($setting)->deletePayment($charge->gateway_payment_id);
+            $charge->forceFill(['gateway_status' => 'DELETED'])->save();
+        } catch (AsaasException $e) {
+            Log::warning('Falha ao cancelar cobrança no Asaas', ['charge' => $charge->id, 'error' => $e->getMessage()]);
+        }
+    }
+
     /** Garante a emissão e dispara a 2ª via por e-mail ao morador responsável. */
     public function sendSecondCopy(Charge $charge): void
     {
@@ -183,7 +206,9 @@ class AsaasService
     /** Localiza a cobrança a partir do payload do webhook, ignorando o escopo de tenant. */
     private function resolveCharge(array $payment): ?Charge
     {
-        $query = Charge::withoutGlobalScope('tenant');
+        // withTrashed: um pagamento pode chegar para uma cobrança cancelada/soft-deletada
+        // (ex.: morador pagou no instante do cancelamento) — ainda precisamos registrá-lo.
+        $query = Charge::withoutGlobalScope('tenant')->withTrashed();
 
         if (! empty($payment['externalReference'])) {
             $charge = (clone $query)->find($payment['externalReference']);
