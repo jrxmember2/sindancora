@@ -397,11 +397,13 @@ Fase 1 considera-se **concluída** quando:
 
 > Detalhes em `docs/tecnico/ia-assistente.md`. Requer `ANTHROPIC_API_KEY` (custo da plataforma).
 
-#### 6.5 Assembleias Digitais
-- [ ] Criação de assembleia com pauta
-- [ ] Votação online por unidade (um voto por unidade)
-- [ ] Ata gerada automaticamente
-- [ ] Registro de presença digital
+#### 6.5 Assembleias Digitais — [x] entregue
+- [x] Criação de assembleia com pauta (itens + opções de voto configuráveis)
+- [x] Votação online por unidade (um voto por unidade; morador vota pelo portal)
+- [x] Ata gerada automaticamente (redigida pela IA da 6.4; fallback determinístico) + PDF
+- [x] Registro de presença digital
+
+> Detalhes em `docs/tecnico/assembleias.md`. Quórum/fração ideal e voto secreto adiados.
 
 #### 6.6 Portaria Digital
 - [ ] Controle de visitantes com QR Code

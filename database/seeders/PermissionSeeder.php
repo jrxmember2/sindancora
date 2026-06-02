@@ -81,6 +81,12 @@ class PermissionSeeder extends Seeder
             ['module' => 'users', 'action' => 'delete', 'description' => 'Desativar usuários'],
             ['module' => 'users', 'action' => 'manage', 'description' => 'Gerenciar roles de usuários'],
 
+            // Assembleias
+            ['module' => 'assemblies', 'action' => 'create', 'description' => 'Criar assembleias'],
+            ['module' => 'assemblies', 'action' => 'read',   'description' => 'Visualizar assembleias'],
+            ['module' => 'assemblies', 'action' => 'update', 'description' => 'Editar/conduzir assembleias'],
+            ['module' => 'assemblies', 'action' => 'delete', 'description' => 'Remover assembleias'],
+
             // IA
             ['module' => 'ai', 'action' => 'use', 'description' => 'Usar o assistente de IA'],
 

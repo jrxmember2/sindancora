@@ -3,6 +3,7 @@
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Panel\AnnouncementController;
 use App\Http\Controllers\Panel\ApiKeyController;
+use App\Http\Controllers\Panel\AssemblyController;
 use App\Http\Controllers\Panel\AssistantController;
 use App\Http\Controllers\Panel\AuditController;
 use App\Http\Controllers\Panel\ChargeController;
@@ -323,6 +324,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::match(['put', 'patch'], 'configuracoes/webhooks/{webhook}', [WebhookController::class, 'update'])->name('webhooks.update');
         Route::post('configuracoes/webhooks/{webhook}/testar', [WebhookController::class, 'test'])->name('webhooks.test');
         Route::delete('configuracoes/webhooks/{webhook}', [WebhookController::class, 'destroy'])->name('webhooks.destroy');
+    });
+
+    // Assembleias digitais — estáticas (criar) antes da dinâmica {assembly}.
+    Route::middleware('permission:assemblies:read')->group(function () {
+        Route::get('assembleias', [AssemblyController::class, 'index'])->name('assemblies.index');
+    });
+    Route::middleware('permission:assemblies:create')->group(function () {
+        Route::get('assembleias/criar', [AssemblyController::class, 'create'])->name('assemblies.create');
+        Route::post('assembleias', [AssemblyController::class, 'store'])->name('assemblies.store');
+    });
+    Route::middleware('permission:assemblies:update')->group(function () {
+        Route::get('assembleias/{assembly}/editar', [AssemblyController::class, 'edit'])->name('assemblies.edit');
+        Route::match(['put', 'patch'], 'assembleias/{assembly}', [AssemblyController::class, 'update'])->name('assemblies.update');
+        Route::post('assembleias/{assembly}/itens', [AssemblyController::class, 'storeItem'])->name('assemblies.items.store');
+        Route::delete('assembleias/{assembly}/itens/{item}', [AssemblyController::class, 'destroyItem'])->name('assemblies.items.destroy');
+        Route::post('assembleias/{assembly}/abrir', [AssemblyController::class, 'open'])->name('assemblies.open');
+        Route::post('assembleias/{assembly}/encerrar', [AssemblyController::class, 'close'])->name('assemblies.close');
+        Route::post('assembleias/{assembly}/ata', [AssemblyController::class, 'generateMinutes'])->name('assemblies.minutes');
+    });
+    Route::middleware('permission:assemblies:delete')->group(function () {
+        Route::delete('assembleias/{assembly}', [AssemblyController::class, 'destroy'])->name('assemblies.destroy');
+    });
+    Route::middleware('permission:assemblies:read')->group(function () {
+        Route::get('assembleias/{assembly}/ata/pdf', [AssemblyController::class, 'downloadMinutes'])->name('assemblies.minutes.pdf');
+        Route::get('assembleias/{assembly}', [AssemblyController::class, 'show'])->name('assemblies.show');
     });
 
     // Assistente de IA
