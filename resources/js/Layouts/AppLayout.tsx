@@ -19,6 +19,7 @@ import {
     Wallet,
     Receipt,
     BarChart3,
+    KeyRound,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -39,6 +40,7 @@ const navigation = [
 const adminNavigation = [
     { name: 'Perfis', href: '/roles', icon: Shield, permission: 'users:manage' },
     { name: 'Pagamentos', href: '/configuracoes/pagamentos', icon: Settings, permission: 'settings:payments' },
+    { name: 'API', href: '/configuracoes/api', icon: KeyRound, permission: 'api_keys:manage' },
     { name: 'Auditoria', href: '/auditoria', icon: ClipboardList, permission: 'audit:read' },
 ];
 

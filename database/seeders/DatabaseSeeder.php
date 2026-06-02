@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             PlanSeeder::class,
             PermissionSeeder::class,
             RoleSeeder::class,
+            ApiScopeSeeder::class,
             DemoTenantSeeder::class,
         ]);
 

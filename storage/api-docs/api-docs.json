@@ -204,6 +204,468 @@
                     }
                 }
             }
+        },
+        "/v1/charges": {
+            "get": {
+                "tags": [
+                    "Cobranças"
+                ],
+                "summary": "Lista cobranças",
+                "operationId": "79ac2666387bcd5f5af1ef638563c170",
+                "parameters": [
+                    {
+                        "name": "condominium_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "unit_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "reference_month",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "apiKey": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Cobranças"
+                ],
+                "summary": "Cria uma cobrança",
+                "operationId": "afda63a7a538b4198e4fb28d7816655e",
+                "responses": {
+                    "201": {
+                        "description": "Criada"
+                    },
+                    "422": {
+                        "description": "Validação"
+                    }
+                },
+                "security": [
+                    {
+                        "apiKey": []
+                    }
+                ]
+            }
+        },
+        "/v1/charges/{id}": {
+            "get": {
+                "tags": [
+                    "Cobranças"
+                ],
+                "summary": "Detalha uma cobrança",
+                "operationId": "d91585624dc5c1e429f0dbe138e42509",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "apiKey": []
+                    }
+                ]
+            }
+        },
+        "/v1/condominiums": {
+            "get": {
+                "tags": [
+                    "Condomínios"
+                ],
+                "summary": "Lista condomínios do tenant",
+                "operationId": "0069c458d676385c1e6d08ab86a1a6c9",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "apiKey": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Condomínios"
+                ],
+                "summary": "Cria um condomínio",
+                "operationId": "cc7a63e25c55f0d0bdce015d4713f3ba",
+                "responses": {
+                    "201": {
+                        "description": "Criado"
+                    },
+                    "402": {
+                        "description": "Limite do plano"
+                    }
+                },
+                "security": [
+                    {
+                        "apiKey": []
+                    }
+                ]
+            }
+        },
+        "/v1/condominiums/{id}": {
+            "get": {
+                "tags": [
+                    "Condomínios"
+                ],
+                "summary": "Detalha um condomínio",
+                "operationId": "47dbb954057e3b25ed2bc389f5ce4c61",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "apiKey": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Condomínios"
+                ],
+                "summary": "Atualiza um condomínio",
+                "operationId": "709f0b0341943bb759cfe42d7ce4440b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "apiKey": []
+                    }
+                ]
+            }
+        },
+        "/v1/persons": {
+            "get": {
+                "tags": [
+                    "Pessoas"
+                ],
+                "summary": "Lista pessoas",
+                "operationId": "ca95f8f29d1d1f1a93bedf4c1a773aba",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "apiKey": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Pessoas"
+                ],
+                "summary": "Cria uma pessoa",
+                "operationId": "0a47b37fd944e66a17aed66b6b179ef5",
+                "responses": {
+                    "201": {
+                        "description": "Criada"
+                    },
+                    "422": {
+                        "description": "Validação"
+                    }
+                },
+                "security": [
+                    {
+                        "apiKey": []
+                    }
+                ]
+            }
+        },
+        "/v1/persons/{id}": {
+            "get": {
+                "tags": [
+                    "Pessoas"
+                ],
+                "summary": "Detalha uma pessoa",
+                "operationId": "182b267d1a2293ece77200f541db3d44",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "apiKey": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Pessoas"
+                ],
+                "summary": "Atualiza uma pessoa",
+                "operationId": "caf92c0bfc81808108d000d5a4923ff4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "apiKey": []
+                    }
+                ]
+            }
+        },
+        "/v1/units": {
+            "get": {
+                "tags": [
+                    "Unidades"
+                ],
+                "summary": "Lista unidades",
+                "operationId": "5bafe5bda92b5e9af5c110788666abbd",
+                "parameters": [
+                    {
+                        "name": "condominium_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "apiKey": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Unidades"
+                ],
+                "summary": "Cria uma unidade",
+                "operationId": "d0fcb5efa2d6471e475ca5806a2741ed",
+                "responses": {
+                    "201": {
+                        "description": "Criada"
+                    },
+                    "402": {
+                        "description": "Limite do plano"
+                    }
+                },
+                "security": [
+                    {
+                        "apiKey": []
+                    }
+                ]
+            }
+        },
+        "/v1/units/{id}": {
+            "get": {
+                "tags": [
+                    "Unidades"
+                ],
+                "summary": "Detalha uma unidade",
+                "operationId": "f67740736ff729befa868320c346e546",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "apiKey": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Unidades"
+                ],
+                "summary": "Atualiza uma unidade",
+                "operationId": "cf2b6f140cd6bd947651789b1971275b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "apiKey": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -246,6 +708,11 @@
                 "type": "http",
                 "scheme": "bearer",
                 "bearerFormat": "JWT"
+            },
+            "apiKey": {
+                "type": "http",
+                "description": "API Key do tenant no formato sk_live_... enviada como Bearer token.",
+                "scheme": "bearer"
             }
         }
     },
@@ -253,6 +720,22 @@
         {
             "name": "Auth",
             "description": "Autenticação"
+        },
+        {
+            "name": "Condomínios",
+            "description": "Condomínios do tenant"
+        },
+        {
+            "name": "Unidades",
+            "description": "Unidades dos condomínios"
+        },
+        {
+            "name": "Pessoas",
+            "description": "Pessoas do tenant"
+        },
+        {
+            "name": "Cobranças",
+            "description": "Cobranças financeiras"
         }
     ],
     "security": [
