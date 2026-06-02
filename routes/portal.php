@@ -1,0 +1,47 @@
+<?php
+
+use App\Http\Controllers\Portal\AnnouncementController;
+use App\Http\Controllers\Portal\DashboardController;
+use App\Http\Controllers\Portal\DocumentController;
+use App\Http\Controllers\Portal\OccurrenceController;
+use App\Http\Controllers\Portal\ProfileController;
+use App\Http\Controllers\Portal\ReservationController;
+use App\Http\Controllers\Portal\UnitController;
+use Illuminate\Support\Facades\Route;
+
+// Portal do Morador — área dedicada, escopada à pessoa logada (middleware 'resident').
+Route::middleware(['auth', 'verified', 'resident'])
+    ->prefix('portal')
+    ->name('portal.')
+    ->group(function () {
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+        // Comunicados (leitura + confirmação)
+        Route::get('comunicados', [AnnouncementController::class, 'index'])->name('announcements.index');
+        Route::get('comunicados/{announcement}', [AnnouncementController::class, 'show'])->name('announcements.show');
+
+        // Ocorrências (próprias)
+        Route::get('ocorrencias', [OccurrenceController::class, 'index'])->name('occurrences.index');
+        Route::get('ocorrencias/criar', [OccurrenceController::class, 'create'])->name('occurrences.create');
+        Route::post('ocorrencias', [OccurrenceController::class, 'store'])->name('occurrences.store');
+        Route::get('ocorrencias/{occurrence}', [OccurrenceController::class, 'show'])->name('occurrences.show');
+        Route::post('ocorrencias/{occurrence}/comentarios', [OccurrenceController::class, 'addComment'])->name('occurrences.comments.store');
+
+        // Reservas (próprias)
+        Route::get('reservas', [ReservationController::class, 'index'])->name('reservations.index');
+        Route::get('reservas/criar', [ReservationController::class, 'create'])->name('reservations.create');
+        Route::post('reservas', [ReservationController::class, 'store'])->name('reservations.store');
+        Route::get('reservas/{reservation}', [ReservationController::class, 'show'])->name('reservations.show');
+        Route::post('reservas/{reservation}/cancelar', [ReservationController::class, 'cancel'])->name('reservations.cancel');
+
+        // Documentos (públicos aos moradores)
+        Route::get('documentos', [DocumentController::class, 'index'])->name('documents.index');
+        Route::get('documentos/{document}/download', [DocumentController::class, 'download'])->name('documents.download');
+
+        // Minha unidade
+        Route::get('minha-unidade', [UnitController::class, 'show'])->name('unit.show');
+
+        // Meu perfil
+        Route::get('perfil', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::match(['put', 'patch'], 'perfil', [ProfileController::class, 'update'])->name('profile.update');
+    });

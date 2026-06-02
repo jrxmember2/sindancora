@@ -171,13 +171,13 @@ Fase 1 considera-se **concluída** quando:
 - [ ] Histórico de moradores por unidade (vínculos passados)
 - [ ] Morador principal (is_primary)
 - [ ] Múltiplas unidades por pessoa (proprietário com vários imóveis)
-- [→ Fase 4] Convite por e-mail para ativar acesso ao portal do morador — adiado: depende do Portal do Morador (Fase 4.1, cadastro via link de convite). Sem o portal não há destino para o convite.
+- [x] Convite por e-mail para ativar acesso ao portal do morador — entregue na Fase 4 (`InvitationService`, botão na ficha da Pessoa).
 - [ ] Importação de pessoas via CSV
 
 #### 2.5 Síndicos e Conselheiros
 - [x] Marcação de pessoa como Síndico, Subsíndico ou Conselheiro do condomínio
 - [x] Mandato com data de início e fim
-- [→ Fase 4] Role automático ao marcar como síndico — adiado: Person e User são entidades separadas (sem FK). A atribuição automática de role só faz sentido quando a pessoa vira usuário (via convite do portal, Fase 4).
+- [x] Role automático ao marcar como síndico — entregue na Fase 4: ao convidar, o `InvitationService` deriva os papéis de gestão de `CondominiumManager` (síndico/subsíndico/conselheiro) além do `morador`.
 
 ### Critérios de Aceite da Fase 2
 
@@ -275,39 +275,39 @@ Fase 1 considera-se **concluída** quando:
 ### Entregas
 
 #### 4.1 Autenticação do Morador
-- [ ] Login separado por subdomínio (portal.tenant.sindancora.com.br)
-- [ ] Cadastro via link de convite enviado pelo admin
-- [ ] Recuperação de senha independente
-- [ ] Sessão isolada do painel admin
+- [~] Login no mesmo domínio com roteamento por papel — decisão: **mesmo domínio + `/portal`** em vez de subdomínio separado (sem wildcard DNS/cert; deploy de container único). `User::canAccessPanel()` separa gestor de morador.
+- [x] Cadastro via link de convite enviado pelo admin (a partir da ficha da Pessoa; `InvitationService` + `ResidentInvitationMail`)
+- [x] Recuperação de senha — reutiliza o fluxo do Laravel (broker de senha), escopado por tenant
+- [~] Sessão única com roteamento por papel — não isolada por subdomínio; gate `panel`/`resident` separa as áreas
 
 #### 4.2 Dashboard do Morador
-- [ ] Boas-vindas com dados da unidade
-- [ ] Resumo de comunicados não lidos
-- [ ] Reservas pendentes/aprovadas
-- [ ] Ocorrências em aberto
-- [ ] Documentos disponíveis (contagem)
+- [x] Boas-vindas com dados da unidade
+- [x] Resumo de comunicados não lidos
+- [x] Reservas pendentes/aprovadas
+- [x] Ocorrências em aberto
+- [x] Documentos disponíveis (contagem)
 
 #### 4.3 Módulos do Portal
-- [ ] Comunicados: listagem com leitura completa e confirmação
-- [ ] Ocorrências: abrir nova + acompanhar histórico das próprias
-- [ ] Reservas: visualizar disponibilidade + fazer reserva + cancelar própria
-- [ ] Documentos: listar e baixar documentos públicos
-- [ ] Dados da unidade: ver informações da unidade e histórico de vínculos
-- [ ] Meu perfil: atualizar dados de contato e senha
+- [x] Comunicados: listagem com leitura completa e confirmação (tabela `announcement_reads`)
+- [x] Ocorrências: abrir nova + acompanhar histórico das próprias (notifica gestores na abertura)
+- [x] Reservas: visualizar ocupação do mês + fazer reserva + cancelar própria (reusa `ReservationService`)
+- [x] Documentos: listar e baixar documentos públicos (`visibility = residents`)
+- [x] Dados da unidade: ver informações da unidade e histórico de vínculos
+- [x] Meu perfil: atualizar dados de contato e senha
 
 #### 4.4 UX do Portal
-- [ ] Layout responsivo (mobile-first)
-- [ ] Modo claro com identidade visual do tenant (white-label)
-- [ ] Notificações in-app
-- [ ] PWA básico (instalável no celular)
+- [x] Layout responsivo (mobile-first) — `PortalLayout` (sidebar no desktop, tab bar no mobile)
+- [x] Modo claro com identidade visual do tenant (white-label) — logo/cor compartilhados via Inertia
+- [x] Notificações in-app — sino reusado; `Portal/Notifications`
+- [→ adiado] PWA básico (instalável no celular)
 
 ### Critérios de Aceite da Fase 4
 
-- [ ] Morador ativa conta via e-mail de convite
-- [ ] Morador acessa o portal em dispositivo móvel sem dificuldades
-- [ ] Morador consegue fazer reserva completa sem ajuda do admin
-- [ ] Morador consegue abrir e acompanhar ocorrência
-- [ ] Morador não consegue ver dados de outros moradores
+- [x] Morador ativa conta via e-mail de convite
+- [x] Morador acessa o portal em dispositivo móvel sem dificuldades
+- [x] Morador consegue fazer reserva completa sem ajuda do admin
+- [x] Morador consegue abrir e acompanhar ocorrência
+- [x] Morador não consegue ver dados de outros moradores (escopo por `person_id`/vínculos ativos)
 
 ---
 

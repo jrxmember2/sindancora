@@ -18,9 +18,12 @@ class User extends Authenticatable
     use BelongsToTenant, HasApiTokens, HasAuditLog, HasFactory, HasUuidKey, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'tenant_id', 'name', 'email', 'phone', 'document',
+        'tenant_id', 'person_id', 'name', 'email', 'phone', 'document',
         'password', 'status', 'is_super_admin', 'last_login_at',
     ];
+
+    /** Papéis com acesso ao painel administrativo (todos exceto o morador). */
+    public const PANEL_ROLES = ['admin', 'sindico', 'subsindico', 'conselheiro'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -37,6 +40,11 @@ class User extends Authenticatable
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    public function person(): BelongsTo
+    {
+        return $this->belongsTo(Person::class);
     }
 
     public function userRoles(): HasMany
@@ -89,6 +97,27 @@ class User extends Authenticatable
     public function isSuperAdmin(): bool
     {
         return $this->is_super_admin;
+    }
+
+    /**
+     * Pode acessar o painel administrativo? (super admin ou qualquer papel de gestão).
+     * Moradores "puros" (só role morador) ficam restritos ao portal.
+     */
+    public function canAccessPanel(): bool
+    {
+        if ($this->is_super_admin) {
+            return true;
+        }
+
+        return $this->userRoles()
+            ->whereHas('role', fn ($q) => $q->whereIn('name', self::PANEL_ROLES))
+            ->exists();
+    }
+
+    /** É morador do portal? (tem papel morador ou está vinculado a uma Person). */
+    public function isResident(): bool
+    {
+        return $this->hasRole('morador') || $this->person_id !== null;
     }
 
     public function isActive(): bool

@@ -57,6 +57,23 @@ class OccurrenceService
         return $occurrence;
     }
 
+    /**
+     * Notifica os gestores (papéis de painel) do tenant sobre uma ocorrência recém-aberta.
+     * Usado quando o morador abre uma ocorrência pelo portal.
+     */
+    public function notifyNew(Occurrence $occurrence): void
+    {
+        $managers = User::where('tenant_id', $occurrence->tenant_id)
+            ->where('status', 'active')
+            ->when(Auth::id(), fn ($q) => $q->where('id', '!=', Auth::id()))
+            ->whereHas('userRoles.role', fn ($q) => $q->whereIn('name', User::PANEL_ROLES))
+            ->get();
+
+        if ($managers->isNotEmpty()) {
+            Notification::send($managers, new OccurrenceUpdated($occurrence, 'Nova ocorrência aberta no portal.'));
+        }
+    }
+
     private function log(Occurrence $occurrence, string $type, ?string $body, ?array $meta = null): OccurrenceComment
     {
         return $occurrence->comments()->create([

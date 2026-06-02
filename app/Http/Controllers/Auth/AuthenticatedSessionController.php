@@ -33,8 +33,15 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        if (auth()->user()->is_super_admin) {
+        $user = auth()->user();
+
+        if ($user->is_super_admin) {
             return redirect()->intended(route('admin.dashboard', absolute: false));
+        }
+
+        // Moradores "puros" vão ao portal; gestores ao painel.
+        if (! $user->canAccessPanel()) {
+            return redirect(route('portal.dashboard', absolute: false));
         }
 
         return redirect(route('dashboard', absolute: false));
