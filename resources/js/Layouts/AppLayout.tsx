@@ -16,6 +16,9 @@ import {
     Bell,
     Shield,
     ClipboardList,
+    Wallet,
+    Receipt,
+    BarChart3,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -28,6 +31,9 @@ const navigation = [
     { name: 'Ocorrências', href: '/ocorrencias', icon: AlertCircle, permission: 'occurrences:read' },
     { name: 'Reservas', href: '/reservas', icon: CalendarRange, permission: 'reservations:read' },
     { name: 'Documentos', href: '/documentos', icon: FileText, permission: 'documents:read' },
+    { name: 'Cobranças', href: '/cobrancas', icon: Wallet, permission: 'charges:read' },
+    { name: 'Despesas', href: '/despesas', icon: Receipt, permission: 'expenses:read' },
+    { name: 'Relatórios', href: '/relatorios', icon: BarChart3, permission: 'reports:read' },
 ];
 
 const adminNavigation = [

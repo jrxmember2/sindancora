@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Portal\AnnouncementController;
+use App\Http\Controllers\Portal\ChargeController;
 use App\Http\Controllers\Portal\DashboardController;
 use App\Http\Controllers\Portal\DocumentController;
 use App\Http\Controllers\Portal\OccurrenceController;
@@ -37,6 +38,11 @@ Route::middleware(['auth', 'verified', 'resident'])
         // Documentos (públicos aos moradores)
         Route::get('documentos', [DocumentController::class, 'index'])->name('documents.index');
         Route::get('documentos/{document}/download', [DocumentController::class, 'download'])->name('documents.download');
+
+        // Minhas cobranças
+        Route::get('cobrancas', [ChargeController::class, 'index'])->name('charges.index');
+        Route::get('cobrancas/{charge}/comprovante', [ChargeController::class, 'download'])->name('charges.download');
+        Route::get('cobrancas/{charge}', [ChargeController::class, 'show'])->name('charges.show');
 
         // Minha unidade
         Route::get('minha-unidade', [UnitController::class, 'show'])->name('unit.show');

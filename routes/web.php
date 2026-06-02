@@ -3,13 +3,16 @@
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Panel\AnnouncementController;
 use App\Http\Controllers\Panel\AuditController;
+use App\Http\Controllers\Panel\ChargeController;
 use App\Http\Controllers\Panel\CommonAreaController;
 use App\Http\Controllers\Panel\CondominiumController;
 use App\Http\Controllers\Panel\DashboardController;
 use App\Http\Controllers\Panel\DocumentController;
+use App\Http\Controllers\Panel\ExpenseController;
 use App\Http\Controllers\Panel\NotificationController;
 use App\Http\Controllers\Panel\OccurrenceController;
 use App\Http\Controllers\Panel\PersonController;
+use App\Http\Controllers\Panel\ReportController;
 use App\Http\Controllers\Panel\ReservationController;
 use App\Http\Controllers\Panel\RoleController;
 use App\Http\Controllers\Panel\UnitController;
@@ -236,6 +239,60 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Reserva — detalhe (dinâmica, registrada após as estáticas acima)
     Route::middleware('permission:reservations:read')->group(function () {
         Route::get('reservas/{reservation}', [ReservationController::class, 'show'])->name('reservations.show');
+    });
+
+    // Cobranças — rotas estáticas (criar, gerar) antes da dinâmica {charge}.
+    Route::middleware('permission:charges:read')->group(function () {
+        Route::get('cobrancas', [ChargeController::class, 'index'])->name('charges.index');
+    });
+    Route::middleware('permission:charges:create')->group(function () {
+        Route::get('cobrancas/criar', [ChargeController::class, 'create'])->name('charges.create');
+        Route::post('cobrancas', [ChargeController::class, 'store'])->name('charges.store');
+        Route::get('cobrancas/gerar', [ChargeController::class, 'generateForm'])->name('charges.generate');
+        Route::post('cobrancas/gerar/preview', [ChargeController::class, 'generatePreview'])->name('charges.generate.preview');
+        Route::post('cobrancas/gerar/confirmar', [ChargeController::class, 'generateConfirm'])->name('charges.generate.confirm');
+    });
+    Route::middleware('permission:charges:update')->group(function () {
+        Route::get('cobrancas/{charge}/editar', [ChargeController::class, 'edit'])->name('charges.edit');
+        Route::match(['put', 'patch'], 'cobrancas/{charge}', [ChargeController::class, 'update'])->name('charges.update');
+    });
+    Route::middleware('permission:charges:mark_paid')->group(function () {
+        Route::post('cobrancas/{charge}/pagar', [ChargeController::class, 'registerPayment'])->name('charges.pay');
+    });
+    Route::middleware('permission:charges:delete')->group(function () {
+        Route::delete('cobrancas/{charge}', [ChargeController::class, 'destroy'])->name('charges.destroy');
+    });
+    Route::middleware('permission:charges:read')->group(function () {
+        Route::get('cobrancas/{charge}/comprovante', [ChargeController::class, 'download'])->name('charges.download');
+        Route::get('cobrancas/{charge}', [ChargeController::class, 'show'])->name('charges.show');
+    });
+
+    // Despesas — estáticas (criar) antes da dinâmica {expense}.
+    Route::middleware('permission:expenses:read')->group(function () {
+        Route::get('despesas', [ExpenseController::class, 'index'])->name('expenses.index');
+    });
+    Route::middleware('permission:expenses:create')->group(function () {
+        Route::get('despesas/criar', [ExpenseController::class, 'create'])->name('expenses.create');
+        Route::post('despesas', [ExpenseController::class, 'store'])->name('expenses.store');
+    });
+    Route::middleware('permission:expenses:update')->group(function () {
+        Route::get('despesas/{expense}/editar', [ExpenseController::class, 'edit'])->name('expenses.edit');
+        Route::match(['put', 'patch'], 'despesas/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
+    });
+    Route::middleware('permission:expenses:delete')->group(function () {
+        Route::delete('despesas/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+    });
+    Route::middleware('permission:expenses:read')->group(function () {
+        Route::get('despesas/{expense}/comprovante', [ExpenseController::class, 'download'])->name('expenses.download');
+    });
+
+    // Relatórios financeiros
+    Route::middleware('permission:reports:read')->group(function () {
+        Route::get('relatorios', [ReportController::class, 'index'])->name('reports.index');
+    });
+    Route::middleware('permission:reports:export')->group(function () {
+        Route::get('relatorios/financeiro/pdf', [ReportController::class, 'exportPdf'])->name('reports.pdf');
+        Route::get('relatorios/financeiro/xlsx', [ReportController::class, 'exportXlsx'])->name('reports.xlsx');
     });
     }); // fim do painel administrativo (middleware 'panel')
 });
