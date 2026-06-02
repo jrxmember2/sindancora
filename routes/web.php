@@ -3,6 +3,7 @@
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Panel\AnnouncementController;
 use App\Http\Controllers\Panel\ApiKeyController;
+use App\Http\Controllers\Panel\AssistantController;
 use App\Http\Controllers\Panel\AuditController;
 use App\Http\Controllers\Panel\ChargeController;
 use App\Http\Controllers\Panel\CommonAreaController;
@@ -322,6 +323,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::match(['put', 'patch'], 'configuracoes/webhooks/{webhook}', [WebhookController::class, 'update'])->name('webhooks.update');
         Route::post('configuracoes/webhooks/{webhook}/testar', [WebhookController::class, 'test'])->name('webhooks.test');
         Route::delete('configuracoes/webhooks/{webhook}', [WebhookController::class, 'destroy'])->name('webhooks.destroy');
+    });
+
+    // Assistente de IA
+    Route::middleware('permission:ai:use')->group(function () {
+        Route::get('assistente', [AssistantController::class, 'index'])->name('assistant.index');
+        Route::post('assistente/mensagem', [AssistantController::class, 'message'])->name('assistant.message');
+        Route::post('assistente/inadimplencia', [AssistantController::class, 'delinquency'])->name('assistant.delinquency');
+        Route::post('assistente/comunicado', [AssistantController::class, 'announcement'])->name('assistant.announcement');
+        Route::delete('assistente/{conversation}', [AssistantController::class, 'destroy'])->name('assistant.destroy');
     });
 
     // Configurações > WhatsApp (Evolution API por tenant)

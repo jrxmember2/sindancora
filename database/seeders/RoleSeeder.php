@@ -30,7 +30,7 @@ class RoleSeeder extends Seeder
                 'reports:read', 'reports:export',
                 'users:create', 'users:read', 'users:update', 'users:delete', 'users:manage',
                 'settings:read', 'settings:update', 'settings:payments', 'settings:whatsapp',
-                'api_keys:manage', 'webhooks:manage',
+                'api_keys:manage', 'webhooks:manage', 'ai:use',
                 'audit:read',
             ],
         ],
@@ -48,6 +48,7 @@ class RoleSeeder extends Seeder
                 'charges:create', 'charges:read', 'charges:update', 'charges:mark_paid',
                 'expenses:create', 'expenses:read', 'expenses:update',
                 'reports:read', 'reports:export',
+                'ai:use',
             ],
         ],
         'subsindico' => [

@@ -22,6 +22,7 @@ import {
     KeyRound,
     Webhook,
     MessageCircle,
+    Sparkles,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -37,6 +38,7 @@ const navigation = [
     { name: 'Cobranças', href: '/cobrancas', icon: Wallet, permission: 'charges:read' },
     { name: 'Despesas', href: '/despesas', icon: Receipt, permission: 'expenses:read' },
     { name: 'Relatórios', href: '/relatorios', icon: BarChart3, permission: 'reports:read' },
+    { name: 'Assistente IA', href: '/assistente', icon: Sparkles, permission: 'ai:use' },
 ];
 
 const adminNavigation = [

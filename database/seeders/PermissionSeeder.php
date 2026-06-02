@@ -81,6 +81,9 @@ class PermissionSeeder extends Seeder
             ['module' => 'users', 'action' => 'delete', 'description' => 'Desativar usuários'],
             ['module' => 'users', 'action' => 'manage', 'description' => 'Gerenciar roles de usuários'],
 
+            // IA
+            ['module' => 'ai', 'action' => 'use', 'description' => 'Usar o assistente de IA'],
+
             // Configurações
             ['module' => 'settings', 'action' => 'read',     'description' => 'Visualizar configurações'],
             ['module' => 'settings', 'action' => 'update',   'description' => 'Editar configurações'],
