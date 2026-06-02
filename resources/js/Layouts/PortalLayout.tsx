@@ -12,6 +12,7 @@ import {
     UserRound,
     ChevronDown,
     Wallet,
+    Vote,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -22,6 +23,7 @@ const nav = [
     { name: 'Ocorrências', href: '/portal/ocorrencias', icon: AlertCircle, match: (p: string) => p.startsWith('/portal/ocorrencias') },
     { name: 'Reservas', href: '/portal/reservas', icon: CalendarRange, match: (p: string) => p.startsWith('/portal/reservas') },
     { name: 'Documentos', href: '/portal/documentos', icon: FileText, match: (p: string) => p.startsWith('/portal/documentos') },
+    { name: 'Assembleias', href: '/portal/assembleias', icon: Vote, match: (p: string) => p.startsWith('/portal/assembleias') },
     { name: 'Minha unidade', href: '/portal/minha-unidade', icon: Building2, match: (p: string) => p.startsWith('/portal/minha-unidade') },
 ];
 

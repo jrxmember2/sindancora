@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Portal\AnnouncementController;
+use App\Http\Controllers\Portal\AssemblyController;
 use App\Http\Controllers\Portal\ChargeController;
 use App\Http\Controllers\Portal\DashboardController;
 use App\Http\Controllers\Portal\DocumentController;
@@ -44,6 +45,12 @@ Route::middleware(['auth', 'verified', 'resident'])
         Route::get('cobrancas/{charge}/comprovante', [ChargeController::class, 'download'])->name('charges.download');
         Route::post('cobrancas/{charge}/segunda-via', [ChargeController::class, 'secondCopy'])->name('charges.second-copy');
         Route::get('cobrancas/{charge}', [ChargeController::class, 'show'])->name('charges.show');
+
+        // Assembleias (presença + votação)
+        Route::get('assembleias', [AssemblyController::class, 'index'])->name('assemblies.index');
+        Route::get('assembleias/{assembly}', [AssemblyController::class, 'show'])->name('assemblies.show');
+        Route::post('assembleias/{assembly}/presenca', [AssemblyController::class, 'attend'])->name('assemblies.attend');
+        Route::post('assembleias/{assembly}/itens/{item}/voto', [AssemblyController::class, 'vote'])->name('assemblies.vote');
 
         // Minha unidade
         Route::get('minha-unidade', [UnitController::class, 'show'])->name('unit.show');
