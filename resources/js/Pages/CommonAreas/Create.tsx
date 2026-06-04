@@ -5,10 +5,11 @@ import CommonAreaForm, { CommonAreaFormData } from './CommonAreaForm';
 interface Option { value: string; label: string }
 
 export default function CommonAreaCreate({ condominiums }: { condominiums: Option[] }) {
-    const form = useForm<CommonAreaFormData>({
+    const form = useForm<CommonAreaFormData & { photos: File[] }>({
         condominium_id: condominiums.length === 1 ? condominiums[0].value : '',
         name: '', description: '', capacity: '', requires_approval: true, min_advance_days: '0',
         opening_time: '', closing_time: '', fee: '', deposit: '', rules: '', active: true,
+        photos: [],
     });
 
     return (
@@ -23,6 +24,7 @@ export default function CommonAreaCreate({ condominiums }: { condominiums: Optio
                     data={form.data} setData={(k, v) => form.setData(k, v)} errors={form.errors} processing={form.processing}
                     onSubmit={() => form.post(route('areas.store'))}
                     condominiums={condominiums} submitLabel="Criar" backHref={route('areas.index')}
+                    photos={form.data.photos} onPhotosChange={(f) => form.setData('photos', f)}
                 />
             </div>
         </AppLayout>

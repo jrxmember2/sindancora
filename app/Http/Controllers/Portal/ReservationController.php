@@ -166,7 +166,22 @@ class ReservationController extends Controller
     {
         return CommonArea::whereIn('condominium_id', $condominiumIds)
             ->where('active', true)
+            ->with('attachments')
             ->orderBy('name')
-            ->get(['id', 'name', 'condominium_id', 'requires_approval', 'min_advance_days', 'opening_time', 'closing_time', 'fee', 'deposit', 'rules', 'capacity']);
+            ->get(['id', 'name', 'condominium_id', 'requires_approval', 'min_advance_days', 'opening_time', 'closing_time', 'fee', 'deposit', 'rules', 'capacity'])
+            ->map(fn (CommonArea $a) => [
+                'id' => $a->id,
+                'name' => $a->name,
+                'condominium_id' => $a->condominium_id,
+                'requires_approval' => $a->requires_approval,
+                'min_advance_days' => $a->min_advance_days,
+                'opening_time' => $a->opening_time,
+                'closing_time' => $a->closing_time,
+                'fee' => $a->fee,
+                'deposit' => $a->deposit,
+                'rules' => $a->rules,
+                'capacity' => $a->capacity,
+                'photos' => $a->attachmentsPayload(),
+            ]);
     }
 }

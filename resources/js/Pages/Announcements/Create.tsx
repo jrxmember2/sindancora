@@ -15,9 +15,10 @@ export default function AnnouncementCreate({ condominiums, categories, urgencies
     const perms = auth.user?.permissions ?? [];
     const canPublish = perms.includes('*') || perms.includes('announcements:publish');
 
-    const form = useForm<AnnouncementFormData>({
+    const form = useForm<AnnouncementFormData & { attachments: File[] }>({
         condominium_id: condominiums.length === 1 ? condominiums[0].value : '',
         title: '', body: '', category: 'general', urgency: 'normal', publish_at: '', expires_at: '',
+        attachments: [],
     });
 
     const submit = (action: 'draft' | 'publish') => {
@@ -37,6 +38,7 @@ export default function AnnouncementCreate({ condominiums, categories, urgencies
                     data={form.data} setData={form.setData} errors={form.errors} processing={form.processing}
                     onSubmit={submit} condominiums={condominiums} categories={categories} urgencies={urgencies}
                     canPublish={canPublish} backHref={route('announcements.index')}
+                    attachments={form.data.attachments} onAttachmentsChange={(f) => form.setData('attachments', f)}
                 />
             </div>
         </AppLayout>

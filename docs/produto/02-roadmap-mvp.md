@@ -204,14 +204,14 @@ Fase 1 considera-se **concluída** quando:
 - [x] CRUD de comunicados (título, corpo rico via TipTap, categoria, nível de urgência)
 - [ ] Segmentação de público: todos, bloco, unidade, perfil — [→ Fase 4] depende de moradores como usuários (portal)
 - [x] Publicação imediata ou agendada (comando `announcements:publish-scheduled` no scheduler)
-- [ ] Anexos (upload de arquivos via storage) — adiado para junto do módulo Documentos (3.4)
+- [x] Anexos (upload de arquivos via storage) — reusa `StorageService` via trait `HasAttachments`; ver `docs/tecnico/anexos.md`
 - [x] Expiração automática por data (scope `visible()` filtra; status "Expirado" na UI)
 - [ ] Registro de leituras por morador (confirmação de leitura) — [→ Fase 4] depende do portal do morador
 - [x] Notificação por e-mail ao publicar comunicado (Mailable enfileirado aos moradores com e-mail do condomínio)
 - [ ] Templates de comunicados (reutilizáveis) — adiado
 
 #### 3.2 Ocorrências / Chamados
-- [x] CRUD de ocorrências (título, categoria, descrição, prioridade) — anexos adiados (junto do módulo Documentos 3.4)
+- [x] CRUD de ocorrências (título, categoria, descrição, prioridade) — com anexos/fotos (trait `HasAttachments`, ver `docs/tecnico/anexos.md`)
 - [ ] Categorias configuráveis por condomínio — usando lista fixa (`Occurrence::CATEGORIES`) por enquanto
 - [x] Ciclo de vida: Aberta → Em Andamento → Encerrada (encerrar exige `occurrences:close`)
 - [x] Histórico de atualizações com comentários (tabela `occurrence_comments`, timeline)
@@ -261,7 +261,7 @@ Fase 1 considera-se **concluída** quando:
 
 > Itens dependentes do **Portal do Morador** (morador abrir/acompanhar as próprias ocorrências e
 > fazer reservas diretamente) foram movidos para a **Fase 4**. No painel (Fases 3) o fluxo é operado
-> por admin/síndico. Anexos de Comunicados/Ocorrências e fotos de áreas seguem adiados (reusar `StorageService`).
+> por admin/síndico. Anexos de Comunicados/Ocorrências e fotos de áreas implementados (trait `HasAttachments` + `StorageService`; ver `docs/tecnico/anexos.md`).
 
 ---
 

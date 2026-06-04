@@ -1,6 +1,7 @@
 import PortalLayout from '@/Layouts/PortalLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
+import AttachmentInput from '@/Components/AttachmentInput';
 
 interface Option { value: string; label: string }
 interface Props {
@@ -10,12 +11,15 @@ interface Props {
 }
 
 export default function PortalOccurrenceCreate({ units, categories, priorities }: Props) {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors } = useForm<{
+        unit_id: string; title: string; description: string; category: string; priority: string; attachments: File[];
+    }>({
         unit_id: units.length === 1 ? units[0].value : '',
         title: '',
         description: '',
         category: 'maintenance',
         priority: 'normal',
+        attachments: [],
     });
 
     const submit = (e: React.FormEvent) => {
@@ -71,6 +75,14 @@ export default function PortalOccurrenceCreate({ units, categories, priorities }
                     <textarea value={data.description} onChange={(e) => setData('description', e.target.value)} rows={5} className={field} placeholder="Descreva o que está acontecendo…" />
                     {errors.description && <p className="mt-1 text-xs text-red-600">{errors.description}</p>}
                 </div>
+
+                <AttachmentInput
+                    value={data.attachments}
+                    onChange={(f) => setData('attachments', f)}
+                    error={errors.attachments}
+                    label="Fotos / anexos"
+                    hint="Anexe fotos do problema, se ajudar."
+                />
 
                 <div className="flex justify-end gap-2 pt-2">
                     <Link href={route('portal.occurrences.index')} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</Link>

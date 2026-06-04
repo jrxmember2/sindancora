@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Portal;
 
+use App\Exceptions\StorageQuotaException;
+use App\Http\Controllers\Concerns\InteractsWithAttachments;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Portal\Concerns\InteractsWithResident;
 use App\Models\Occurrence;
@@ -15,7 +17,7 @@ use Inertia\Response;
 
 class OccurrenceController extends Controller
 {
-    use InteractsWithResident;
+    use InteractsWithAttachments, InteractsWithResident;
 
     public function __construct(private readonly OccurrenceService $service) {}
 
@@ -71,6 +73,13 @@ class OccurrenceController extends Controller
 
         $this->service->notifyNew($occurrence);
 
+        $request->validate($this->attachmentRules());
+        try {
+            $this->storeAttachments($request, $occurrence, Occurrence::ATTACHMENT_ENTITY, 'tenant', $occurrence->condominium_id);
+        } catch (StorageQuotaException $e) {
+            return redirect()->route('portal.occurrences.show', $occurrence)->with('error', $e->getMessage());
+        }
+
         return redirect()->route('portal.occurrences.show', $occurrence)
             ->with('success', 'Ocorrência registrada. Você será avisado a cada atualização.');
     }
@@ -78,10 +87,11 @@ class OccurrenceController extends Controller
     public function show(Occurrence $occurrence): Response
     {
         $this->authorizeOwner($occurrence);
-        $occurrence->load(['condominium:id,name', 'unit:id,number', 'assignee:id,name', 'comments' => fn ($q) => $q->where('type', 'comment')->with('user:id,name')]);
+        $occurrence->load(['condominium:id,name', 'unit:id,number', 'assignee:id,name', 'comments' => fn ($q) => $q->where('type', 'comment')->with('user:id,name'), 'attachments']);
 
         return Inertia::render('Portal/Occurrences/Show', [
             'occurrence' => $occurrence,
+            'attachments' => $occurrence->attachmentsPayload(),
             'categories' => Occurrence::CATEGORIES,
             'priorities' => Occurrence::PRIORITIES,
             'statuses' => Occurrence::STATUSES,

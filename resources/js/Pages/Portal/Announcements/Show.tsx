@@ -1,6 +1,7 @@
 import PortalLayout from '@/Layouts/PortalLayout';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Paperclip } from 'lucide-react';
+import AttachmentList, { Attachment } from '@/Components/AttachmentList';
 
 interface Announcement {
     id: string; title: string; body: string; category: string; urgency: string;
@@ -9,11 +10,12 @@ interface Announcement {
 }
 interface Props {
     announcement: Announcement;
+    attachments: Attachment[];
     categories: Record<string, string>;
     urgencies: Record<string, string>;
 }
 
-export default function PortalAnnouncementShow({ announcement, categories }: Props) {
+export default function PortalAnnouncementShow({ announcement, attachments, categories }: Props) {
     return (
         <PortalLayout>
             <Head title={announcement.title} />
@@ -36,6 +38,14 @@ export default function PortalAnnouncementShow({ announcement, categories }: Pro
                     </p>
                 </div>
                 <div className="rich-content p-5 text-[15px] leading-relaxed text-gray-700" dangerouslySetInnerHTML={{ __html: announcement.body }} />
+                {attachments.length > 0 && (
+                    <div className="border-t border-gray-100 p-5">
+                        <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-gray-700">
+                            <Paperclip className="h-4 w-4 text-gray-400" /> Anexos
+                        </p>
+                        <AttachmentList attachments={attachments} />
+                    </div>
+                )}
                 {announcement.expires_at && (
                     <p className="border-t border-gray-100 px-5 py-3 text-xs text-gray-400">
                         Válido até {new Date(announcement.expires_at).toLocaleDateString('pt-BR')}.

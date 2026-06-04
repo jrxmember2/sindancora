@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Panel;
 
+use App\Exceptions\StorageQuotaException;
+use App\Http\Controllers\Concerns\InteractsWithAttachments;
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use App\Models\Condominium;
@@ -14,6 +16,8 @@ use Inertia\Response;
 
 class AnnouncementController extends Controller
 {
+    use InteractsWithAttachments;
+
     public function __construct(private readonly AnnouncementService $service)
     {
     }
@@ -64,16 +68,21 @@ class AnnouncementController extends Controller
             'status' => 'draft',
         ]));
 
+        if ($error = $this->uploadAttachments($request, $announcement)) {
+            return $error;
+        }
+
         return $this->applyAction($announcement, $action, 'criado');
     }
 
     public function show(Announcement $announcement): Response
     {
         $announcement = $this->authorizeTenant($announcement);
-        $announcement->load('condominium:id,name', 'creator:id,name');
+        $announcement->load('condominium:id,name', 'creator:id,name', 'attachments');
 
         return Inertia::render('Announcements/Show', [
             'announcement' => $announcement,
+            'attachments' => $announcement->attachmentsPayload(),
             'categories' => Announcement::CATEGORIES,
             'urgencies' => Announcement::URGENCIES,
         ]);
@@ -86,6 +95,7 @@ class AnnouncementController extends Controller
 
         return Inertia::render('Announcements/Edit', [
             'announcement' => $announcement,
+            'attachments' => $announcement->attachmentsPayload(),
             'condominiums' => $this->condominiumOptions($tenant->id),
             'categories' => Announcement::CATEGORIES,
             'urgencies' => Announcement::URGENCIES,
@@ -100,7 +110,25 @@ class AnnouncementController extends Controller
 
         $announcement->update($data);
 
+        if ($error = $this->uploadAttachments($request, $announcement)) {
+            return $error;
+        }
+
         return $this->applyAction($announcement, $action, 'atualizado');
+    }
+
+    /** Valida e sobe os anexos do comunicado (visíveis aos moradores). Retorna erro em estouro de cota. */
+    private function uploadAttachments(Request $request, Announcement $announcement): ?RedirectResponse
+    {
+        $request->validate($this->attachmentRules());
+
+        try {
+            $this->storeAttachments($request, $announcement, Announcement::ATTACHMENT_ENTITY, 'public_to_residents', $announcement->condominium_id);
+        } catch (StorageQuotaException $e) {
+            return back()->withErrors(['attachments' => $e->getMessage()])->withInput();
+        }
+
+        return null;
     }
 
     public function publish(Announcement $announcement): RedirectResponse

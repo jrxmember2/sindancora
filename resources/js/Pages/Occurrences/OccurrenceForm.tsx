@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import AttachmentInput from '@/Components/AttachmentInput';
 
 export interface OccurrenceFormData {
     condominium_id: string;
@@ -16,7 +17,7 @@ interface UnitOption extends Option { condominium_id: string }
 interface Props {
     data: OccurrenceFormData;
     setData: (key: keyof OccurrenceFormData, value: string) => void;
-    errors: Partial<Record<keyof OccurrenceFormData, string>>;
+    errors: Partial<Record<keyof OccurrenceFormData, string>> & { attachments?: string };
     processing: boolean;
     onSubmit: () => void;
     condominiums: Option[];
@@ -26,6 +27,8 @@ interface Props {
     priorities: Record<string, string>;
     submitLabel: string;
     backHref: string;
+    attachments?: File[];
+    onAttachmentsChange?: (files: File[]) => void;
 }
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
@@ -42,6 +45,7 @@ const inputClass = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-sm f
 
 export default function OccurrenceForm({
     data, setData, errors, processing, onSubmit, condominiums, units, assignableUsers, categories, priorities, submitLabel, backHref,
+    attachments, onAttachmentsChange,
 }: Props) {
     const condoUnits = units.filter(u => u.condominium_id === data.condominium_id);
 
@@ -100,6 +104,16 @@ export default function OccurrenceForm({
                         maxLength={5000}
                     />
                 </Field>
+
+                {onAttachmentsChange && (
+                    <AttachmentInput
+                        value={attachments ?? []}
+                        onChange={onAttachmentsChange}
+                        error={errors.attachments}
+                        label="Anexos (fotos, documentos)"
+                        hint="Anexe fotos do problema, se ajudar. Até 50 MB por arquivo."
+                    />
+                )}
             </div>
 
             <div className="flex items-center justify-between">

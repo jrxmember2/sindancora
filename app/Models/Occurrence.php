@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\BelongsToTenant;
+use App\Traits\HasAttachments;
 use App\Traits\HasAuditLog;
 use App\Traits\HasUuidKey;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +13,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Occurrence extends Model
 {
-    use BelongsToTenant, HasAuditLog, HasUuidKey, SoftDeletes;
+    use BelongsToTenant, HasAttachments, HasAuditLog, HasUuidKey, SoftDeletes;
+
+    public const ATTACHMENT_ENTITY = 'occurrence';
 
     protected $fillable = [
         'tenant_id', 'condominium_id', 'unit_id', 'created_by', 'assigned_to',
