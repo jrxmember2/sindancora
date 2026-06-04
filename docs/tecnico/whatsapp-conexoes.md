@@ -60,10 +60,11 @@ Sem conexão conectada → não envia (degradação graciosa). Supera o uso do `
 
 ## Deploy
 
-`migrate --force` (3 tabelas novas) + `db:seed --force` (PlanSeeder adiciona o limite
-`whatsapp_connections` aos planos) + `optimize:clear`. Definir no ambiente **`EVOLUTION_BASE_URL`** e
-**`EVOLUTION_API_KEY`** (servidor Evolution auto-hospedado). `EVOLUTION_WEBHOOK_URL` fica vazio até a
-Fase 2 (recebimento). Worker de fila ativo (notificações WhatsApp rodam em fila).
+`migrate --force` (tabelas de conexões + `evolution_settings`) + `db:seed --force` (PlanSeeder adiciona
+o limite `whatsapp_connections` aos planos) + `optimize:clear`. O servidor Evolution é configurado pelo
+**super admin** em `/admin/whatsapp` (URL + chave global, encriptada) — ver `docs/tecnico/evolution-servidor.md`.
+As envs `EVOLUTION_BASE_URL`/`EVOLUTION_API_KEY` continuam como fallback opcional. Worker de fila ativo
+(notificações WhatsApp rodam em fila).
 
 ## Próximas fases
 
