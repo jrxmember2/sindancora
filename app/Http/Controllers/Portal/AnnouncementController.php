@@ -43,10 +43,11 @@ class AnnouncementController extends Controller
             ['tenant_id' => $announcement->tenant_id, 'read_at' => now()],
         );
 
-        $announcement->load('condominium:id,name', 'creator:id,name');
+        $announcement->load('condominium:id,name', 'creator:id,name', 'attachments');
 
         return Inertia::render('Portal/Announcements/Show', [
             'announcement' => $announcement,
+            'attachments' => $announcement->attachmentsPayload(),
             'categories' => Announcement::CATEGORIES,
             'urgencies' => Announcement::URGENCIES,
         ]);

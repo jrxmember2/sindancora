@@ -2,12 +2,14 @@ import PortalLayout from '@/Layouts/PortalLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Info } from 'lucide-react';
 
+interface Photo { id: string; name: string; is_image: boolean }
 interface Area {
     id: string; name: string; condominium_id: string;
     requires_approval: boolean; min_advance_days: number;
     opening_time: string | null; closing_time: string | null;
     fee: string | number | null; deposit: string | number | null;
     rules: string | null; capacity: number | null;
+    photos: Photo[];
 }
 interface Props {
     areas: Area[];
@@ -56,6 +58,20 @@ export default function PortalReservationCreate({ areas, selectedArea }: Props) 
                     </select>
                     {errors.common_area_id && <p className="mt-1 text-xs text-red-600">{errors.common_area_id}</p>}
                 </div>
+
+                {area && area.photos.filter((p) => p.is_image).length > 0 && (
+                    <div className="flex gap-2 overflow-x-auto">
+                        {area.photos.filter((p) => p.is_image).map((p) => (
+                            <img
+                                key={p.id}
+                                src={route('attachments.download', p.id)}
+                                alt={p.name}
+                                className="h-28 w-40 flex-shrink-0 rounded-lg object-cover"
+                                loading="lazy"
+                            />
+                        ))}
+                    </div>
+                )}
 
                 {area && (
                     <div className="rounded-lg bg-blue-50 p-3 text-xs text-blue-800">

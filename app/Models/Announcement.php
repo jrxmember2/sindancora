@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\BelongsToTenant;
+use App\Traits\HasAttachments;
 use App\Traits\HasAuditLog;
 use App\Traits\HasUuidKey;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,7 +14,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Announcement extends Model
 {
-    use BelongsToTenant, HasAuditLog, HasUuidKey, SoftDeletes;
+    use BelongsToTenant, HasAttachments, HasAuditLog, HasUuidKey, SoftDeletes;
+
+    public const ATTACHMENT_ENTITY = 'announcement';
 
     protected $fillable = [
         'tenant_id', 'condominium_id', 'created_by', 'title', 'body',

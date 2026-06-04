@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Panel\AnnouncementController;
 use App\Http\Controllers\Panel\ApiKeyController;
@@ -41,6 +42,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/notificacoes', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notificacoes/marcar-todas', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::post('/notificacoes/{id}/lida', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+
+    // Anexos genéricos (comunicados, ocorrências, áreas) — painel e portal; acesso resolvido por entity_type.
+    Route::get('/anexos/{object}/download', [AttachmentController::class, 'download'])->name('attachments.download');
+    Route::delete('/anexos/{object}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
 
     // Painel administrativo — bloqueado para moradores "puros" (redirecionados ao portal).
     Route::middleware('panel')->group(function () {

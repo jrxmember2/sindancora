@@ -1,5 +1,7 @@
 import { Link } from '@inertiajs/react';
 import RichTextEditor from '@/Components/RichTextEditor';
+import AttachmentInput from '@/Components/AttachmentInput';
+import AttachmentList, { Attachment } from '@/Components/AttachmentList';
 
 export interface AnnouncementFormData {
     condominium_id: string;
@@ -16,7 +18,7 @@ interface Option { value: string; label: string }
 interface Props {
     data: AnnouncementFormData;
     setData: (key: keyof AnnouncementFormData, value: string) => void;
-    errors: Partial<Record<keyof AnnouncementFormData, string>>;
+    errors: Partial<Record<keyof AnnouncementFormData, string>> & { attachments?: string };
     processing: boolean;
     onSubmit: (action: 'draft' | 'publish') => void;
     condominiums: Option[];
@@ -24,6 +26,9 @@ interface Props {
     urgencies: Record<string, string>;
     canPublish: boolean;
     backHref: string;
+    attachments: File[];
+    onAttachmentsChange: (files: File[]) => void;
+    existingAttachments?: Attachment[];
 }
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
@@ -40,6 +45,7 @@ const inputClass = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-sm f
 
 export default function AnnouncementForm({
     data, setData, errors, processing, onSubmit, condominiums, categories, urgencies, canPublish, backHref,
+    attachments, onAttachmentsChange, existingAttachments = [],
 }: Props) {
     return (
         <div className="mx-auto max-w-2xl space-y-6">
@@ -71,6 +77,20 @@ export default function AnnouncementForm({
                 <Field label="Mensagem *" error={errors.body}>
                     <RichTextEditor value={data.body} onChange={html => setData('body', html)} />
                 </Field>
+
+                {existingAttachments.length > 0 && (
+                    <div>
+                        <p className="mb-1 block text-sm font-medium text-gray-700">Anexos atuais</p>
+                        <AttachmentList attachments={existingAttachments} canRemove />
+                    </div>
+                )}
+
+                <AttachmentInput
+                    value={attachments}
+                    onChange={onAttachmentsChange}
+                    error={errors.attachments}
+                    hint="PDF, imagens, planilhas… até 50 MB por arquivo."
+                />
 
                 <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-5">
                     <Field label="Agendar publicação" error={errors.publish_at}>

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Panel;
 
+use App\Exceptions\StorageQuotaException;
+use App\Http\Controllers\Concerns\InteractsWithAttachments;
 use App\Http\Controllers\Controller;
 use App\Models\Condominium;
 use App\Models\Occurrence;
@@ -16,6 +18,8 @@ use Inertia\Response;
 
 class OccurrenceController extends Controller
 {
+    use InteractsWithAttachments;
+
     public function __construct(private readonly OccurrenceService $service)
     {
     }
@@ -71,6 +75,13 @@ class OccurrenceController extends Controller
             $this->service->assign($occurrence, $assignee);
         }
 
+        $request->validate($this->attachmentRules());
+        try {
+            $this->storeAttachments($request, $occurrence, Occurrence::ATTACHMENT_ENTITY, 'tenant', $occurrence->condominium_id);
+        } catch (StorageQuotaException $e) {
+            return redirect()->route('occurrences.show', $occurrence)->with('error', $e->getMessage());
+        }
+
         return redirect()->route('occurrences.show', $occurrence)->with('success', 'Ocorrência registrada.');
     }
 
@@ -79,13 +90,14 @@ class OccurrenceController extends Controller
         $occurrence = $this->authorizeTenant($occurrence);
         $occurrence->load([
             'condominium:id,name', 'unit:id,number', 'creator:id,name', 'assignee:id,name',
-            'comments.user:id,name',
+            'comments.user:id,name', 'attachments',
         ]);
 
         $tenant = app('tenant');
 
         return Inertia::render('Occurrences/Show', [
             'occurrence' => $occurrence,
+            'attachments' => $occurrence->attachmentsPayload(),
             'assignableUsers' => $this->userOptions($tenant->id),
             'categories' => Occurrence::CATEGORIES,
             'priorities' => Occurrence::PRIORITIES,

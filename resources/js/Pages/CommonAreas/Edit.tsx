@@ -1,6 +1,7 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import CommonAreaForm, { CommonAreaFormData } from './CommonAreaForm';
+import { Attachment } from '@/Components/AttachmentList';
 
 interface Option { value: string; label: string }
 interface Area {
@@ -11,8 +12,8 @@ interface Area {
 
 const hhmm = (t: string | null) => (t ? t.slice(0, 5) : '');
 
-export default function CommonAreaEdit({ area, condominiums }: { area: Area; condominiums: Option[] }) {
-    const form = useForm<CommonAreaFormData>({
+export default function CommonAreaEdit({ area, photos, condominiums }: { area: Area; photos: Attachment[]; condominiums: Option[] }) {
+    const form = useForm<CommonAreaFormData & { photos: File[] }>({
         condominium_id: area.condominium_id,
         name: area.name,
         description: area.description ?? '',
@@ -25,6 +26,7 @@ export default function CommonAreaEdit({ area, condominiums }: { area: Area; con
         deposit: area.deposit ?? '',
         rules: area.rules ?? '',
         active: area.active,
+        photos: [],
     });
 
     return (
@@ -39,6 +41,8 @@ export default function CommonAreaEdit({ area, condominiums }: { area: Area; con
                     data={form.data} setData={(k, v) => form.setData(k, v)} errors={form.errors} processing={form.processing}
                     onSubmit={() => form.put(route('areas.update', area.id))}
                     condominiums={condominiums} submitLabel="Salvar" backHref={route('areas.index')}
+                    photos={form.data.photos} onPhotosChange={(f) => form.setData('photos', f)}
+                    existingPhotos={photos}
                 />
             </div>
         </AppLayout>

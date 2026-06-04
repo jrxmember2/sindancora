@@ -13,9 +13,10 @@ interface Props {
 }
 
 export default function OccurrenceCreate({ condominiums, units, assignableUsers, categories, priorities }: Props) {
-    const form = useForm<OccurrenceFormData>({
+    const form = useForm<OccurrenceFormData & { attachments: File[] }>({
         condominium_id: condominiums.length === 1 ? condominiums[0].value : '',
         unit_id: '', assigned_to: '', title: '', description: '', category: 'maintenance', priority: 'normal',
+        attachments: [],
     });
 
     return (
@@ -32,6 +33,7 @@ export default function OccurrenceCreate({ condominiums, units, assignableUsers,
                     condominiums={condominiums} units={units} assignableUsers={assignableUsers}
                     categories={categories} priorities={priorities}
                     submitLabel="Registrar" backHref={route('occurrences.index')}
+                    attachments={form.data.attachments} onAttachmentsChange={(f) => form.setData('attachments', f)}
                 />
             </div>
         </AppLayout>

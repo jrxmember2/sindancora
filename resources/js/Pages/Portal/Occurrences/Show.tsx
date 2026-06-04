@@ -1,6 +1,7 @@
 import PortalLayout from '@/Layouts/PortalLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, MessageSquare } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Paperclip } from 'lucide-react';
+import AttachmentList, { Attachment } from '@/Components/AttachmentList';
 
 interface Comment { id: string; body: string; created_at: string; user: { name: string } | null }
 interface Occurrence {
@@ -11,6 +12,7 @@ interface Occurrence {
 }
 interface Props {
     occurrence: Occurrence;
+    attachments: Attachment[];
     categories: Record<string, string>;
     priorities: Record<string, string>;
     statuses: Record<string, string>;
@@ -22,7 +24,7 @@ const statusStyles: Record<string, string> = {
     closed: 'bg-gray-100 text-gray-600',
 };
 
-export default function PortalOccurrenceShow({ occurrence, categories, priorities, statuses }: Props) {
+export default function PortalOccurrenceShow({ occurrence, attachments, categories, priorities, statuses }: Props) {
     const { data, setData, post, processing, reset } = useForm({ body: '' });
 
     const submit = (e: React.FormEvent) => {
@@ -56,6 +58,15 @@ export default function PortalOccurrenceShow({ occurrence, categories, prioritie
                     <p className="mt-3 whitespace-pre-wrap text-sm text-gray-700">{occurrence.description}</p>
                     {occurrence.assignee?.name && (
                         <p className="mt-3 text-xs text-gray-500">Responsável: <span className="font-medium text-gray-700">{occurrence.assignee.name}</span></p>
+                    )}
+
+                    {attachments.length > 0 && (
+                        <div className="mt-4">
+                            <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-gray-700">
+                                <Paperclip className="h-4 w-4 text-gray-400" /> Anexos
+                            </p>
+                            <AttachmentList attachments={attachments} />
+                        </div>
                     )}
                 </div>
 

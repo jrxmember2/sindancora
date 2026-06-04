@@ -2,6 +2,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
 import AnnouncementForm, { AnnouncementFormData } from './AnnouncementForm';
+import { Attachment } from '@/Components/AttachmentList';
 
 interface Option { value: string; label: string }
 interface Announcement {
@@ -11,6 +12,7 @@ interface Announcement {
 }
 interface Props {
     announcement: Announcement;
+    attachments: Attachment[];
     condominiums: Option[];
     categories: Record<string, string>;
     urgencies: Record<string, string>;
@@ -19,12 +21,12 @@ interface Props {
 // ISO (UTC) → valor aceito por <input type="datetime-local"> (YYYY-MM-DDTHH:mm)
 const toLocalInput = (iso: string | null): string => (iso ? iso.slice(0, 16) : '');
 
-export default function AnnouncementEdit({ announcement, condominiums, categories, urgencies }: Props) {
+export default function AnnouncementEdit({ announcement, attachments, condominiums, categories, urgencies }: Props) {
     const { auth } = usePage<PageProps>().props;
     const perms = auth.user?.permissions ?? [];
     const canPublish = perms.includes('*') || perms.includes('announcements:publish');
 
-    const form = useForm<AnnouncementFormData>({
+    const form = useForm<AnnouncementFormData & { attachments: File[] }>({
         condominium_id: announcement.condominium_id,
         title: announcement.title,
         body: announcement.body,
@@ -32,10 +34,12 @@ export default function AnnouncementEdit({ announcement, condominiums, categorie
         urgency: announcement.urgency,
         publish_at: toLocalInput(announcement.publish_at),
         expires_at: toLocalInput(announcement.expires_at),
+        attachments: [],
     });
 
     const submit = (action: 'draft' | 'publish') => {
         form.transform(d => ({ ...d, action }));
+        // Com arquivos, o Inertia envia como FormData e faz o spoofing de método (POST + _method=put).
         form.put(route('announcements.update', announcement.id));
     };
 
@@ -51,6 +55,8 @@ export default function AnnouncementEdit({ announcement, condominiums, categorie
                     data={form.data} setData={form.setData} errors={form.errors} processing={form.processing}
                     onSubmit={submit} condominiums={condominiums} categories={categories} urgencies={urgencies}
                     canPublish={canPublish} backHref={route('announcements.show', announcement.id)}
+                    attachments={form.data.attachments} onAttachmentsChange={(f) => form.setData('attachments', f)}
+                    existingAttachments={attachments}
                 />
             </div>
         </AppLayout>

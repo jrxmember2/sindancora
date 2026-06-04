@@ -1,4 +1,6 @@
 import { Link } from '@inertiajs/react';
+import AttachmentInput from '@/Components/AttachmentInput';
+import AttachmentList, { Attachment } from '@/Components/AttachmentList';
 
 export interface CommonAreaFormData {
     condominium_id: string;
@@ -26,6 +28,9 @@ interface Props {
     condominiums: Option[];
     submitLabel: string;
     backHref: string;
+    photos: File[];
+    onPhotosChange: (files: File[]) => void;
+    existingPhotos?: Attachment[];
 }
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
@@ -40,7 +45,7 @@ function Field({ label, error, children }: { label: string; error?: string; chil
 
 const inputClass = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500';
 
-export default function CommonAreaForm({ data, setData, errors, processing, onSubmit, condominiums, submitLabel, backHref }: Props) {
+export default function CommonAreaForm({ data, setData, errors, processing, onSubmit, condominiums, submitLabel, backHref, photos, onPhotosChange, existingPhotos = [] }: Props) {
     return (
         <div className="mx-auto max-w-2xl space-y-6">
             <div className="space-y-5 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
@@ -88,6 +93,21 @@ export default function CommonAreaForm({ data, setData, errors, processing, onSu
                 <Field label="Regras de uso" error={errors.rules}>
                     <textarea value={data.rules} onChange={e => setData('rules', e.target.value)} rows={3} className={`${inputClass} resize-none`} />
                 </Field>
+
+                {existingPhotos.length > 0 && (
+                    <div>
+                        <p className="mb-1 block text-sm font-medium text-gray-700">Fotos atuais</p>
+                        <AttachmentList attachments={existingPhotos} canRemove />
+                    </div>
+                )}
+
+                <AttachmentInput
+                    value={photos}
+                    onChange={onPhotosChange}
+                    error={errors.photos}
+                    label="Fotos da área"
+                    hint="Imagens que ajudam o morador a conhecer o espaço."
+                />
 
                 <div className="flex flex-col gap-3 border-t border-gray-100 pt-4">
                     <label className="flex items-center gap-2 text-sm text-gray-700">

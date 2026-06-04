@@ -1,7 +1,8 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { Pencil, Trash2, Building2, User, Calendar, CheckCircle2, MessageSquare, RefreshCw, UserCheck } from 'lucide-react';
+import { Pencil, Trash2, Building2, User, Calendar, CheckCircle2, MessageSquare, RefreshCw, UserCheck, Paperclip } from 'lucide-react';
 import type { PageProps } from '@/types';
+import AttachmentList, { Attachment } from '@/Components/AttachmentList';
 
 interface Option { value: string; label: string }
 interface Named { id: string; name: string }
@@ -17,6 +18,7 @@ interface Occurrence {
 }
 interface Props {
     occurrence: Occurrence;
+    attachments: Attachment[];
     assignableUsers: Option[];
     categories: Record<string, string>;
     priorities: Record<string, string>;
@@ -32,7 +34,7 @@ const statusStyle: Record<string, string> = {
 };
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '');
 
-export default function OccurrenceShow({ occurrence: o, assignableUsers, categories, priorities, statuses }: Props) {
+export default function OccurrenceShow({ occurrence: o, attachments, assignableUsers, categories, priorities, statuses }: Props) {
     const { auth } = usePage<PageProps>().props;
     const perms = auth.user?.permissions ?? [];
     const can = (p: string) => perms.includes('*') || perms.includes(p);
@@ -89,6 +91,15 @@ export default function OccurrenceShow({ occurrence: o, assignableUsers, categor
                         {o.closed_at && <span className="inline-flex items-center gap-1 text-green-600"><CheckCircle2 className="h-3.5 w-3.5" /> Encerrada em {fmt(o.closed_at)}</span>}
                     </div>
                     <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-gray-700">{o.description}</p>
+
+                    {attachments.length > 0 && (
+                        <div className="mt-5 border-t border-gray-100 pt-4">
+                            <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-gray-700">
+                                <Paperclip className="h-4 w-4 text-gray-400" /> Anexos
+                            </p>
+                            <AttachmentList attachments={attachments} canRemove={can('occurrences:update')} />
+                        </div>
+                    )}
                 </div>
 
                 {/* Ações: status + responsável */}

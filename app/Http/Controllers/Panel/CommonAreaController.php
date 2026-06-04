@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Panel;
 
+use App\Exceptions\StorageQuotaException;
+use App\Http\Controllers\Concerns\InteractsWithAttachments;
 use App\Http\Controllers\Controller;
 use App\Models\CommonArea;
 use App\Models\Condominium;
@@ -12,6 +14,8 @@ use Inertia\Response;
 
 class CommonAreaController extends Controller
 {
+    use InteractsWithAttachments;
+
     public function index(Request $request): Response
     {
         $tenant = app('tenant');
@@ -43,7 +47,11 @@ class CommonAreaController extends Controller
         $tenant = app('tenant');
         $data = $this->validated($request, $tenant->id);
 
-        CommonArea::create(array_merge($data, ['tenant_id' => $tenant->id]));
+        $area = CommonArea::create(array_merge($data, ['tenant_id' => $tenant->id]));
+
+        if ($error = $this->uploadPhotos($request, $area)) {
+            return $error;
+        }
 
         return redirect()->route('areas.index')->with('success', 'Área comum criada.');
     }
@@ -51,9 +59,11 @@ class CommonAreaController extends Controller
     public function edit(CommonArea $area): Response
     {
         $area = $this->authorizeTenant($area);
+        $area->load('attachments');
 
         return Inertia::render('CommonAreas/Edit', [
             'area' => $area,
+            'photos' => $area->attachmentsPayload(),
             'condominiums' => $this->condominiumOptions($area->tenant_id),
         ]);
     }
@@ -65,7 +75,25 @@ class CommonAreaController extends Controller
 
         $area->update($data);
 
+        if ($error = $this->uploadPhotos($request, $area)) {
+            return $error;
+        }
+
         return redirect()->route('areas.index')->with('success', 'Área comum atualizada.');
+    }
+
+    /** Valida e sobe as fotos da área (visíveis aos moradores). Retorna erro em estouro de cota. */
+    private function uploadPhotos(Request $request, CommonArea $area): ?RedirectResponse
+    {
+        $request->validate($this->attachmentRules('photos'));
+
+        try {
+            $this->storeAttachments($request, $area, CommonArea::ATTACHMENT_ENTITY, 'public_to_residents', $area->condominium_id, 'photos');
+        } catch (StorageQuotaException $e) {
+            return back()->withErrors(['photos' => $e->getMessage()])->withInput();
+        }
+
+        return null;
     }
 
     public function destroy(CommonArea $area): RedirectResponse

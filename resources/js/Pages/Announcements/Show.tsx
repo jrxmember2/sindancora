@@ -1,7 +1,8 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Pencil, Trash2, Send, Calendar, Clock, Building2, User } from 'lucide-react';
+import { Pencil, Trash2, Send, Calendar, Clock, Building2, User, Paperclip } from 'lucide-react';
 import type { PageProps } from '@/types';
+import AttachmentList, { Attachment } from '@/Components/AttachmentList';
 
 interface Announcement {
     id: string; title: string; body: string; category: string; urgency: string; status: string;
@@ -11,6 +12,7 @@ interface Announcement {
 }
 interface Props {
     announcement: Announcement;
+    attachments: Attachment[];
     categories: Record<string, string>;
     urgencies: Record<string, string>;
 }
@@ -23,7 +25,7 @@ const urgencyStyle: Record<string, string> = {
     high: 'bg-red-50 text-red-700',
 };
 
-export default function AnnouncementShow({ announcement: a, categories, urgencies }: Props) {
+export default function AnnouncementShow({ announcement: a, attachments, categories, urgencies }: Props) {
     const { auth } = usePage<PageProps>().props;
     const perms = auth.user?.permissions ?? [];
     const can = (p: string) => perms.includes('*') || perms.includes(p);
@@ -84,6 +86,15 @@ export default function AnnouncementShow({ announcement: a, categories, urgencie
                     </div>
 
                     <div className="rich-content mt-4" dangerouslySetInnerHTML={{ __html: a.body }} />
+
+                    {attachments.length > 0 && (
+                        <div className="mt-5 border-t border-gray-100 pt-4">
+                            <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-gray-700">
+                                <Paperclip className="h-4 w-4 text-gray-400" /> Anexos
+                            </p>
+                            <AttachmentList attachments={attachments} canRemove={can('announcements:update')} />
+                        </div>
+                    )}
                 </div>
             </div>
         </AppLayout>
