@@ -73,7 +73,7 @@ class WhatsappConnectionController extends Controller
 
         $instance = $this->uniqueInstanceName($tenant->slug ?? 'tenant');
 
-        $payload = $this->evolution->createInstance($instance, config('services.evolution.webhook_url'));
+        $payload = $this->evolution->createInstance($instance, $this->evolution->webhookUrl());
         $token = $payload['hash'] ?? $payload['instance']['apikey'] ?? $payload['apikey'] ?? null;
 
         WhatsappConnection::create([

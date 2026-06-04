@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\EvolutionSettingController;
 use App\Http\Controllers\Admin\PlanController;
 use Illuminate\Support\Facades\Route;
 
@@ -26,5 +27,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'super_admin'])->gro
         Route::get('/{plan}/edit', [PlanController::class, 'edit'])->name('edit');
         Route::match(['put', 'patch'], '/{plan}', [PlanController::class, 'update'])->name('update');
         Route::patch('/{plan}/toggle', [PlanController::class, 'toggleActive'])->name('toggle');
+    });
+
+    // Configuração global do servidor Evolution (WhatsApp)
+    Route::prefix('whatsapp')->name('evolution.')->group(function () {
+        Route::get('/', [EvolutionSettingController::class, 'edit'])->name('edit');
+        Route::match(['put', 'patch'], '/', [EvolutionSettingController::class, 'update'])->name('update');
+        Route::post('/testar', [EvolutionSettingController::class, 'test'])->name('test');
     });
 });

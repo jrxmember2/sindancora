@@ -2,6 +2,7 @@
 
 namespace App\Services\Whatsapp;
 
+use App\Models\EvolutionSetting;
 use App\Models\WhatsappConnection;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
@@ -15,9 +16,35 @@ use Illuminate\Support\Facades\Http;
  */
 class EvolutionManager
 {
+    private ?EvolutionSetting $setting = null;
+    private bool $settingLoaded = false;
+
     public function isConfigured(): bool
     {
-        return filled($this->baseUrl()) && filled($this->globalKey());
+        $setting = $this->setting();
+        $enabled = $setting ? $setting->enabled : true;
+
+        return $enabled && filled($this->baseUrl()) && filled($this->globalKey());
+    }
+
+    /** Testa a conexão com o servidor Evolution (lista instâncias). */
+    public function health(): bool
+    {
+        if (! $this->isConfigured()) {
+            return false;
+        }
+
+        try {
+            return $this->request()->get($this->url('/instance/fetchInstances'))->successful();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /** URL pública do webhook de recebimento (Fase 2), do banco ou do config. */
+    public function webhookUrl(): ?string
+    {
+        return $this->setting()?->webhook_url ?: config('services.evolution.webhook_url');
     }
 
     /**
@@ -94,11 +121,22 @@ class EvolutionManager
 
     private function baseUrl(): ?string
     {
-        return config('services.evolution.base_url');
+        return $this->setting()?->base_url ?: config('services.evolution.base_url');
     }
 
     private function globalKey(): ?string
     {
-        return config('services.evolution.key');
+        return $this->setting()?->api_key ?: config('services.evolution.key');
+    }
+
+    /** Linha de config global (memoizada). Pode ser null se ainda não configurada. */
+    private function setting(): ?EvolutionSetting
+    {
+        if (! $this->settingLoaded) {
+            $this->setting = EvolutionSetting::first();
+            $this->settingLoaded = true;
+        }
+
+        return $this->setting;
     }
 }
