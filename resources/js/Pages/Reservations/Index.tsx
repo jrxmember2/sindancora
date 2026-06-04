@@ -10,15 +10,18 @@ interface ListReservation {
     condominium: { id: string; name: string } | null;
     requester: { id: string; name: string } | null;
 }
-interface MonthReservation { id: string; common_area_id: string; date: string; start_time: string; end_time: string; status: string }
+interface CalReservation { id: string; common_area_id: string; common_area: string | null; date: string; start_time: string; end_time: string; status: string }
+interface Calendar { view: 'month' | 'week'; month: string; week_start: string; reservations: CalReservation[] }
 interface Props {
     reservations: { data: ListReservation[] };
-    monthReservations: MonthReservation[];
-    month: string;
+    calendar: Calendar;
     areas: Option[];
     statuses: Record<string, string>;
     filters: { status?: string; common_area_id?: string };
 }
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const toYmd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 const statusStyle: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700',
@@ -34,34 +37,58 @@ const hhmm = (t: string) => t.slice(0, 5);
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-export default function ReservationsIndex({ reservations, monthReservations, month, areas, statuses, filters }: Props) {
+export default function ReservationsIndex({ reservations, calendar, areas, statuses, filters }: Props) {
     const { auth } = usePage<PageProps>().props;
     const perms = auth.user?.permissions ?? [];
     const can = (p: string) => perms.includes('*') || perms.includes(p);
 
+    const { view, month, week_start } = calendar;
+
     const navigate = (params: Record<string, string>) =>
         router.get(route('reservations.index'), {
-            month, status: filters.status ?? '', common_area_id: filters.common_area_id ?? '', ...params,
+            view, month, week: week_start, status: filters.status ?? '', common_area_id: filters.common_area_id ?? '', ...params,
         }, { preserveState: true, replace: true });
 
     const [yy, mm] = month.split('-').map(Number);
     const shiftMonth = (delta: number) => {
         const d = new Date(yy, mm - 1 + delta, 1);
-        navigate({ month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` });
+        navigate({ month: `${d.getFullYear()}-${pad(d.getMonth() + 1)}` });
+    };
+    const shiftWeek = (delta: number) => {
+        const d = new Date(`${week_start}T00:00:00`);
+        d.setDate(d.getDate() + delta * 7);
+        navigate({ week: toYmd(d) });
     };
 
-    // Monta as células do calendário (semana começando no domingo).
+    // Agrupa as reservas por data (YYYY-MM-DD).
+    const byDate: Record<string, CalReservation[]> = {};
+    calendar.reservations.forEach(r => { (byDate[r.date] ??= []).push(r); });
+
+    // Células do mês (semana começando no domingo).
     const firstWeekday = new Date(yy, mm - 1, 1).getDay();
     const daysInMonth = new Date(yy, mm, 0).getDate();
-    const byDay: Record<number, MonthReservation[]> = {};
-    monthReservations.forEach(r => {
-        const day = Number(r.date.slice(8, 10));
-        (byDay[day] ??= []).push(r);
-    });
-    const cells: (number | null)[] = [
+    const monthCells: (number | null)[] = [
         ...Array(firstWeekday).fill(null),
         ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
     ];
+
+    // Dias da semana (a partir de week_start, domingo).
+    const weekDays: Date[] = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(`${week_start}T00:00:00`);
+        d.setDate(d.getDate() + i);
+        return d;
+    });
+    const weekEnd = weekDays[6];
+    const todayYmd = toYmd(new Date());
+
+    const viewBtn = (v: 'month' | 'week', label: string) => (
+        <button
+            onClick={() => navigate({ view: v })}
+            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${view === v ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+        >
+            {label}
+        </button>
+    );
 
     return (
         <AppLayout>
@@ -86,38 +113,88 @@ export default function ReservationsIndex({ reservations, monthReservations, mon
 
                 {/* Calendário */}
                 <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                    <div className="mb-3 flex items-center justify-between">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                            <button onClick={() => shiftMonth(-1)} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"><ChevronLeft className="h-4 w-4" /></button>
-                            <span className="text-sm font-semibold text-gray-900">{MONTHS[mm - 1]} de {yy}</span>
-                            <button onClick={() => shiftMonth(1)} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"><ChevronRight className="h-4 w-4" /></button>
+                            {view === 'month' ? (
+                                <>
+                                    <button onClick={() => shiftMonth(-1)} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"><ChevronLeft className="h-4 w-4" /></button>
+                                    <span className="min-w-[150px] text-center text-sm font-semibold text-gray-900">{MONTHS[mm - 1]} de {yy}</span>
+                                    <button onClick={() => shiftMonth(1)} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"><ChevronRight className="h-4 w-4" /></button>
+                                </>
+                            ) : (
+                                <>
+                                    <button onClick={() => shiftWeek(-1)} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"><ChevronLeft className="h-4 w-4" /></button>
+                                    <span className="min-w-[150px] text-center text-sm font-semibold text-gray-900">
+                                        {weekDays[0].getDate()} {MONTHS[weekDays[0].getMonth()].slice(0, 3)} – {weekEnd.getDate()} {MONTHS[weekEnd.getMonth()].slice(0, 3)}
+                                    </span>
+                                    <button onClick={() => shiftWeek(1)} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"><ChevronRight className="h-4 w-4" /></button>
+                                </>
+                            )}
                         </div>
-                        <select value={filters.common_area_id ?? ''} onChange={e => navigate({ common_area_id: e.target.value })} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none">
-                            <option value="">Todas as áreas</option>
-                            {areas.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
-                        </select>
+                        <div className="flex items-center gap-2">
+                            <div className="flex rounded-lg border border-gray-200 p-0.5">
+                                {viewBtn('month', 'Mês')}
+                                {viewBtn('week', 'Semana')}
+                            </div>
+                            <select value={filters.common_area_id ?? ''} onChange={e => navigate({ common_area_id: e.target.value })} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none">
+                                <option value="">Todas as áreas</option>
+                                {areas.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+                            </select>
+                        </div>
                     </div>
-                    <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg bg-gray-100 text-xs">
-                        {WEEKDAYS.map(d => <div key={d} className="bg-gray-50 py-1.5 text-center font-medium text-gray-500">{d}</div>)}
-                        {cells.map((day, i) => (
-                            <div key={i} className="min-h-[72px] bg-white p-1">
-                                {day && (
-                                    <>
-                                        <span className="text-[11px] font-medium text-gray-400">{day}</span>
-                                        <div className="mt-0.5 space-y-0.5">
-                                            {(byDay[day] ?? []).slice(0, 3).map(r => (
-                                                <div key={r.id} className="flex items-center gap-1 truncate" title={`${hhmm(r.start_time)}–${hhmm(r.end_time)}`}>
-                                                    <span className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${dotStyle[r.status] ?? 'bg-gray-300'}`} />
-                                                    <span className="truncate text-[10px] text-gray-600">{hhmm(r.start_time)}</span>
+
+                    {view === 'month' ? (
+                        <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg bg-gray-100 text-xs">
+                            {WEEKDAYS.map(d => <div key={d} className="bg-gray-50 py-1.5 text-center font-medium text-gray-500">{d}</div>)}
+                            {monthCells.map((day, i) => {
+                                const dayRes = day ? (byDate[`${month}-${pad(day)}`] ?? []) : [];
+                                return (
+                                    <div key={i} className="min-h-[72px] bg-white p-1">
+                                        {day && (
+                                            <>
+                                                <span className="text-[11px] font-medium text-gray-400">{day}</span>
+                                                <div className="mt-0.5 space-y-0.5">
+                                                    {dayRes.slice(0, 3).map(r => (
+                                                        <div key={r.id} className="flex items-center gap-1 truncate" title={`${hhmm(r.start_time)}–${hhmm(r.end_time)} · ${r.common_area ?? ''}`}>
+                                                            <span className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${dotStyle[r.status] ?? 'bg-gray-300'}`} />
+                                                            <span className="truncate text-[10px] text-gray-600">{hhmm(r.start_time)}</span>
+                                                        </div>
+                                                    ))}
+                                                    {dayRes.length > 3 && <span className="text-[10px] text-gray-400">+{dayRes.length - 3}</span>}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg bg-gray-100 text-xs">
+                            {weekDays.map((d, i) => {
+                                const ymd = toYmd(d);
+                                const dayRes = byDate[ymd] ?? [];
+                                const isToday = ymd === todayYmd;
+                                return (
+                                    <div key={i} className="min-h-[160px] bg-white p-1.5">
+                                        <div className={`mb-1 text-center ${isToday ? 'text-blue-600' : 'text-gray-500'}`}>
+                                            <div className="text-[10px] font-medium uppercase">{WEEKDAYS[i]}</div>
+                                            <div className={`text-sm font-semibold ${isToday ? 'flex h-6 w-6 mx-auto items-center justify-center rounded-full bg-blue-600 text-white' : ''}`}>{d.getDate()}</div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            {dayRes.map(r => (
+                                                <div key={r.id} className={`rounded px-1 py-0.5 text-[10px] leading-tight ${r.status === 'approved' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`} title={r.common_area ?? ''}>
+                                                    <div className="font-medium">{hhmm(r.start_time)}–{hhmm(r.end_time)}</div>
+                                                    <div className="truncate">{r.common_area}</div>
                                                 </div>
                                             ))}
-                                            {(byDay[day]?.length ?? 0) > 3 && <span className="text-[10px] text-gray-400">+{byDay[day].length - 3}</span>}
+                                            {dayRes.length === 0 && <div className="text-center text-[10px] text-gray-300">—</div>}
                                         </div>
-                                    </>
-                                )}
-                            </div>
-                        ))}
-                    </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
                     <div className="mt-2 flex gap-4 text-[11px] text-gray-500">
                         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500" /> Aprovada</span>
                         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-400" /> Pendente</span>

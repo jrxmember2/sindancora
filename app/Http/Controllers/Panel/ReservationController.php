@@ -34,20 +34,45 @@ class ReservationController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        // Calendário do mês selecionado (?month=YYYY-MM), opcionalmente por área.
-        $month = $this->parseMonth($request->month);
-        $monthReservations = Reservation::where('tenant_id', $tenant->id)
+        // Calendário: visão mensal (?month=YYYY-MM) ou semanal (?view=week&week=YYYY-MM-DD), por área.
+        $view = $request->view === 'week' ? 'week' : 'month';
+
+        if ($view === 'week') {
+            $anchor = $this->parseDate($request->week);
+            $start = $anchor->copy()->startOfWeek(Carbon::SUNDAY);
+            $end = $anchor->copy()->endOfWeek(Carbon::SATURDAY);
+        } else {
+            $anchor = $this->parseMonth($request->month);
+            $start = $anchor->copy()->startOfMonth();
+            $end = $anchor->copy()->endOfMonth();
+        }
+
+        $calendarReservations = Reservation::where('tenant_id', $tenant->id)
             ->with('commonArea:id,name')
-            ->whereBetween('date', [$month->copy()->startOfMonth()->toDateString(), $month->copy()->endOfMonth()->toDateString()])
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
             ->when($request->common_area_id, fn ($q, $id) => $q->where('common_area_id', $id))
             ->whereIn('status', ['pending', 'approved'])
+            ->orderBy('date')
             ->orderBy('start_time')
-            ->get(['id', 'common_area_id', 'date', 'start_time', 'end_time', 'status']);
+            ->get(['id', 'common_area_id', 'date', 'start_time', 'end_time', 'status'])
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'common_area_id' => $r->common_area_id,
+                'common_area' => $r->commonArea?->name,
+                'date' => $r->date instanceof Carbon ? $r->date->toDateString() : substr((string) $r->date, 0, 10),
+                'start_time' => $r->start_time,
+                'end_time' => $r->end_time,
+                'status' => $r->status,
+            ]);
 
         return Inertia::render('Reservations/Index', [
             'reservations' => $reservations,
-            'monthReservations' => $monthReservations,
-            'month' => $month->format('Y-m'),
+            'calendar' => [
+                'view' => $view,
+                'month' => $anchor->copy()->startOfMonth()->format('Y-m'),
+                'week_start' => $start->toDateString(),
+                'reservations' => $calendarReservations,
+            ],
             'areas' => $this->areaOptions($tenant->id),
             'statuses' => Reservation::STATUSES,
             'filters' => $request->only(['status', 'common_area_id']),
@@ -168,6 +193,15 @@ class ReservationController extends Controller
             return $month ? Carbon::createFromFormat('Y-m', $month)->startOfMonth() : Carbon::now()->startOfMonth();
         } catch (\Throwable) {
             return Carbon::now()->startOfMonth();
+        }
+    }
+
+    private function parseDate(?string $date): Carbon
+    {
+        try {
+            return $date ? Carbon::createFromFormat('Y-m-d', $date)->startOfDay() : Carbon::now()->startOfDay();
+        } catch (\Throwable) {
+            return Carbon::now()->startOfDay();
         }
     }
 

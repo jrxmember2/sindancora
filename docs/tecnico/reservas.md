@@ -44,10 +44,13 @@ Rotas estáticas (`areas`, `criar`) registradas antes da dinâmica `{reservation
 ## Frontend
 
 - `Pages/CommonAreas/{Index,Create,Edit}.tsx` + `CommonAreaForm.tsx`.
-- `Pages/Reservations/{Index,Create,Show}.tsx`. O **Index** traz um **calendário mensal** (grade
-  própria, sem dependência externa) com navegação de mês e filtro por área, mostrando reservas
-  pendentes/aprovadas, além da lista filtrável por status. O **Show** tem os botões de aprovar/recusar/
-  cancelar (motivo via prompt). Horários `time` são exibidos com `slice(0,5)`.
+- `Pages/Reservations/{Index,Create,Show}.tsx`. O **Index** traz um **calendário com alternador
+  Mês/Semana** (grade própria, sem dependência externa): a visão mensal mostra pontos por dia; a
+  **semanal** mostra 7 colunas (dom–sáb) com cada reserva detalhada (horário + área) e destaque do dia
+  atual. Navegação por mês/semana e filtro por área, mostrando reservas pendentes/aprovadas, além da
+  lista filtrável por status. O backend recebe `?view=month|week` (+ `month=YYYY-MM` ou `week=YYYY-MM-DD`)
+  e devolve `calendar` (view, month, week_start, reservations do período). O **Show** tem os botões de
+  aprovar/recusar/cancelar (motivo via prompt). Horários `time` são exibidos com `slice(0,5)`.
 
 ## Deploy
 
@@ -55,6 +58,6 @@ Rotas estáticas (`areas`, `criar`) registradas antes da dinâmica `{reservation
 
 ## Pendências
 
-Fotos das áreas (reusar `StorageService`), visão semanal do calendário, bloqueio de inadimplente
-(depende do módulo financeiro) e a solicitação direta pelo morador (Portal — Fase 4).
+Bloqueio de inadimplente (depende do módulo financeiro). (Fotos das áreas e a visão semanal do
+calendário já foram implementadas; o calendário de ocupação do **portal do morador** segue mensal.)
 Ver `docs/produto/02-roadmap-mvp.md` §3.3.
