@@ -23,6 +23,7 @@ class PlanController extends Controller
         'announcements_monthly' => 'Comunicados/mês',
         'emails_monthly' => 'E-mails/mês',
         'api_calls_monthly' => 'Chamadas de API/mês',
+        'whatsapp_connections' => 'Conexões WhatsApp',
     ];
 
     /** Módulos habilitáveis por plano. */

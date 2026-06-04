@@ -47,4 +47,12 @@ return [
         'version' => env('ANTHROPIC_VERSION', '2023-06-01'),
     ],
 
+    // Servidor Evolution API (auto-hospedado). Chave GLOBAL do servidor — nunca exposta ao tenant.
+    'evolution' => [
+        'base_url' => env('EVOLUTION_BASE_URL'),
+        'key' => env('EVOLUTION_API_KEY'),
+        // URL pública do webhook de recebimento (Fase 2). Se vazio, instâncias são criadas sem webhook.
+        'webhook_url' => env('EVOLUTION_WEBHOOK_URL'),
+    ],
+
 ];
