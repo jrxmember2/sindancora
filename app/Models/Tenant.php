@@ -78,6 +78,16 @@ class Tenant extends Model
         return $this->hasOne(TenantWhatsappSetting::class);
     }
 
+    public function whatsappConnections(): HasMany
+    {
+        return $this->hasMany(WhatsappConnection::class);
+    }
+
+    public function whatsappAddons(): HasMany
+    {
+        return $this->hasMany(TenantWhatsappAddon::class)->where('active', true);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', 'active');

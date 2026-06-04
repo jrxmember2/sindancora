@@ -24,6 +24,7 @@ use App\Http\Controllers\Panel\RoleController;
 use App\Http\Controllers\Panel\UnitController;
 use App\Http\Controllers\Panel\UserController;
 use App\Http\Controllers\Panel\WebhookController;
+use App\Http\Controllers\Panel\WhatsappConnectionController;
 use App\Http\Controllers\Panel\WhatsappSettingController;
 use Illuminate\Support\Facades\Route;
 
@@ -375,11 +376,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('assistente/{conversation}', [AssistantController::class, 'destroy'])->name('assistant.destroy');
     });
 
-    // Configurações > WhatsApp (Evolution API por tenant)
+    // Configurações > WhatsApp (Evolution API por tenant) — config legada de instância única.
     Route::middleware('permission:settings:whatsapp')->group(function () {
         Route::get('configuracoes/whatsapp', [WhatsappSettingController::class, 'edit'])->name('settings.whatsapp.edit');
         Route::match(['put', 'patch'], 'configuracoes/whatsapp', [WhatsappSettingController::class, 'update'])->name('settings.whatsapp.update');
         Route::post('configuracoes/whatsapp/testar', [WhatsappSettingController::class, 'test'])->name('settings.whatsapp.test');
+    });
+
+    // Conexão do WhatsApp — múltiplas conexões licenciadas (Evolution gerenciada por nós).
+    Route::middleware('permission:settings:whatsapp')->group(function () {
+        Route::get('configuracoes/whatsapp/conexoes', [WhatsappConnectionController::class, 'index'])->name('whatsapp.connections.index');
+        Route::post('configuracoes/whatsapp/conexoes', [WhatsappConnectionController::class, 'store'])->name('whatsapp.connections.store');
+        Route::get('configuracoes/whatsapp/conexoes/{connection}/qr', [WhatsappConnectionController::class, 'connect'])->name('whatsapp.connections.qr');
+        Route::get('configuracoes/whatsapp/conexoes/{connection}/estado', [WhatsappConnectionController::class, 'state'])->name('whatsapp.connections.state');
+        Route::match(['put', 'patch'], 'configuracoes/whatsapp/conexoes/{connection}/condominios', [WhatsappConnectionController::class, 'syncCondominiums'])->name('whatsapp.connections.condominiums');
+        Route::delete('configuracoes/whatsapp/conexoes/{connection}', [WhatsappConnectionController::class, 'destroy'])->name('whatsapp.connections.destroy');
     });
     }); // fim do painel administrativo (middleware 'panel')
 });

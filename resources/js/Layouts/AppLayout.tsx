@@ -50,7 +50,7 @@ const adminNavigation = [
     { name: 'Pagamentos', href: '/configuracoes/pagamentos', icon: Settings, permission: 'settings:payments' },
     { name: 'API', href: '/configuracoes/api', icon: KeyRound, permission: 'api_keys:manage' },
     { name: 'Webhooks', href: '/configuracoes/webhooks', icon: Webhook, permission: 'webhooks:manage' },
-    { name: 'WhatsApp', href: '/configuracoes/whatsapp', icon: MessageCircle, permission: 'settings:whatsapp' },
+    { name: 'WhatsApp', href: '/configuracoes/whatsapp/conexoes', icon: MessageCircle, permission: 'settings:whatsapp' },
     { name: 'Auditoria', href: '/auditoria', icon: ClipboardList, permission: 'audit:read' },
 ];
 
