@@ -13,6 +13,8 @@ class Condominium extends Model
 {
     use BelongsToTenant, HasAuditLog, HasUuidKey, SoftDeletes;
 
+    protected $table = 'condominiums';
+
     protected $fillable = [
         'tenant_id', 'name', 'cnpj', 'email', 'phone',
         'zip_code', 'street', 'number', 'complement', 'neighborhood', 'city', 'state',

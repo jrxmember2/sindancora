@@ -14,6 +14,8 @@ class Person extends Model
 {
     use BelongsToTenant, HasAuditLog, HasUuidKey, SoftDeletes;
 
+    protected $table = 'persons';
+
     protected $fillable = [
         'tenant_id', 'name', 'cpf', 'email', 'phone', 'phone2',
         'birth_date', 'zip_code', 'street', 'number', 'complement',
