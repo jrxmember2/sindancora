@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\CondominiumController;
 use App\Http\Controllers\Api\V1\PersonController;
 use App\Http\Controllers\Api\V1\TenantController;
 use App\Http\Controllers\Api\V1\UnitController;
+use App\Http\Controllers\Api\EvolutionWebhookController;
 use App\Http\Controllers\Api\WebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +19,7 @@ Route::get('/health', fn () => response()->json([
 
 // Webhooks de gateways (públicos, sem tenant por host — resolvido no controller pelo payload)
 Route::post('/webhooks/asaas', [WebhookController::class, 'asaas'])->name('webhooks.asaas');
+Route::post('/webhooks/evolution', [EvolutionWebhookController::class, 'handle'])->name('webhooks.evolution');
 
 // API v1
 Route::prefix('v1')->group(function () {

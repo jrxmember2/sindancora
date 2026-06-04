@@ -14,6 +14,7 @@ use App\Http\Controllers\Panel\DashboardController;
 use App\Http\Controllers\Panel\DocumentController;
 use App\Http\Controllers\Panel\ExpenseController;
 use App\Http\Controllers\Panel\GatehouseController;
+use App\Http\Controllers\Panel\InboxController;
 use App\Http\Controllers\Panel\NotificationController;
 use App\Http\Controllers\Panel\OccurrenceController;
 use App\Http\Controllers\Panel\PaymentSettingController;
@@ -381,6 +382,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('configuracoes/whatsapp', [WhatsappSettingController::class, 'edit'])->name('settings.whatsapp.edit');
         Route::match(['put', 'patch'], 'configuracoes/whatsapp', [WhatsappSettingController::class, 'update'])->name('settings.whatsapp.update');
         Route::post('configuracoes/whatsapp/testar', [WhatsappSettingController::class, 'test'])->name('settings.whatsapp.test');
+    });
+
+    // Inbox de WhatsApp (atendimento) — Fase 2.
+    Route::middleware('permission:inbox:use')->group(function () {
+        Route::get('inbox', [InboxController::class, 'index'])->name('inbox.index');
+        Route::post('inbox/{conversation}/enviar', [InboxController::class, 'send'])->name('inbox.send');
+        Route::post('inbox/{conversation}/atribuir', [InboxController::class, 'assign'])->name('inbox.assign');
+        Route::post('inbox/{conversation}/status', [InboxController::class, 'toggleStatus'])->name('inbox.status');
     });
 
     // Conexão do WhatsApp — múltiplas conexões licenciadas (Evolution gerenciada por nós).
