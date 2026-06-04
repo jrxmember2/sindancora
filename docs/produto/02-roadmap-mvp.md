@@ -406,10 +406,12 @@ Fase 1 considera-se **concluída** quando:
 > Detalhes em `docs/tecnico/assembleias.md`. Quórum/fração ideal e voto secreto adiados.
 
 #### 6.6 Portaria Digital
-- [ ] Controle de visitantes com QR Code
-- [ ] Cadastro de visitantes autorizados por unidade
-- [ ] Perfil porteiro com acesso restrito
-- [ ] Log de entradas e saídas
+- [x] Controle de visitantes com QR Code (token por autorização; QR renderizado no portal, validado na portaria)
+- [x] Cadastro de visitantes autorizados por unidade (morador pré-autoriza no portal; gestor no painel)
+- [x] Perfil porteiro com acesso restrito (papel `porteiro` + área dedicada `/portaria`)
+- [x] Log de entradas e saídas (check-in/check-out em `visitor_visits`)
+
+> Detalhes em `docs/tecnico/portaria.md`. Reconhecimento facial/leitura de placa e foto do visitante adiados.
 
 ---
 

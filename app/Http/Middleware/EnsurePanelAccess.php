@@ -17,7 +17,8 @@ class EnsurePanelAccess
         $user = $request->user();
 
         if ($user && ! $user->canAccessPanel()) {
-            return redirect()->route('portal.dashboard');
+            // Porteiro → portaria; morador → portal.
+            return redirect()->route($user->homeRoute());
         }
 
         return $next($request);

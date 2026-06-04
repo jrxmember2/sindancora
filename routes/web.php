@@ -12,6 +12,7 @@ use App\Http\Controllers\Panel\CondominiumController;
 use App\Http\Controllers\Panel\DashboardController;
 use App\Http\Controllers\Panel\DocumentController;
 use App\Http\Controllers\Panel\ExpenseController;
+use App\Http\Controllers\Panel\GatehouseController;
 use App\Http\Controllers\Panel\NotificationController;
 use App\Http\Controllers\Panel\OccurrenceController;
 use App\Http\Controllers\Panel\PaymentSettingController;
@@ -349,6 +350,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('permission:assemblies:read')->group(function () {
         Route::get('assembleias/{assembly}/ata/pdf', [AssemblyController::class, 'downloadMinutes'])->name('assemblies.minutes.pdf');
         Route::get('assembleias/{assembly}', [AssemblyController::class, 'show'])->name('assemblies.show');
+    });
+
+    // Portaria — monitoramento e autorizações (telas do porteiro ficam em /portaria).
+    Route::middleware('permission:gatehouse:read')->group(function () {
+        Route::get('visitantes', [GatehouseController::class, 'index'])->name('gatehouse.index');
+    });
+    Route::middleware('permission:gatehouse:manage')->group(function () {
+        Route::post('visitantes/autorizacoes', [GatehouseController::class, 'storeAuthorization'])->name('gatehouse.authorizations.store');
+        Route::delete('visitantes/autorizacoes/{authorization}', [GatehouseController::class, 'revokeAuthorization'])->name('gatehouse.authorizations.revoke');
     });
 
     // Assistente de IA

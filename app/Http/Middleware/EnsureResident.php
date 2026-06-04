@@ -16,12 +16,12 @@ class EnsureResident
     {
         $user = $request->user();
 
-        // Usuário administrativo (sem vínculo de morador) volta ao painel.
-        if ($user && ! $user->person_id && $user->canAccessPanel()) {
-            return redirect()->route('dashboard');
+        // Usuário sem vínculo de morador volta para sua área (painel/portaria).
+        if ($user && ! $user->person_id && ($user->canAccessPanel() || $user->isGatehouse())) {
+            return redirect()->route($user->homeRoute());
         }
 
-        // Sem pessoa vinculada e sem acesso ao painel: conta sem destino → 403 (evita loop).
+        // Sem pessoa vinculada e sem destino próprio: conta sem acesso → 403 (evita loop).
         if (! $user || ! $user->person_id) {
             abort(403, 'Sua conta ainda não tem acesso ao portal do morador.');
         }

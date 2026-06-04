@@ -102,6 +102,11 @@ class PermissionSeeder extends Seeder
 
             // Auditoria
             ['module' => 'audit', 'action' => 'read', 'description' => 'Visualizar logs de auditoria'],
+
+            // Portaria
+            ['module' => 'gatehouse', 'action' => 'read',     'description' => 'Visualizar visitantes e acessos'],
+            ['module' => 'gatehouse', 'action' => 'register', 'description' => 'Registrar entradas/saídas e validar QR'],
+            ['module' => 'gatehouse', 'action' => 'manage',   'description' => 'Gerenciar autorizações de visitantes'],
         ];
 
         foreach ($permissions as $perm) {

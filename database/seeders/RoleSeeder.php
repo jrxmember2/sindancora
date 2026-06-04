@@ -32,6 +32,7 @@ class RoleSeeder extends Seeder
                 'users:create', 'users:read', 'users:update', 'users:delete', 'users:manage',
                 'settings:read', 'settings:update', 'settings:payments', 'settings:whatsapp',
                 'api_keys:manage', 'webhooks:manage', 'ai:use',
+                'gatehouse:read', 'gatehouse:register', 'gatehouse:manage',
                 'audit:read',
             ],
         ],
@@ -50,6 +51,7 @@ class RoleSeeder extends Seeder
                 'expenses:create', 'expenses:read', 'expenses:update',
                 'reports:read', 'reports:export',
                 'assemblies:create', 'assemblies:read', 'assemblies:update', 'assemblies:delete',
+                'gatehouse:read', 'gatehouse:register', 'gatehouse:manage',
                 'ai:use',
             ],
         ],
@@ -60,6 +62,7 @@ class RoleSeeder extends Seeder
                 'condominiums:read', 'units:read', 'persons:read',
                 'announcements:read', 'occurrences:read', 'occurrences:update',
                 'reservations:read', 'documents:read', 'documents:download',
+                'gatehouse:read',
             ],
         ],
         'conselheiro' => [
@@ -69,7 +72,7 @@ class RoleSeeder extends Seeder
                 'condominiums:read', 'units:read',
                 'announcements:read', 'occurrences:read',
                 'reservations:read', 'documents:read', 'documents:download',
-                'reports:read',
+                'reports:read', 'gatehouse:read',
             ],
         ],
         'morador' => [
@@ -80,6 +83,13 @@ class RoleSeeder extends Seeder
                 'occurrences:create', 'occurrences:read',
                 'reservations:create', 'reservations:read', 'reservations:cancel',
                 'documents:read', 'documents:download',
+            ],
+        ],
+        'porteiro' => [
+            'display_name' => 'Porteiro',
+            'description' => 'Equipe de portaria. Acesso restrito à portaria (registrar acessos e validar QR).',
+            'permissions' => [
+                'gatehouse:read', 'gatehouse:register',
             ],
         ],
     ];

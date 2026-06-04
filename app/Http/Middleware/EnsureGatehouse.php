@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * Restringe a área da portaria a porteiros e gestores (quem tem gatehouse:register).
+ * Demais usuários são devolvidos à sua área de origem.
+ */
+class EnsureGatehouse
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        $user = $request->user();
+
+        if ($user && ($user->hasPermission('gatehouse:register') || $user->isGatehouse())) {
+            return $next($request);
+        }
+
+        if ($user) {
+            return redirect()->route($user->homeRoute());
+        }
+
+        abort(403);
+    }
+}

@@ -24,6 +24,7 @@ import {
     MessageCircle,
     Sparkles,
     Vote,
+    DoorOpen,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -40,6 +41,7 @@ const navigation = [
     { name: 'Despesas', href: '/despesas', icon: Receipt, permission: 'expenses:read' },
     { name: 'Relatórios', href: '/relatorios', icon: BarChart3, permission: 'reports:read' },
     { name: 'Assembleias', href: '/assembleias', icon: Vote, permission: 'assemblies:read' },
+    { name: 'Portaria', href: '/visitantes', icon: DoorOpen, permission: 'gatehouse:read' },
     { name: 'Assistente IA', href: '/assistente', icon: Sparkles, permission: 'ai:use' },
 ];
 
