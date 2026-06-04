@@ -225,7 +225,7 @@ Fase 1 considera-se **concluída** quando:
 #### 3.3 Áreas Comuns e Reservas
 - [x] CRUD de áreas comuns (nome, descrição, capacidade, regras) — fotos adiadas (reusar StorageService)
 - [x] Configuração: requer aprovação, taxa, caução, antecedência mínima, horários
-- [x] Calendário visual de disponibilidade (mensal) — visão semanal adiada
+- [x] Calendário visual de disponibilidade (mensal e **semanal**, com alternador no painel)
 - [x] Solicitação de reserva com preenchimento de horário — pelo painel; pelo morador na Fase 4 (portal)
 - [x] Fluxo de aprovação: Pendente → Aprovada / Recusada
 - [x] Cancelamento com motivo

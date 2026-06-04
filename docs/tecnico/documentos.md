@@ -47,8 +47,13 @@ faz **streaming** via `Storage::download()`. Gate `documents:download`.
 ## Exclusão / lixeira
 
 `destroy()` faz soft delete do documento e chama `StorageService::delete($object)` (modo não imediato):
-marca `deleted_at` + `permanent_delete_at = now()+30 dias`. A remoção definitiva do arquivo do bucket
-após 30 dias deve ser feita por uma rotina de limpeza (a agendar — ainda não implementada).
+marca `deleted_at` + `permanent_delete_at = now()+30 dias`. A remoção definitiva é feita pela rotina
+`storage:purge-trash` (comando `App\Console\Commands\PurgeTrashedStorage`), agendada **diariamente às
+03:30** em `routes/console.php`. Ela: (1) `forceDelete` dos registros soft-deletados há mais de 30 dias
+(antes dos arquivos, por causa da FK `documents.storage_object_id`); (2) apaga do bucket e remove os
+`StorageObject` cujo `permanent_delete_at` já passou, decrementando o contador `storage_mb` do tenant
+(o arquivo só "libera" cota na remoção definitiva). Suporta `--dry-run`. Roda sem contexto de tenant
+(varre todos). Vale para qualquer anexo na lixeira, não só documentos.
 
 ## RBAC
 
@@ -67,5 +72,5 @@ configurado em produção (R2/MinIO) — ver `docs/produto/04-planos-limites-e-s
 
 ## Pendências
 
-Filtro por data, substituição de arquivo na edição, rotina de expurgo da lixeira (30 dias), e o uso do
-mesmo `StorageService` para **anexos** de Comunicados (3.1) e Ocorrências (3.2), que ficaram adiados.
+Filtro por data e substituição de arquivo na edição. (Anexos de Comunicados/Ocorrências/Áreas e a rotina
+de expurgo da lixeira já foram implementados — ver `docs/tecnico/anexos.md` e `storage:purge-trash`.)
