@@ -13,6 +13,7 @@ import {
     ChevronDown,
     Wallet,
     Vote,
+    DoorOpen,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -24,6 +25,7 @@ const nav = [
     { name: 'Reservas', href: '/portal/reservas', icon: CalendarRange, match: (p: string) => p.startsWith('/portal/reservas') },
     { name: 'Documentos', href: '/portal/documentos', icon: FileText, match: (p: string) => p.startsWith('/portal/documentos') },
     { name: 'Assembleias', href: '/portal/assembleias', icon: Vote, match: (p: string) => p.startsWith('/portal/assembleias') },
+    { name: 'Visitantes', href: '/portal/visitantes', icon: DoorOpen, match: (p: string) => p.startsWith('/portal/visitantes') },
     { name: 'Minha unidade', href: '/portal/minha-unidade', icon: Building2, match: (p: string) => p.startsWith('/portal/minha-unidade') },
 ];
 

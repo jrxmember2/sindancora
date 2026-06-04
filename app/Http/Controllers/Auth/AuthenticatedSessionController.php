@@ -35,16 +35,12 @@ class AuthenticatedSessionController extends Controller
 
         $user = auth()->user();
 
+        // Roteia por papel: super admin → admin; gestor → painel; porteiro → portaria; morador → portal.
         if ($user->is_super_admin) {
             return redirect()->intended(route('admin.dashboard', absolute: false));
         }
 
-        // Moradores "puros" vão ao portal; gestores ao painel.
-        if (! $user->canAccessPanel()) {
-            return redirect(route('portal.dashboard', absolute: false));
-        }
-
-        return redirect(route('dashboard', absolute: false));
+        return redirect(route($user->homeRoute(), absolute: false));
     }
 
     /**

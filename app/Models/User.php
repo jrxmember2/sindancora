@@ -120,6 +120,33 @@ class User extends Authenticatable
         return $this->hasRole('morador') || $this->person_id !== null;
     }
 
+    /** É porteiro? (acesso restrito à área da portaria). */
+    public function isGatehouse(): bool
+    {
+        return $this->hasRole('porteiro');
+    }
+
+    /**
+     * Rota inicial do usuário conforme o papel. Centraliza o roteamento pós-login
+     * e os redirecionamentos dos middlewares de área (painel/portal/portaria).
+     */
+    public function homeRoute(): string
+    {
+        if ($this->is_super_admin) {
+            return 'admin.dashboard';
+        }
+
+        if ($this->canAccessPanel()) {
+            return 'dashboard';
+        }
+
+        if ($this->isGatehouse()) {
+            return 'portaria.index';
+        }
+
+        return 'portal.dashboard';
+    }
+
     public function isActive(): bool
     {
         return $this->status === 'active';

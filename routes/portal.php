@@ -9,6 +9,7 @@ use App\Http\Controllers\Portal\OccurrenceController;
 use App\Http\Controllers\Portal\ProfileController;
 use App\Http\Controllers\Portal\ReservationController;
 use App\Http\Controllers\Portal\UnitController;
+use App\Http\Controllers\Portal\VisitorAuthorizationController;
 use Illuminate\Support\Facades\Route;
 
 // Portal do Morador — área dedicada, escopada à pessoa logada (middleware 'resident').
@@ -51,6 +52,13 @@ Route::middleware(['auth', 'verified', 'resident'])
         Route::get('assembleias/{assembly}', [AssemblyController::class, 'show'])->name('assemblies.show');
         Route::post('assembleias/{assembly}/presenca', [AssemblyController::class, 'attend'])->name('assemblies.attend');
         Route::post('assembleias/{assembly}/itens/{item}/voto', [AssemblyController::class, 'vote'])->name('assemblies.vote');
+
+        // Visitantes (pré-autorização com QR)
+        Route::get('visitantes', [VisitorAuthorizationController::class, 'index'])->name('visitors.index');
+        Route::get('visitantes/criar', [VisitorAuthorizationController::class, 'create'])->name('visitors.create');
+        Route::post('visitantes', [VisitorAuthorizationController::class, 'store'])->name('visitors.store');
+        Route::get('visitantes/{authorization}', [VisitorAuthorizationController::class, 'show'])->name('visitors.show');
+        Route::post('visitantes/{authorization}/revogar', [VisitorAuthorizationController::class, 'revoke'])->name('visitors.revoke');
 
         // Minha unidade
         Route::get('minha-unidade', [UnitController::class, 'show'])->name('unit.show');
