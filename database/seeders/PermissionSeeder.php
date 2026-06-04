@@ -107,6 +107,9 @@ class PermissionSeeder extends Seeder
             ['module' => 'gatehouse', 'action' => 'read',     'description' => 'Visualizar visitantes e acessos'],
             ['module' => 'gatehouse', 'action' => 'register', 'description' => 'Registrar entradas/saídas e validar QR'],
             ['module' => 'gatehouse', 'action' => 'manage',   'description' => 'Gerenciar autorizações de visitantes'],
+
+            // Inbox WhatsApp
+            ['module' => 'inbox', 'action' => 'use', 'description' => 'Atender conversas de WhatsApp'],
         ];
 
         foreach ($permissions as $perm) {

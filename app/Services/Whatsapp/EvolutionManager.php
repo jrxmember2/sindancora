@@ -95,15 +95,18 @@ class EvolutionManager
         return $this->request()->delete($this->url("/instance/delete/{$instance}"))->successful();
     }
 
-    /** Envia texto por uma conexão específica (usa o token da instância, com fallback na chave global). */
-    public function sendText(WhatsappConnection $connection, string $number, string $message): bool
+    /**
+     * Envia texto por uma conexão específica (usa o token da instância, com fallback na chave global).
+     * Retorna o payload da Evolution (inclui key.id da mensagem) ou null em falha.
+     */
+    public function sendText(WhatsappConnection $connection, string $number, string $message): ?array
     {
         $response = $this->request($connection->token)->post($this->url("/message/sendText/{$connection->instance}"), [
             'number' => $number,
             'text' => $message,
         ]);
 
-        return $response->successful();
+        return $response->successful() ? ($response->json() ?? []) : null;
     }
 
     private function request(?string $apiKey = null): PendingRequest
