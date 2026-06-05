@@ -43,6 +43,11 @@ class Unit extends Model
         return $this->hasMany(Charge::class);
     }
 
+    public function pets(): HasMany
+    {
+        return $this->hasMany(Pet::class);
+    }
+
     public function scopeOfCondominium($query, string $condominiumId)
     {
         return $query->where('condominium_id', $condominiumId);

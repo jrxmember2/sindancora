@@ -14,6 +14,21 @@ export function maskPhone(value: string): string {
     return d.replace(/^(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
 }
 
+/** Máscara de data: dd/mm/aaaa. */
+export function maskDate(value: string): string {
+    const d = onlyDigits(value).slice(0, 8);
+    if (d.length <= 2) return d;
+    if (d.length <= 4) return d.replace(/^(\d{2})(\d{0,2})/, '$1/$2');
+    return d.replace(/^(\d{2})(\d{2})(\d{0,4})/, '$1/$2/$3');
+}
+
+/** Converte data ISO (aaaa-mm-dd) para dd/mm/aaaa. Vazio quando nulo. */
+export function isoToBrDate(value: string | null | undefined): string {
+    if (!value) return '';
+    const [y, m, d] = value.split('-');
+    return y && m && d ? `${d}/${m}/${y}` : '';
+}
+
 /** Máscara de CPF: 000.000.000-00. */
 export function maskCpf(value: string): string {
     const d = onlyDigits(value).slice(0, 11);
