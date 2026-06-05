@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\StorageObject;
+use App\Models\User;
 use App\Models\WaCampaign;
 use App\Models\WaCampaignRecipient;
 use App\Models\WaOptOut;
@@ -81,13 +82,15 @@ class SendCampaignMessage implements ShouldQueue
     /** Envia texto, ou mídia com legenda quando a campanha tem anexo. */
     private function send(EvolutionManager $evolution, WhatsappConnection $connection, WaCampaign $campaign, string $phone): ?array
     {
+        $body = $this->body($campaign);
+
         if (! $campaign->media_storage_object_id) {
-            return $evolution->sendText($connection, $phone, $campaign->body);
+            return $evolution->sendText($connection, $phone, $body);
         }
 
         $object = StorageObject::find($campaign->media_storage_object_id);
         if (! $object) {
-            return $evolution->sendText($connection, $phone, $campaign->body);
+            return $evolution->sendText($connection, $phone, $body);
         }
 
         $contents = Storage::disk($object->storage_provider)->get($object->storage_path);
@@ -101,8 +104,20 @@ class SendCampaignMessage implements ShouldQueue
             mimetype: $mime,
             base64: base64_encode((string) $contents),
             fileName: $object->original_filename ?: 'arquivo',
-            caption: $campaign->body,
+            caption: $body,
         );
+    }
+
+    /** Corpo da mensagem, assinado com o nome de quem criou a campanha quando sign está ligado. */
+    private function body(WaCampaign $campaign): string
+    {
+        if (! $campaign->sign) {
+            return $campaign->body;
+        }
+
+        $name = $campaign->created_by ? optional(User::find($campaign->created_by))->name : null;
+
+        return $name ? '*'.$name."*:\n".$campaign->body : $campaign->body;
     }
 
     /** Marca a campanha como concluída quando não há mais destinatários pendentes. */

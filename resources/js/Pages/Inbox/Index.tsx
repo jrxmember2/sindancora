@@ -210,7 +210,10 @@ export default function InboxIndex({ conversations, selected, condominiums, sect
                                 <p className="bg-amber-50 px-4 py-1.5 text-center text-xs text-amber-700">Número desconectado — as mensagens podem não ser entregues.</p>
                             )}
 
-                            <form onSubmit={send} className="flex items-center gap-2 border-t border-gray-100 p-3">
+                            <div className="flex items-center justify-end border-t border-gray-100 px-3 pt-2">
+                                <SignatureToggle />
+                            </div>
+                            <form onSubmit={send} className="flex items-center gap-2 px-3 pb-3 pt-1">
                                 <input ref={fileRef} type="file" className="hidden" onChange={onPickFile} />
                                 <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} title="Anexar arquivo" className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 disabled:opacity-50">
                                     <Paperclip className="h-4 w-4" />
@@ -258,6 +261,20 @@ export default function InboxIndex({ conversations, selected, condominiums, sect
     );
 }
 
+function SignatureToggle() {
+    const signOn = usePage<PageProps>().props.auth.user?.sign_messages ?? false;
+    const toggle = () => router.patch(route('inbox.signature'), { enabled: !signOn }, { preserveScroll: true, preserveState: true });
+
+    return (
+        <button type="button" onClick={toggle} className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 hover:text-gray-800" title="Adiciona seu nome no início da mensagem">
+            <span className={`relative inline-block h-4 w-7 rounded-full transition-colors ${signOn ? 'bg-green-500' : 'bg-gray-300'}`}>
+                <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${signOn ? 'left-3.5' : 'left-0.5'}`} />
+            </span>
+            Assinar com meu nome
+        </button>
+    );
+}
+
 function NewConversationModal({ connections, onClose }: { connections: Option[]; onClose: () => void }) {
     const form = useForm({ connection_id: connections[0]?.value ?? '', phone: '', body: '' });
 
@@ -290,9 +307,12 @@ function NewConversationModal({ connections, onClose }: { connections: Option[];
                         <textarea value={form.data.body} onChange={(e) => form.setData('body', e.target.value)} rows={3} placeholder="Digite a primeira mensagem…" className="w-full rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500" />
                         {form.errors.body && <p className="mt-1 text-xs text-red-600">{form.errors.body}</p>}
                     </div>
-                    <div className="flex justify-end gap-2">
-                        <button type="button" onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
-                        <button type="submit" disabled={form.processing || !form.data.connection_id || !form.data.phone.trim() || !form.data.body.trim()} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">Enviar</button>
+                    <div className="flex items-center justify-between gap-2">
+                        <SignatureToggle />
+                        <div className="flex gap-2">
+                            <button type="button" onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
+                            <button type="submit" disabled={form.processing || !form.data.connection_id || !form.data.phone.trim() || !form.data.body.trim()} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">Enviar</button>
+                        </div>
                     </div>
                 </form>
             </div>

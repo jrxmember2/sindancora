@@ -22,7 +22,7 @@ class WaCampaign extends Model
 
     protected $fillable = [
         'tenant_id', 'connection_id', 'condominium_id', 'name', 'body', 'media_storage_object_id',
-        'target_type', 'block_ids', 'unit_ids', 'throttle_seconds', 'status', 'scheduled_at',
+        'target_type', 'block_ids', 'unit_ids', 'throttle_seconds', 'sign', 'status', 'scheduled_at',
         'total_recipients', 'sent_count', 'failed_count', 'skipped_count',
         'started_at', 'completed_at', 'created_by',
     ];
@@ -33,6 +33,7 @@ class WaCampaign extends Model
             'block_ids' => 'array',
             'unit_ids' => 'array',
             'throttle_seconds' => 'integer',
+            'sign' => 'boolean',
             'total_recipients' => 'integer',
             'sent_count' => 'integer',
             'failed_count' => 'integer',

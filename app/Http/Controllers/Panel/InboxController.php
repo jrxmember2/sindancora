@@ -164,16 +164,37 @@ class InboxController extends Controller
             return back()->with('error', 'Conexão indisponível.');
         }
 
-        $payload = $this->evolution->sendText($connection, $conversation->contact_phone, $data['body']);
+        $body = $this->signed($data['body']);
+        $payload = $this->evolution->sendText($connection, $conversation->contact_phone, $body);
 
         if ($payload === null) {
             return back()->with('error', 'Não foi possível enviar. Verifique se o número está conectado.');
         }
 
         $waId = $payload['key']['id'] ?? $payload['data']['key']['id'] ?? null;
-        $this->inbox->recordOutbound($conversation, $data['body'], $waId, Auth::id());
+        $this->inbox->recordOutbound($conversation, $body, $waId, Auth::id());
 
         return back(303);
+    }
+
+    /** Liga/desliga a assinatura das mensagens com o nome do atendente (preferência do usuário). */
+    public function signature(Request $request): RedirectResponse
+    {
+        $request->validate(['enabled' => 'required|boolean']);
+        Auth::user()->update(['sign_messages' => $request->boolean('enabled')]);
+
+        return back(303);
+    }
+
+    /** Prefixa a mensagem com o nome do atendente quando a assinatura está ligada. */
+    private function signed(?string $body): ?string
+    {
+        $user = Auth::user();
+        if (! $user->sign_messages || blank($body)) {
+            return $body;
+        }
+
+        return '*'.$user->name."*:\n".$body;
     }
 
     /** Inicia uma conversa nova: o atendente envia a 1ª mensagem para um número. */
@@ -223,13 +244,14 @@ class InboxController extends Controller
             ]);
         }
 
-        $payload = $this->evolution->sendText($connection, $phone, $data['body']);
+        $body = $this->signed($data['body']);
+        $payload = $this->evolution->sendText($connection, $phone, $body);
         if ($payload === null) {
             return back()->with('error', 'Não foi possível enviar. Verifique se o número está conectado.');
         }
 
         $waId = $payload['key']['id'] ?? $payload['data']['key']['id'] ?? null;
-        $this->inbox->recordOutbound($conversation, $data['body'], $waId, $user->id);
+        $this->inbox->recordOutbound($conversation, $body, $waId, $user->id);
 
         return redirect()->route('inbox.index', ['conversation' => $conversation->id])->with('success', 'Conversa iniciada.');
     }
@@ -254,6 +276,7 @@ class InboxController extends Controller
         $mime = $file->getMimeType() ?: 'application/octet-stream';
         $mediatype = str_starts_with($mime, 'image/') ? 'image' : (str_starts_with($mime, 'video/') ? 'video' : 'document');
         $contents = file_get_contents($file->getRealPath());
+        $caption = $this->signed($data['caption'] ?? null);
 
         // Armazena primeiro (cota); StorageQuotaException → 402 tratado globalmente.
         $object = $this->storage->storeRaw(
@@ -274,7 +297,7 @@ class InboxController extends Controller
             mimetype: $mime,
             base64: base64_encode($contents),
             fileName: $file->getClientOriginalName(),
-            caption: $data['caption'] ?? null,
+            caption: $caption,
         );
 
         if ($payload === null) {
@@ -283,7 +306,7 @@ class InboxController extends Controller
         }
 
         $waId = $payload['key']['id'] ?? $payload['data']['key']['id'] ?? null;
-        $this->inbox->recordOutbound($conversation, $data['caption'] ?? null, $waId, Auth::id(), $mediatype, $object->id);
+        $this->inbox->recordOutbound($conversation, $caption, $waId, Auth::id(), $mediatype, $object->id);
 
         return back(303);
     }

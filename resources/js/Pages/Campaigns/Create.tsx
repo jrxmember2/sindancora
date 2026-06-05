@@ -17,11 +17,11 @@ export default function CampaignsCreate({ connections, condominiums, mediaMaxMb 
     const form = useForm<{
         name: string; connection_id: string; condominium_id: string; body: string;
         target_type: TargetType; block_ids: string[]; unit_ids: string[];
-        throttle_seconds: number; scheduled_at: string; file: File | null;
+        throttle_seconds: number; sign: boolean; scheduled_at: string; file: File | null;
     }>({
         name: '', connection_id: connections[0]?.value ?? '', condominium_id: '',
         body: '', target_type: 'all', block_ids: [], unit_ids: [],
-        throttle_seconds: 10, scheduled_at: '', file: null,
+        throttle_seconds: 10, sign: false, scheduled_at: '', file: null,
     });
 
     const [targets, setTargets] = useState<{ blocks: Option[]; units: Option[] }>({ blocks: [], units: [] });
@@ -138,6 +138,11 @@ export default function CampaignsCreate({ connections, condominiums, mediaMaxMb 
                             <input type="datetime-local" value={form.data.scheduled_at} onChange={(e) => form.setData('scheduled_at', e.target.value)} className="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500" />
                         </Field>
                     </div>
+
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" checked={form.data.sign} onChange={(e) => form.setData('sign', e.target.checked)} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                        Assinar com meu nome (adiciona seu nome no início de cada mensagem)
+                    </label>
 
                     <div className="flex justify-end gap-2 border-t border-gray-100 pt-4">
                         <Link href={route('campaigns.index')} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</Link>
