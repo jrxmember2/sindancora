@@ -17,14 +17,18 @@ class Person extends Model
     protected $table = 'persons';
 
     protected $fillable = [
-        'tenant_id', 'name', 'cpf', 'email', 'phone', 'phone2',
+        'tenant_id', 'name', 'cpf', 'email', 'phone', 'phone2', 'phones', 'emails',
         'birth_date', 'zip_code', 'street', 'number', 'complement',
         'neighborhood', 'city', 'state', 'notes', 'gateway_customer_id',
     ];
 
     protected function casts(): array
     {
-        return ['birth_date' => 'date'];
+        return [
+            'birth_date' => 'date',
+            'phones' => 'array',
+            'emails' => 'array',
+        ];
     }
 
     public function unitLinks(): HasMany

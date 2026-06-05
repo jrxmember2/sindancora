@@ -82,7 +82,7 @@ class WhatsappConnectionController extends Controller
         if (! isset($payload['instance']) && blank($token)) {
             Log::warning('Conexão WhatsApp: instância não criada', ['instance' => $instance, 'resp' => $payload]);
 
-            return back()->with('error', 'Não foi possível criar a instância na Evolution: '.$this->evolutionError($payload).' Verifique a URL/versão do servidor.');
+            return back()->with('error', 'Não foi possível criar a instância na Evolution: '.$this->createErrorMessage($payload));
         }
 
         $connection = WhatsappConnection::create([
@@ -118,7 +118,13 @@ class WhatsappConnectionController extends Controller
         // Instância inexistente no servidor (criada antes de uma correção, ou Evolution reiniciada
         // sem volume persistente) → recria na hora e tenta novamente.
         if (($result['status'] ?? null) === 404) {
-            $this->recreateInstance($connection);
+            $payload = $this->recreateInstance($connection);
+
+            // Recriação recusada (ex.: chave global incorreta) → devolve o motivo para a tela.
+            if (! isset($payload['instance']) && blank($this->resolveToken($payload))) {
+                return response()->json(['error' => $this->createErrorMessage($payload)], 200);
+            }
+
             $result = $this->evolution->connect($connection->instance);
         }
 
@@ -131,8 +137,8 @@ class WhatsappConnectionController extends Controller
         ]);
     }
 
-    /** Recria a instância no servidor (mesmo nome) e guarda o QR/token/webhook. */
-    private function recreateInstance(WhatsappConnection $connection): void
+    /** Recria a instância no servidor (mesmo nome) e guarda o QR/token/webhook. Retorna o payload. */
+    private function recreateInstance(WhatsappConnection $connection): array
     {
         $payload = $this->evolution->createInstance($connection->instance, $this->evolution->webhookUrl());
 
@@ -148,6 +154,18 @@ class WhatsappConnectionController extends Controller
         if ($url = $this->evolution->webhookUrl()) {
             $this->evolution->setWebhook($connection->instance, $url);
         }
+
+        return $payload;
+    }
+
+    /** Mensagem amigável para falhas de criação — destaca o caso de autenticação (chave global). */
+    private function createErrorMessage(array $payload): string
+    {
+        if (in_array(($payload['status'] ?? null), [401, 403], true)) {
+            return 'a Evolution recusou a autenticação (chave global incorreta). Ajuste a chave do servidor em Administração → WhatsApp para a mesma do AUTHENTICATION_API_KEY do servidor.';
+        }
+
+        return $this->evolutionError($payload).' Verifique a URL/versão do servidor.';
     }
 
     /** Extrai o token/apikey da instância do payload de criação (lida com hash string ou objeto). */

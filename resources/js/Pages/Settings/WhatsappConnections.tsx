@@ -178,15 +178,18 @@ function CondominiumAllocator({ connection, condominiums, onDone }: { connection
 function QrModal({ connection, onClose }: { connection: Connection; onClose: () => void }) {
     const [qr, setQr] = useState<string | null>(null);
     const [code, setCode] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
     const [status, setStatus] = useState(connection.status);
     const [loading, setLoading] = useState(true);
     const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const loadQr = () => {
         setLoading(true);
+        setError(null);
         fetch(route('whatsapp.connections.qr', connection.id), { headers: { Accept: 'application/json' } })
             .then((r) => r.json())
             .then((d) => {
+                if (d.error) { setError(d.error); return; }
                 if (d.base64) setQr(d.base64.startsWith('data:') ? d.base64 : `data:image/png;base64,${d.base64}`);
                 setCode(d.code ?? null);
             })
@@ -227,6 +230,8 @@ function QrModal({ connection, onClose }: { connection: Connection; onClose: () 
                         <div className="flex min-h-[220px] items-center justify-center">
                             {loading && !qr ? (
                                 <RefreshCw className="h-6 w-6 animate-spin text-gray-300" />
+                            ) : error ? (
+                                <p className="px-2 text-sm text-red-600">{error}</p>
                             ) : qr ? (
                                 <img src={qr} alt="QR Code" className="h-56 w-56" />
                             ) : (

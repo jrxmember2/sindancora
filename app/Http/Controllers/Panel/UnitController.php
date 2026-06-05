@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Panel;
 use App\Http\Controllers\Controller;
 use App\Models\Block;
 use App\Models\Condominium;
+use App\Models\Pet;
 use App\Models\Unit;
 use App\Services\PlanLimitService;
+use App\Services\UnitRosterService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +17,10 @@ use Inertia\Response;
 
 class UnitController extends Controller
 {
-    public function __construct(private readonly PlanLimitService $planLimitService) {}
+    public function __construct(
+        private readonly PlanLimitService $planLimitService,
+        private readonly UnitRosterService $roster,
+    ) {}
 
     public function index(Request $request, Condominium $condominium): Response
     {
@@ -54,6 +59,7 @@ class UnitController extends Controller
             'blocks' => $condominium->blocks()->orderBy('name')->get(['id', 'name']),
             'typeLabels' => Unit::typeLabels(),
             'statusLabels' => Unit::statusLabels(),
+            'petSpecies' => Pet::SPECIES,
         ]);
     }
 
@@ -63,20 +69,14 @@ class UnitController extends Controller
         abort_unless($condominium->tenant_id === $tenant->id, 403);
         $this->planLimitService->check($tenant, 'units');
 
-        $data = $request->validate([
-            'number' => 'required|string|max:20',
-            'block_id' => 'nullable|uuid|exists:blocks,id',
-            'floor' => 'nullable|integer',
-            'type' => 'required|in:apartment,house,commercial,garage,storage',
-            'area_m2' => 'nullable|numeric|min:0',
-            'fraction' => 'nullable|numeric|min:0',
-            'status' => 'required|in:occupied,vacant,under_renovation',
-        ]);
+        $data = $request->validate($this->rules());
 
         $this->validateUniqueNumber($condominium, $data['number'], $data['block_id'] ?? null);
 
-        $unit = $condominium->units()->create(array_merge($data, ['tenant_id' => $tenant->id]));
+        $unit = $condominium->units()->create(array_merge($this->unitAttributes($data), ['tenant_id' => $tenant->id]));
         $this->planLimitService->increment($tenant, 'units');
+
+        $this->roster->sync($unit, $data);
 
         return redirect()->route('condominiums.units.index', $condominium)->with('success', "Unidade {$unit->number} criada.");
     }
@@ -86,12 +86,23 @@ class UnitController extends Controller
         $tenant = app('tenant');
         abort_unless($condominium->tenant_id === $tenant->id && $unit->condominium_id === $condominium->id, 403);
 
+        $unit->load(['activeLinks.person', 'pets']);
+
         return Inertia::render('Units/Edit', [
             'condominium' => $condominium->only('id', 'name'),
-            'unit' => $unit,
+            'unit' => array_merge($unit->only('id', 'number', 'block_id', 'floor', 'type', 'area_m2', 'fraction', 'status'), [
+                'owners' => $this->personItems($unit, 'owner'),
+                'tenants' => $this->personItems($unit, 'tenant'),
+                'family' => $this->personItems($unit, 'dependent'),
+                'pets' => $unit->pets->map(fn (Pet $p) => [
+                    'id' => $p->id, 'name' => $p->name, 'species' => $p->species,
+                    'breed' => $p->breed, 'notes' => $p->notes,
+                ])->values(),
+            ]),
             'blocks' => $condominium->blocks()->orderBy('name')->get(['id', 'name']),
             'typeLabels' => Unit::typeLabels(),
             'statusLabels' => Unit::statusLabels(),
+            'petSpecies' => Pet::SPECIES,
         ]);
     }
 
@@ -100,7 +111,34 @@ class UnitController extends Controller
         $tenant = app('tenant');
         abort_unless($condominium->tenant_id === $tenant->id && $unit->condominium_id === $condominium->id, 403);
 
-        $data = $request->validate([
+        $data = $request->validate($this->rules());
+
+        if ($data['number'] !== $unit->number || ($data['block_id'] ?? null) !== $unit->block_id) {
+            $this->validateUniqueNumber($condominium, $data['number'], $data['block_id'] ?? null, $unit->id);
+        }
+
+        $unit->update($this->unitAttributes($data));
+
+        $this->roster->sync($unit, $data);
+
+        return redirect()->route('condominiums.units.index', $condominium)->with('success', "Unidade {$unit->number} atualizada.");
+    }
+
+    /** Regras de validação da unidade + roster (pessoas e pets). Linhas em branco são ignoradas no serviço. */
+    private function rules(): array
+    {
+        $person = [
+            '*.id' => 'nullable|uuid',
+            '*.name' => 'nullable|string|max:255',
+            '*.cpf' => 'nullable|string|max:20',
+            '*.birth_date' => 'nullable|string|max:10',
+            '*.phones' => 'array',
+            '*.phones.*' => 'nullable|string|max:25',
+            '*.emails' => 'array',
+            '*.emails.*' => 'nullable|string|max:255',
+        ];
+
+        return array_merge([
             'number' => 'required|string|max:20',
             'block_id' => 'nullable|uuid|exists:blocks,id',
             'floor' => 'nullable|integer',
@@ -108,15 +146,62 @@ class UnitController extends Controller
             'area_m2' => 'nullable|numeric|min:0',
             'fraction' => 'nullable|numeric|min:0',
             'status' => 'required|in:occupied,vacant,under_renovation',
-        ]);
+            'owners' => 'array',
+            'tenants' => 'array',
+            'family' => 'array',
+            'pets' => 'array',
+            'pets.*.id' => 'nullable|uuid',
+            'pets.*.name' => 'nullable|string|max:120',
+            'pets.*.species' => 'nullable|string|max:20',
+            'pets.*.breed' => 'nullable|string|max:120',
+            'pets.*.notes' => 'nullable|string|max:500',
+        ],
+            $this->prefixRules('owners', $person),
+            $this->prefixRules('tenants', $person),
+            $this->prefixRules('family', $person),
+        );
+    }
 
-        if ($data['number'] !== $unit->number || ($data['block_id'] ?? null) !== $unit->block_id) {
-            $this->validateUniqueNumber($condominium, $data['number'], $data['block_id'] ?? null, $unit->id);
+    /** Prefixa as regras de pessoa com o nome do grupo (owners/tenants/family). */
+    private function prefixRules(string $group, array $rules): array
+    {
+        $out = [];
+        foreach ($rules as $key => $rule) {
+            $out["{$group}.{$key}"] = $rule;
         }
 
-        $unit->update($data);
+        return $out;
+    }
 
-        return redirect()->route('condominiums.units.index', $condominium)->with('success', "Unidade {$unit->number} atualizada.");
+    /** Apenas os campos próprios da unidade (descarta os arrays de roster). */
+    private function unitAttributes(array $data): array
+    {
+        return array_intersect_key($data, array_flip(['number', 'block_id', 'floor', 'type', 'area_m2', 'fraction', 'status']));
+    }
+
+    /** Serializa as pessoas de um tipo para o formulário (telefones/emails com fallback ao legado). */
+    private function personItems(Unit $unit, string $type): \Illuminate\Support\Collection
+    {
+        return $unit->activeLinks
+            ->where('type', $type)
+            ->sortByDesc('is_primary')
+            ->map(function ($link) {
+                $p = $link->person;
+                if (! $p) {
+                    return null;
+                }
+
+                return [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'cpf' => $p->cpf,
+                    'birth_date' => $p->birth_date?->format('Y-m-d'),
+                    'phones' => ! empty($p->phones) ? $p->phones : array_values(array_filter([$p->phone, $p->phone2])),
+                    'emails' => ! empty($p->emails) ? $p->emails : array_values(array_filter([$p->email])),
+                ];
+            })
+            ->filter()
+            ->values();
     }
 
     public function destroy(Condominium $condominium, Unit $unit): RedirectResponse
