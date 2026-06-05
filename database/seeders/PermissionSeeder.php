@@ -110,6 +110,9 @@ class PermissionSeeder extends Seeder
 
             // Inbox WhatsApp
             ['module' => 'inbox', 'action' => 'use', 'description' => 'Atender conversas de WhatsApp'],
+
+            // Setores de atendimento + chatbot
+            ['module' => 'sectors', 'action' => 'manage', 'description' => 'Gerenciar setores e o chatbot de WhatsApp'],
         ];
 
         foreach ($permissions as $perm) {

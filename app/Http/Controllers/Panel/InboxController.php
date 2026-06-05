@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Condominium;
+use App\Models\Sector;
 use App\Models\WaConversation;
 use App\Services\Whatsapp\EvolutionManager;
 use App\Services\WaInboxService;
@@ -14,8 +15,9 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Inbox de WhatsApp (Fase 2): lista de conversas + thread + responder. Escopo por condomínio
- * (filtro) e atribuição. Atualização ao vivo por polling. Setores/chatbot ficam na Fase 3.
+ * Inbox de WhatsApp: lista de conversas + thread + responder. Atualização ao vivo por polling.
+ * Escopo por setor (Fase 3): quem não gerencia setores (sectors:manage) só vê conversas dos seus
+ * setores; síndico/admin veem tudo. Filtros adicionais por condomínio e status.
  */
 class InboxController extends Controller
 {
@@ -27,10 +29,15 @@ class InboxController extends Controller
     public function index(Request $request): Response
     {
         $tenant = app('tenant');
+        $user = Auth::user();
+        $seeAll = $user->hasPermission('sectors:manage');
+        $mySectorIds = $seeAll ? null : $user->sectors()->pluck('sectors.id');
 
         $conversations = WaConversation::where('tenant_id', $tenant->id)
-            ->with(['connection:id,name', 'condominium:id,name', 'assignee:id,name'])
+            ->with(['connection:id,name', 'condominium:id,name', 'sector:id,name', 'assignee:id,name'])
+            ->when(! $seeAll, fn ($q) => $q->whereIn('sector_id', $mySectorIds))
             ->when($request->condominium_id, fn ($q, $id) => $q->where('condominium_id', $id))
+            ->when($request->sector_id, fn ($q, $id) => $q->where('sector_id', $id))
             ->when($request->status, fn ($q, $s) => $q->where('status', $s), fn ($q) => $q->where('status', 'open'))
             ->orderByDesc('last_message_at')
             ->limit(80)
@@ -43,6 +50,7 @@ class InboxController extends Controller
                 'unread_count' => $c->unread_count,
                 'connection' => $c->connection?->name,
                 'condominium' => $c->condominium?->name,
+                'sector' => $c->sector?->name,
                 'assignee' => $c->assignee?->name,
                 'last_message_at' => $c->last_message_at?->toIso8601String(),
             ]);
@@ -50,10 +58,10 @@ class InboxController extends Controller
         $selected = null;
         if ($request->conversation) {
             $conversation = WaConversation::where('tenant_id', $tenant->id)
-                ->with(['connection:id,name,status', 'condominium:id,name', 'assignee:id,name'])
+                ->with(['connection:id,name,status', 'condominium:id,name', 'sector:id,name', 'assignee:id,name'])
                 ->find($request->conversation);
 
-            if ($conversation) {
+            if ($conversation && $this->canAccess($conversation, $seeAll, $mySectorIds)) {
                 $this->inbox->markRead($conversation);
 
                 $selected = [
@@ -64,16 +72,24 @@ class InboxController extends Controller
                     'connection' => $conversation->connection?->name,
                     'connection_status' => $conversation->connection?->status,
                     'condominium' => $conversation->condominium?->name,
+                    'sector' => $conversation->sector?->name,
                     'assignee' => $conversation->assignee?->name,
                     'assigned_to_me' => $conversation->assigned_to === Auth::id(),
                     'messages' => $conversation->messages()->limit(200)->get()->map(fn ($m) => [
                         'id' => $m->id,
                         'direction' => $m->direction,
                         'body' => $m->body,
+                        'is_bot' => $m->direction === 'out' && $m->sent_by === null,
                         'created_at' => $m->created_at?->toIso8601String(),
                     ]),
                 ];
             }
+        }
+
+        // Setores disponíveis no filtro: todos do tenant (gestor) ou só os do atendente.
+        $sectorsQuery = Sector::where('tenant_id', $tenant->id)->active();
+        if (! $seeAll) {
+            $sectorsQuery->whereIn('id', $mySectorIds);
         }
 
         return Inertia::render('Inbox/Index', [
@@ -81,12 +97,21 @@ class InboxController extends Controller
             'selected' => $selected,
             'condominiums' => Condominium::where('tenant_id', $tenant->id)->orderBy('name')->get(['id', 'name'])
                 ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]),
+            'sectors' => $sectorsQuery->orderBy('name')->get(['id', 'name'])
+                ->map(fn ($s) => ['value' => $s->id, 'label' => $s->name]),
             'filters' => [
                 'condominium_id' => $request->condominium_id,
+                'sector_id' => $request->sector_id,
                 'status' => $request->status ?? 'open',
                 'conversation' => $request->conversation,
             ],
         ]);
+    }
+
+    /** Atendente sem sectors:manage só acessa conversas dos seus setores. */
+    private function canAccess(WaConversation $conversation, bool $seeAll, $mySectorIds): bool
+    {
+        return $seeAll || ($conversation->sector_id && $mySectorIds->contains($conversation->sector_id));
     }
 
     public function send(Request $request, WaConversation $conversation): RedirectResponse
@@ -134,5 +159,13 @@ class InboxController extends Controller
     private function authorizeTenant(WaConversation $conversation): void
     {
         abort_unless($conversation->tenant_id === app('tenant')->id, 403);
+
+        $user = Auth::user();
+        if ($user->hasPermission('sectors:manage')) {
+            return; // gestor vê/atende tudo
+        }
+
+        $mine = $user->sectors()->pluck('sectors.id');
+        abort_unless($conversation->sector_id && $mine->contains($conversation->sector_id), 403);
     }
 }

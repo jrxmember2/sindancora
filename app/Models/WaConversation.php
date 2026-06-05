@@ -15,8 +15,8 @@ class WaConversation extends Model
     protected $table = 'wa_conversations';
 
     protected $fillable = [
-        'tenant_id', 'connection_id', 'condominium_id', 'contact_phone', 'contact_name',
-        'status', 'assigned_to', 'unread_count', 'last_message_at',
+        'tenant_id', 'connection_id', 'condominium_id', 'sector_id', 'contact_phone', 'contact_name',
+        'status', 'bot_state', 'assigned_to', 'unread_count', 'last_message_at',
     ];
 
     protected function casts(): array
@@ -35,6 +35,11 @@ class WaConversation extends Model
     public function condominium(): BelongsTo
     {
         return $this->belongsTo(Condominium::class);
+    }
+
+    public function sector(): BelongsTo
+    {
+        return $this->belongsTo(Sector::class);
     }
 
     public function assignee(): BelongsTo

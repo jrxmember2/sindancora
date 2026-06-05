@@ -11,10 +11,11 @@ interface Conversation {
     unread_count: number;
     connection: string | null;
     condominium: string | null;
+    sector: string | null;
     assignee: string | null;
     last_message_at: string | null;
 }
-interface Message { id: string; direction: string; body: string | null; created_at: string | null }
+interface Message { id: string; direction: string; body: string | null; is_bot?: boolean; created_at: string | null }
 interface Selected {
     id: string;
     contact_name: string | null;
@@ -23,6 +24,7 @@ interface Selected {
     connection: string | null;
     connection_status: string | null;
     condominium: string | null;
+    sector: string | null;
     assignee: string | null;
     assigned_to_me: boolean;
     messages: Message[];
@@ -32,13 +34,14 @@ interface Props {
     conversations: Conversation[];
     selected: Selected | null;
     condominiums: Option[];
-    filters: { condominium_id?: string; status?: string; conversation?: string };
+    sectors: Option[];
+    filters: { condominium_id?: string; sector_id?: string; status?: string; conversation?: string };
 }
 
 const time = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
 const displayName = (c: { contact_name: string | null; contact_phone: string }) => c.contact_name || c.contact_phone;
 
-export default function InboxIndex({ conversations, selected, condominiums, filters }: Props) {
+export default function InboxIndex({ conversations, selected, condominiums, sectors, filters }: Props) {
     const navigate = (params: Record<string, string | undefined>) =>
         router.get(route('inbox.index'), { ...filters, ...params }, { preserveState: true, preserveScroll: true, replace: true });
 
@@ -79,6 +82,12 @@ export default function InboxIndex({ conversations, selected, condominiums, filt
                             <option value="">Todos os condomínios</option>
                             {condominiums.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                         </select>
+                        {sectors.length > 0 && (
+                            <select value={filters.sector_id ?? ''} onChange={(e) => navigate({ sector_id: e.target.value || undefined })} className="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Todos os setores</option>
+                                {sectors.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                            </select>
+                        )}
                         <div className="flex rounded-lg border border-gray-200 p-0.5 text-sm">
                             {(['open', 'closed'] as const).map((s) => (
                                 <button key={s} onClick={() => navigate({ status: s })} className={`flex-1 rounded-md px-2 py-1 font-medium ${(filters.status ?? 'open') === s ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
@@ -101,7 +110,7 @@ export default function InboxIndex({ conversations, selected, condominiums, filt
                                     <span className="flex-shrink-0 text-[10px] text-gray-400">{time(c.last_message_at)}</span>
                                 </div>
                                 <span className="truncate text-xs text-gray-500">
-                                    {c.condominium ?? 'Sem condomínio'}{c.connection ? ` · ${c.connection}` : ''}{c.assignee ? ` · ${c.assignee}` : ''}
+                                    {c.condominium ?? 'Sem condomínio'}{c.sector ? ` · ${c.sector}` : ''}{c.assignee ? ` · ${c.assignee}` : ''}
                                 </span>
                             </button>
                         ))}
@@ -120,6 +129,7 @@ export default function InboxIndex({ conversations, selected, condominiums, filt
                                     <p className="truncate text-xs text-gray-500">
                                         {selected.contact_phone}
                                         {selected.condominium ? ` · ${selected.condominium}` : ' · Sem condomínio'}
+                                        {selected.sector ? ` · ${selected.sector}` : ''}
                                         {selected.assignee ? ` · Resp.: ${selected.assignee}` : ''}
                                     </p>
                                 </div>
@@ -133,12 +143,17 @@ export default function InboxIndex({ conversations, selected, condominiums, filt
 
                             <div className="flex flex-1 flex-col gap-2 overflow-y-auto bg-gray-50 p-4">
                                 {selected.messages.length === 0 && <p className="m-auto text-sm text-gray-400">Sem mensagens.</p>}
-                                {selected.messages.map((m) => (
-                                    <div key={m.id} className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${m.direction === 'out' ? 'self-end rounded-br-sm bg-blue-600 text-white' : 'self-start rounded-bl-sm bg-white text-gray-800 shadow-sm'}`}>
-                                        <p className="whitespace-pre-wrap break-words">{m.body}</p>
-                                        <p className={`mt-0.5 text-[10px] ${m.direction === 'out' ? 'text-blue-100' : 'text-gray-400'}`}>{time(m.created_at)}</p>
-                                    </div>
-                                ))}
+                                {selected.messages.map((m) => {
+                                    const out = m.direction === 'out';
+                                    const bubble = m.is_bot ? 'self-end rounded-br-sm bg-emerald-600 text-white' : out ? 'self-end rounded-br-sm bg-blue-600 text-white' : 'self-start rounded-bl-sm bg-white text-gray-800 shadow-sm';
+                                    return (
+                                        <div key={m.id} className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${bubble}`}>
+                                            {m.is_bot && <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-100">🤖 Chatbot</p>}
+                                            <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                                            <p className={`mt-0.5 text-[10px] ${out ? 'text-blue-100' : 'text-gray-400'}`}>{time(m.created_at)}</p>
+                                        </div>
+                                    );
+                                })}
                             </div>
 
                             {selected.connection_status !== 'connected' && (

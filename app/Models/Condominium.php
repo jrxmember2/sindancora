@@ -7,6 +7,7 @@ use App\Traits\HasAuditLog;
 use App\Traits\HasUuidKey;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Condominium extends Model
@@ -54,6 +55,16 @@ class Condominium extends Model
     public function activeManagers(): HasMany
     {
         return $this->hasMany(CondominiumManager::class)->whereNull('end_date');
+    }
+
+    public function sectors(): HasMany
+    {
+        return $this->hasMany(Sector::class);
+    }
+
+    public function botSetting(): HasOne
+    {
+        return $this->hasOne(WhatsappBotSetting::class);
     }
 
     public function scopeActive($query)

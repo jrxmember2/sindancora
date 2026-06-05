@@ -26,6 +26,8 @@ import {
     Vote,
     DoorOpen,
     MessagesSquare,
+    Headset,
+    Bot,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -44,6 +46,7 @@ const navigation = [
     { name: 'Assembleias', href: '/assembleias', icon: Vote, permission: 'assemblies:read' },
     { name: 'Portaria', href: '/visitantes', icon: DoorOpen, permission: 'gatehouse:read' },
     { name: 'Atendimento', href: '/inbox', icon: MessagesSquare, permission: 'inbox:use' },
+    { name: 'Setores', href: '/setores', icon: Headset, permission: 'sectors:manage' },
     { name: 'Assistente IA', href: '/assistente', icon: Sparkles, permission: 'ai:use' },
 ];
 
@@ -53,6 +56,7 @@ const adminNavigation = [
     { name: 'API', href: '/configuracoes/api', icon: KeyRound, permission: 'api_keys:manage' },
     { name: 'Webhooks', href: '/configuracoes/webhooks', icon: Webhook, permission: 'webhooks:manage' },
     { name: 'WhatsApp', href: '/configuracoes/whatsapp/conexoes', icon: MessageCircle, permission: 'settings:whatsapp' },
+    { name: 'Chatbot', href: '/configuracoes/chatbot', icon: Bot, permission: 'sectors:manage' },
     { name: 'Auditoria', href: '/auditoria', icon: ClipboardList, permission: 'audit:read' },
 ];
 

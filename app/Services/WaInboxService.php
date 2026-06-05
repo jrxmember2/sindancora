@@ -72,6 +72,12 @@ class WaInboxService
             'created_at' => now(),
         ]);
 
+        // Triagem do chatbot (Fase 3): só para mensagens recebidas e enquanto não roteada.
+        // Resolvido pelo container para evitar ciclo de dependência (o bot usa este serviço).
+        if ($direction === 'in' && $connection->bot_enabled && $conversation->bot_state !== 'routed') {
+            app(WhatsappBotService::class)->handleIncoming($conversation, $body);
+        }
+
         return $conversation;
     }
 
