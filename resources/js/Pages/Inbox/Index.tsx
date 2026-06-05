@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
-import { MessagesSquare, Send, UserCheck, CheckCircle2, RotateCcw, Paperclip, FileText, Zap, Download } from 'lucide-react';
+import { MessagesSquare, Send, UserCheck, CheckCircle2, RotateCcw, Paperclip, FileText, Zap, Download, Plus, X } from 'lucide-react';
+import { maskPhone } from '@/lib/masks';
 
 interface Conversation {
     id: string;
@@ -38,6 +39,7 @@ interface Props {
     selected: Selected | null;
     condominiums: Option[];
     sectors: Option[];
+    connections: Option[];
     quickReplies: QuickReply[];
     filters: { condominium_id?: string; sector_id?: string; status?: string; conversation?: string };
 }
@@ -45,7 +47,7 @@ interface Props {
 const time = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
 const displayName = (c: { contact_name: string | null; contact_phone: string }) => c.contact_name || c.contact_phone;
 
-export default function InboxIndex({ conversations, selected, condominiums, sectors, quickReplies, filters }: Props) {
+export default function InboxIndex({ conversations, selected, condominiums, sectors, connections, quickReplies, filters }: Props) {
     const navigate = (params: Record<string, string | undefined>) =>
         router.get(route('inbox.index'), { ...filters, ...params }, { preserveState: true, preserveScroll: true, replace: true });
 
@@ -54,6 +56,7 @@ export default function InboxIndex({ conversations, selected, condominiums, sect
     const fileRef = useRef<HTMLInputElement>(null);
     const [qrOpen, setQrOpen] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [newOpen, setNewOpen] = useState(false);
     const tenantId = usePage<PageProps>().props.tenant?.id;
 
     // Tempo real (Reverb): atualiza ao receber/enviar mensagem. Mantém um poll lento de fallback.
@@ -110,6 +113,14 @@ export default function InboxIndex({ conversations, selected, condominiums, sect
             <div className="mb-4 flex items-center gap-2">
                 <MessagesSquare className="h-6 w-6 text-green-600" />
                 <h1 className="text-2xl font-bold text-gray-900">Atendimento WhatsApp</h1>
+                <button
+                    onClick={() => setNewOpen(true)}
+                    disabled={connections.length === 0}
+                    title={connections.length === 0 ? 'Nenhuma conexão conectada' : undefined}
+                    className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                >
+                    <Plus className="h-4 w-4" /> Nova conversa
+                </button>
             </div>
 
             <div className="flex h-[calc(100vh-180px)] overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -241,7 +252,51 @@ export default function InboxIndex({ conversations, selected, condominiums, sect
                     )}
                 </div>
             </div>
+
+            {newOpen && <NewConversationModal connections={connections} onClose={() => setNewOpen(false)} />}
         </AppLayout>
+    );
+}
+
+function NewConversationModal({ connections, onClose }: { connections: Option[]; onClose: () => void }) {
+    const form = useForm({ connection_id: connections[0]?.value ?? '', phone: '', body: '' });
+
+    const submit = (e: React.FormEvent) => {
+        e.preventDefault();
+        form.post(route('inbox.start'), { onSuccess: onClose });
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+            <div className="w-full max-w-md rounded-xl bg-white p-6" onClick={(e) => e.stopPropagation()}>
+                <div className="mb-4 flex items-center justify-between">
+                    <h2 className="font-semibold text-gray-900">Nova conversa</h2>
+                    <button onClick={onClose} className="rounded p-1 text-gray-400 hover:bg-gray-100"><X className="h-4 w-4" /></button>
+                </div>
+                <form onSubmit={submit} className="space-y-4">
+                    <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Conexão</label>
+                        <select value={form.data.connection_id} onChange={(e) => form.setData('connection_id', e.target.value)} className="w-full rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500">
+                            {connections.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Telefone</label>
+                        <input type="tel" value={form.data.phone} onChange={(e) => form.setData('phone', maskPhone(e.target.value))} placeholder="(00) 00000-0000" className="w-full rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500" />
+                        {form.errors.phone && <p className="mt-1 text-xs text-red-600">{form.errors.phone}</p>}
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Mensagem</label>
+                        <textarea value={form.data.body} onChange={(e) => form.setData('body', e.target.value)} rows={3} placeholder="Digite a primeira mensagem…" className="w-full rounded-lg border-gray-300 text-sm focus:border-green-500 focus:ring-green-500" />
+                        {form.errors.body && <p className="mt-1 text-xs text-red-600">{form.errors.body}</p>}
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <button type="button" onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
+                        <button type="submit" disabled={form.processing || !form.data.connection_id || !form.data.phone.trim() || !form.data.body.trim()} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">Enviar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     );
 }
 

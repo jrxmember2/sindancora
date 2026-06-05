@@ -91,7 +91,9 @@ class WaCampaignService
     /** Coleta a audiência (person_id, name, phone normalizado), sem opt-out e dedup por telefone. */
     private function collect(string $tenantId, string $condominiumId, string $targetType, ?array $blockIds, ?array $unitIds): Collection
     {
-        $rows = PersonUnitLink::query()
+        // withoutGlobalScope: o escopo de tenant adiciona `tenant_id` sem qualificar a tabela e,
+        // com os JOINs abaixo (units/persons), causaria "column ambiguous". Filtramos persons.tenant_id.
+        $rows = PersonUnitLink::withoutGlobalScope('tenant')
             ->whereNull('person_unit_links.end_date')
             ->join('units', 'units.id', '=', 'person_unit_links.unit_id')
             ->join('persons', 'persons.id', '=', 'person_unit_links.person_id')

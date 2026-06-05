@@ -32,15 +32,19 @@ class WhatsappReportController extends Controller
         $openNow = WaConversation::where('tenant_id', $tenant->id)->where('status', 'open')->count();
         $closedInPeriod = (clone $conversations)->where('status', 'closed')->count();
 
-        // Por setor (inclui "Sem setor").
-        $bySector = (clone $conversations)
+        // Por setor / condomínio: com JOIN, as colunas precisam ser qualificadas e o escopo de tenant
+        // (que adiciona `tenant_id` sem qualificar) desligado, senão dá "column ambiguous".
+        $joined = fn () => WaConversation::withoutGlobalScope('tenant')
+            ->where('wa_conversations.tenant_id', $tenant->id)
+            ->whereBetween('wa_conversations.created_at', [$from, $to]);
+
+        $bySector = $joined()
             ->leftJoin('sectors', 'sectors.id', '=', 'wa_conversations.sector_id')
             ->selectRaw('COALESCE(sectors.name, ?) as label, COUNT(*) as total', ['Sem setor'])
             ->groupBy('label')->orderByDesc('total')->get()
             ->map(fn ($r) => ['label' => $r->label, 'total' => (int) $r->total]);
 
-        // Por condomínio (inclui "Sem condomínio").
-        $byCondominium = (clone $conversations)
+        $byCondominium = $joined()
             ->leftJoin('condominiums', 'condominiums.id', '=', 'wa_conversations.condominium_id')
             ->selectRaw('COALESCE(condominiums.name, ?) as label, COUNT(*) as total', ['Sem condomínio'])
             ->groupBy('label')->orderByDesc('total')->get()

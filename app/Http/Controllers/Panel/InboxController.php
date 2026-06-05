@@ -8,7 +8,9 @@ use App\Models\Sector;
 use App\Models\StorageObject;
 use App\Models\WaConversation;
 use App\Models\WaMessage;
+use App\Models\WaOptOut;
 use App\Models\WaQuickReply;
+use App\Models\WhatsappConnection;
 use App\Services\StorageService;
 use App\Services\Whatsapp\EvolutionManager;
 use App\Services\WaInboxService;
@@ -114,6 +116,9 @@ class InboxController extends Controller
                 ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]),
             'sectors' => $sectorsQuery->orderBy('name')->get(['id', 'name'])
                 ->map(fn ($s) => ['value' => $s->id, 'label' => $s->name]),
+            'connections' => WhatsappConnection::where('tenant_id', $tenant->id)->where('status', 'connected')
+                ->orderBy('name')->get(['id', 'name'])
+                ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]),
             'quickReplies' => $quickReplies,
             'filters' => [
                 'condominium_id' => $request->condominium_id,
@@ -169,6 +174,64 @@ class InboxController extends Controller
         $this->inbox->recordOutbound($conversation, $data['body'], $waId, Auth::id());
 
         return back(303);
+    }
+
+    /** Inicia uma conversa nova: o atendente envia a 1ª mensagem para um número. */
+    public function startConversation(Request $request): RedirectResponse
+    {
+        $tenant = app('tenant');
+        $user = Auth::user();
+
+        $data = $request->validate([
+            'connection_id' => 'required|uuid',
+            'phone' => 'required|string|max:25',
+            'body' => 'required|string|max:4000',
+        ]);
+
+        $connection = WhatsappConnection::where('tenant_id', $tenant->id)->find($data['connection_id']);
+        if (! $connection || $connection->status !== 'connected') {
+            return back()->with('error', 'Selecione uma conexão conectada.');
+        }
+
+        $phone = WaOptOut::normalizePhone($data['phone']);
+        if (! $phone) {
+            return back()->with('error', 'Telefone inválido.');
+        }
+
+        $conversation = WaConversation::where('tenant_id', $tenant->id)
+            ->where('connection_id', $connection->id)
+            ->where('contact_phone', $phone)
+            ->first();
+
+        if (! $conversation) {
+            // Resolve o condomínio quando a conexão atende exatamente um.
+            $condoIds = $connection->condominiums()->pluck('condominiums.id');
+
+            // Atendente sem visão macro: amarra ao seu setor para conseguir ver a conversa.
+            $sectorId = $user->hasPermission('sectors:manage') ? null : $user->sectors()->value('sectors.id');
+
+            $conversation = WaConversation::create([
+                'tenant_id' => $tenant->id,
+                'connection_id' => $connection->id,
+                'condominium_id' => $condoIds->count() === 1 ? $condoIds->first() : null,
+                'sector_id' => $sectorId,
+                'contact_phone' => $phone,
+                'status' => 'open',
+                'bot_state' => 'routed', // conversa iniciada por humano — não passa pelo chatbot
+                'assigned_to' => $user->id,
+                'unread_count' => 0,
+            ]);
+        }
+
+        $payload = $this->evolution->sendText($connection, $phone, $data['body']);
+        if ($payload === null) {
+            return back()->with('error', 'Não foi possível enviar. Verifique se o número está conectado.');
+        }
+
+        $waId = $payload['key']['id'] ?? $payload['data']['key']['id'] ?? null;
+        $this->inbox->recordOutbound($conversation, $data['body'], $waId, $user->id);
+
+        return redirect()->route('inbox.index', ['conversation' => $conversation->id])->with('success', 'Conversa iniciada.');
     }
 
     /** Envia mídia (imagem/vídeo/documento) anexada pelo atendente. */
