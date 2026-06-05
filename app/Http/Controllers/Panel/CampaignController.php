@@ -119,6 +119,7 @@ class CampaignController extends Controller
             'unit_ids' => 'array',
             'unit_ids.*' => 'uuid',
             'throttle_seconds' => 'nullable|integer|min:1|max:300',
+            'sign' => 'boolean',
             'scheduled_at' => 'nullable|date|after:now',
             'file' => "nullable|file|max:{$maxKb}",
         ]);
@@ -133,6 +134,7 @@ class CampaignController extends Controller
             'block_ids' => $data['target_type'] === 'blocks' ? ($data['block_ids'] ?? []) : null,
             'unit_ids' => $data['target_type'] === 'units' ? ($data['unit_ids'] ?? []) : null,
             'throttle_seconds' => $data['throttle_seconds'] ?? 10,
+            'sign' => $request->boolean('sign'),
             'status' => ! empty($data['scheduled_at']) ? 'scheduled' : 'draft',
             'scheduled_at' => $data['scheduled_at'] ?? null,
             'created_by' => Auth::id(),

@@ -29,6 +29,7 @@ class HandleInertiaRequests extends Middleware
                     'email' => $user->email,
                     'is_super_admin' => $user->is_super_admin,
                     'permissions' => $user->permissionNames(),
+                    'sign_messages' => (bool) $user->sign_messages,
                 ] : null,
             ],
             'tenant' => $tenant ? [

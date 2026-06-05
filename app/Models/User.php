@@ -20,7 +20,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'tenant_id', 'person_id', 'name', 'email', 'phone', 'document',
-        'password', 'status', 'is_super_admin', 'last_login_at',
+        'password', 'status', 'is_super_admin', 'last_login_at', 'sign_messages',
     ];
 
     /** Papéis com acesso ao painel administrativo (todos exceto o morador). */
@@ -35,6 +35,7 @@ class User extends Authenticatable
             'last_login_at' => 'datetime',
             'password' => 'hashed',
             'is_super_admin' => 'boolean',
+            'sign_messages' => 'boolean',
         ];
     }
 

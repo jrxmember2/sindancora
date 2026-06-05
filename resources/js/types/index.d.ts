@@ -4,6 +4,7 @@ export interface AuthUser {
     email: string;
     is_super_admin: boolean;
     permissions: string[];
+    sign_messages: boolean;
 }
 
 export interface TenantData {
