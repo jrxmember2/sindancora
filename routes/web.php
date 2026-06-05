@@ -392,6 +392,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Inbox de WhatsApp (atendimento) — Fase 2; mídia/respostas prontas — Fase 4.
     Route::middleware('permission:inbox:use')->group(function () {
         Route::get('inbox', [InboxController::class, 'index'])->name('inbox.index');
+        Route::post('inbox/nova', [InboxController::class, 'startConversation'])->name('inbox.start');
         Route::post('inbox/{conversation}/enviar', [InboxController::class, 'send'])->name('inbox.send');
         Route::post('inbox/{conversation}/midia', [InboxController::class, 'sendMedia'])->name('inbox.sendMedia');
         Route::get('inbox/midia/{object}', [InboxController::class, 'media'])->name('inbox.media');
