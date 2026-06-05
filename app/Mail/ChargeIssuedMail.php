@@ -14,7 +14,12 @@ class ChargeIssuedMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public Charge $charge) {}
+    public ?string $tenantId;
+
+    public function __construct(public Charge $charge)
+    {
+        $this->tenantId = $charge->tenant_id;
+    }
 
     public function envelope(): Envelope
     {

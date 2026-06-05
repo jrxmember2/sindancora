@@ -16,6 +16,7 @@ use App\Http\Controllers\Panel\DocumentController;
 use App\Http\Controllers\Panel\ExpenseController;
 use App\Http\Controllers\Panel\GatehouseController;
 use App\Http\Controllers\Panel\InboxController;
+use App\Http\Controllers\Panel\MailSettingController;
 use App\Http\Controllers\Panel\NotificationController;
 use App\Http\Controllers\Panel\OccurrenceController;
 use App\Http\Controllers\Panel\PaymentSettingController;
@@ -380,6 +381,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('assistente/inadimplencia', [AssistantController::class, 'delinquency'])->name('assistant.delinquency');
         Route::post('assistente/comunicado', [AssistantController::class, 'announcement'])->name('assistant.announcement');
         Route::delete('assistente/{conversation}', [AssistantController::class, 'destroy'])->name('assistant.destroy');
+    });
+
+    // Configurações > E-mail (SMTP/IMAP do tenant).
+    Route::middleware('permission:settings:email')->group(function () {
+        Route::get('configuracoes/email', [MailSettingController::class, 'edit'])->name('settings.email.edit');
+        Route::match(['put', 'patch'], 'configuracoes/email', [MailSettingController::class, 'update'])->name('settings.email.update');
+        Route::post('configuracoes/email/testar', [MailSettingController::class, 'test'])->name('settings.email.test');
     });
 
     // Configurações > WhatsApp (Evolution API por tenant) — config legada de instância única.

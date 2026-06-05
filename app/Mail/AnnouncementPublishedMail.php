@@ -14,8 +14,11 @@ class AnnouncementPublishedMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
+    public ?string $tenantId;
+
     public function __construct(public Announcement $announcement)
     {
+        $this->tenantId = $announcement->tenant_id;
     }
 
     public function envelope(): Envelope

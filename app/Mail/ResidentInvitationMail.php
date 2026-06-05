@@ -17,6 +17,7 @@ class ResidentInvitationMail extends Mailable implements ShouldQueue
         public string $userName,
         public string $tenantName,
         public string $url,
+        public ?string $tenantId = null,
     ) {}
 
     public function envelope(): Envelope

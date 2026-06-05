@@ -30,7 +30,7 @@ class RoleSeeder extends Seeder
                 'reports:read', 'reports:export',
                 'assemblies:create', 'assemblies:read', 'assemblies:update', 'assemblies:delete',
                 'users:create', 'users:read', 'users:update', 'users:delete', 'users:manage',
-                'settings:read', 'settings:update', 'settings:payments', 'settings:whatsapp',
+                'settings:read', 'settings:update', 'settings:payments', 'settings:whatsapp', 'settings:email',
                 'api_keys:manage', 'webhooks:manage', 'ai:use',
                 'gatehouse:read', 'gatehouse:register', 'gatehouse:manage',
                 'inbox:use', 'sectors:manage', 'campaigns:manage',

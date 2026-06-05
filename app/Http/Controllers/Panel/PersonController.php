@@ -105,15 +105,23 @@ class PersonController extends Controller
         return redirect()->route('persons.index')->with('success', 'Pessoa excluída.');
     }
 
-    /** Convida (ou reconvida) a pessoa para o portal do morador. */
-    public function invite(Person $person, InvitationService $invitations): RedirectResponse
+    /** Convida (ou reconvida) a pessoa para o portal do morador, pelos canais escolhidos. */
+    public function invite(Request $request, Person $person, InvitationService $invitations): RedirectResponse
     {
         $tenant = app('tenant');
         abort_unless($person->tenant_id === $tenant->id, 403);
 
-        $invitations->invite($person);
+        $data = $request->validate([
+            'channels' => 'array',
+            'channels.*' => 'in:email,whatsapp',
+        ]);
 
-        return back()->with('success', "Convite enviado para {$person->email}.");
+        $channels = $data['channels'] ?? ['email'];
+        $invitations->invite($person, $channels);
+
+        $labels = array_map(fn ($c) => $c === 'whatsapp' ? 'WhatsApp' : 'e-mail', $channels);
+
+        return back()->with('success', 'Convite enviado por '.implode(' e ', $labels).'.');
     }
 
     // --- Vínculos com unidades ---
