@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, router, useForm } from '@inertiajs/react';
-import { MessagesSquare, Send, UserCheck, CheckCircle2, RotateCcw, Building2 } from 'lucide-react';
+import { MessagesSquare, Send, UserCheck, CheckCircle2, RotateCcw, Paperclip, FileText, Zap, Download } from 'lucide-react';
 
 interface Conversation {
     id: string;
@@ -15,7 +15,9 @@ interface Conversation {
     assignee: string | null;
     last_message_at: string | null;
 }
-interface Message { id: string; direction: string; body: string | null; is_bot?: boolean; created_at: string | null }
+interface Media { type: string; name: string | null; mime: string | null; is_image: boolean; url: string | null }
+interface Message { id: string; direction: string; body: string | null; is_bot?: boolean; media: Media | null; created_at: string | null }
+interface QuickReply { id: string; title: string; body: string; sector_id: string | null }
 interface Selected {
     id: string;
     contact_name: string | null;
@@ -35,17 +37,22 @@ interface Props {
     selected: Selected | null;
     condominiums: Option[];
     sectors: Option[];
+    quickReplies: QuickReply[];
     filters: { condominium_id?: string; sector_id?: string; status?: string; conversation?: string };
 }
 
 const time = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
 const displayName = (c: { contact_name: string | null; contact_phone: string }) => c.contact_name || c.contact_phone;
 
-export default function InboxIndex({ conversations, selected, condominiums, sectors, filters }: Props) {
+export default function InboxIndex({ conversations, selected, condominiums, sectors, quickReplies, filters }: Props) {
     const navigate = (params: Record<string, string | undefined>) =>
         router.get(route('inbox.index'), { ...filters, ...params }, { preserveState: true, preserveScroll: true, replace: true });
 
     const openConversation = (id: string) => navigate({ conversation: id });
+
+    const fileRef = useRef<HTMLInputElement>(null);
+    const [qrOpen, setQrOpen] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
     // Polling (Reverb fica para a Fase 5).
     useEffect(() => {
@@ -60,6 +67,26 @@ export default function InboxIndex({ conversations, selected, condominiums, sect
         e.preventDefault();
         if (!selected) return;
         reply.post(route('inbox.send', selected.id), { preserveScroll: true, onSuccess: () => reply.reset('body') });
+    };
+
+    const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const f = e.target.files?.[0];
+        if (!f || !selected) return;
+        const fd = new FormData();
+        fd.append('file', f);
+        if (reply.data.body.trim()) fd.append('caption', reply.data.body);
+        setUploading(true);
+        router.post(route('inbox.sendMedia', selected.id), fd, {
+            preserveScroll: true,
+            forceFormData: true,
+            onSuccess: () => reply.reset('body'),
+            onFinish: () => { setUploading(false); if (fileRef.current) fileRef.current.value = ''; },
+        });
+    };
+
+    const useQuickReply = (body: string) => {
+        reply.setData('body', reply.data.body ? `${reply.data.body} ${body}` : body);
+        setQrOpen(false);
     };
 
     const assign = () => selected && router.post(route('inbox.assign', selected.id), {}, { preserveScroll: true });
@@ -149,7 +176,8 @@ export default function InboxIndex({ conversations, selected, condominiums, sect
                                     return (
                                         <div key={m.id} className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${bubble}`}>
                                             {m.is_bot && <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-100">🤖 Chatbot</p>}
-                                            <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                                            {m.media && <MediaBubble media={m.media} out={out} />}
+                                            {m.body && <p className="whitespace-pre-wrap break-words">{m.body}</p>}
                                             <p className={`mt-0.5 text-[10px] ${out ? 'text-blue-100' : 'text-gray-400'}`}>{time(m.created_at)}</p>
                                         </div>
                                     );
@@ -161,14 +189,40 @@ export default function InboxIndex({ conversations, selected, condominiums, sect
                             )}
 
                             <form onSubmit={send} className="flex items-center gap-2 border-t border-gray-100 p-3">
+                                <input ref={fileRef} type="file" className="hidden" onChange={onPickFile} />
+                                <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} title="Anexar arquivo" className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 disabled:opacity-50">
+                                    <Paperclip className="h-4 w-4" />
+                                </button>
+
+                                {quickReplies.length > 0 && (
+                                    <div className="relative flex-shrink-0">
+                                        <button type="button" onClick={() => setQrOpen((o) => !o)} title="Respostas rápidas" className="flex h-10 w-10 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100">
+                                            <Zap className="h-4 w-4" />
+                                        </button>
+                                        {qrOpen && (
+                                            <>
+                                                <div className="fixed inset-0 z-40" onClick={() => setQrOpen(false)} />
+                                                <div className="absolute bottom-12 left-0 z-50 max-h-72 w-72 overflow-y-auto rounded-xl border border-gray-100 bg-white shadow-lg">
+                                                    {quickReplies.map((q) => (
+                                                        <button key={q.id} type="button" onClick={() => useQuickReply(q.body)} className="block w-full border-b border-gray-50 px-3 py-2 text-left hover:bg-gray-50">
+                                                            <span className="block text-sm font-medium text-gray-900">{q.title}</span>
+                                                            <span className="block truncate text-xs text-gray-500">{q.body}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+
                                 <input
                                     type="text"
                                     value={reply.data.body}
                                     onChange={(e) => reply.setData('body', e.target.value)}
-                                    placeholder="Digite uma mensagem…"
+                                    placeholder={uploading ? 'Enviando arquivo…' : 'Digite uma mensagem…'}
                                     className="flex-1 rounded-full border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
                                 />
-                                <button type="submit" disabled={reply.processing || !reply.data.body.trim()} className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">
+                                <button type="submit" disabled={reply.processing || uploading || !reply.data.body.trim()} className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">
                                     <Send className="h-4 w-4" />
                                 </button>
                             </form>
@@ -177,5 +231,35 @@ export default function InboxIndex({ conversations, selected, condominiums, sect
                 </div>
             </div>
         </AppLayout>
+    );
+}
+
+function MediaBubble({ media, out }: { media: Media; out: boolean }) {
+    if (!media.url) {
+        return <p className={`flex items-center gap-1.5 text-xs italic ${out ? 'text-blue-100' : 'text-gray-400'}`}><FileText className="h-3.5 w-3.5" /> Mídia indisponível</p>;
+    }
+
+    if (media.is_image) {
+        return (
+            <a href={media.url} target="_blank" rel="noopener noreferrer" className="mb-1 block">
+                <img src={media.url} alt={media.name ?? 'imagem'} className="max-h-60 rounded-lg" />
+            </a>
+        );
+    }
+
+    if (media.type === 'video') {
+        return <video src={media.url} controls className="mb-1 max-h-60 rounded-lg" />;
+    }
+
+    if (media.type === 'audio') {
+        return <audio src={media.url} controls className="mb-1 w-56" />;
+    }
+
+    return (
+        <a href={media.url} target="_blank" rel="noopener noreferrer" className={`mb-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${out ? 'bg-blue-500/40' : 'bg-gray-100'}`}>
+            <FileText className="h-4 w-4 flex-shrink-0" />
+            <span className="min-w-0 flex-1 truncate">{media.name ?? 'arquivo'}</span>
+            <Download className="h-3.5 w-3.5 flex-shrink-0" />
+        </a>
     );
 }

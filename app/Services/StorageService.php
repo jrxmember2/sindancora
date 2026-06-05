@@ -91,6 +91,61 @@ class StorageService
         return $storageObject;
     }
 
+    /**
+     * Armazena conteúdo bruto (bytes) — usado para mídia recebida/enviada pelo WhatsApp, onde não há
+     * um UploadedFile. Respeita a cota do tenant e um limite de tamanho opcional (bytes). Lança
+     * StorageQuotaException se estourar a cota. Não valida MIME (mídia de chat é heterogênea).
+     */
+    public function storeRaw(
+        Tenant $tenant,
+        string $entityType,
+        string $entityId,
+        string $contents,
+        string $filename,
+        ?string $mimeType,
+        string $visibility = 'tenant',
+        ?string $condominiumId = null,
+        ?int $maxBytes = null,
+    ): StorageObject {
+        $size = strlen($contents);
+
+        if ($maxBytes !== null && $size > $maxBytes) {
+            abort(422, 'Arquivo de mídia acima do limite permitido.');
+        }
+
+        $this->checkQuota($tenant, $size);
+
+        $uuid = (string) Str::uuid();
+        $year = now()->year;
+        $month = now()->format('m');
+        $ext = pathinfo($filename, PATHINFO_EXTENSION) ?: 'bin';
+        $condFolder = $condominiumId ?? 'general';
+        $path = "{$tenant->id}/{$condFolder}/{$entityType}/{$year}/{$month}/{$uuid}.{$ext}";
+
+        $disk = config('filesystems.default');
+        Storage::disk($disk)->put($path, $contents);
+
+        $object = StorageObject::create([
+            'tenant_id' => $tenant->id,
+            'condominium_id' => $condominiumId,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'storage_provider' => $disk,
+            'storage_bucket' => config("filesystems.disks.{$disk}.bucket"),
+            'storage_path' => $path,
+            'original_filename' => $filename,
+            'mime_type' => $mimeType,
+            'file_size_bytes' => $size,
+            'checksum_sha256' => hash('sha256', $contents),
+            'visibility' => $visibility,
+            'uploaded_by' => auth()->id(),
+        ]);
+
+        app(PlanLimitService::class)->increment($tenant, 'storage_mb', (int) ceil($size / 1024 / 1024));
+
+        return $object;
+    }
+
     public function delete(StorageObject $object, bool $immediate = false): void
     {
         if ($immediate) {

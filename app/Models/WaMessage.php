@@ -16,7 +16,8 @@ class WaMessage extends Model
     public $timestamps = false; // só created_at (default no banco)
 
     protected $fillable = [
-        'tenant_id', 'conversation_id', 'direction', 'body', 'wa_message_id', 'sent_by', 'created_at',
+        'tenant_id', 'conversation_id', 'direction', 'body', 'media_type', 'storage_object_id',
+        'wa_message_id', 'sent_by', 'created_at',
     ];
 
     protected function casts(): array
@@ -34,5 +35,15 @@ class WaMessage extends Model
     public function sender(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sent_by');
+    }
+
+    public function storageObject(): BelongsTo
+    {
+        return $this->belongsTo(StorageObject::class, 'storage_object_id');
+    }
+
+    public function hasMedia(): bool
+    {
+        return $this->media_type !== null;
     }
 }

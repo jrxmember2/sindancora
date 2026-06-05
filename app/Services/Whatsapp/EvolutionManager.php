@@ -109,6 +109,49 @@ class EvolutionManager
         return $response->successful() ? ($response->json() ?? []) : null;
     }
 
+    /**
+     * Envia mídia (imagem/vídeo/documento) por uma conexão. $base64 é o conteúdo em base64 (sem o
+     * prefixo data:). Retorna o payload (inclui key.id) ou null em falha.
+     */
+    public function sendMedia(
+        WhatsappConnection $connection,
+        string $number,
+        string $mediatype,
+        ?string $mimetype,
+        string $base64,
+        string $fileName,
+        ?string $caption = null,
+    ): ?array {
+        $response = $this->request($connection->token)->post($this->url("/message/sendMedia/{$connection->instance}"), array_filter([
+            'number' => $number,
+            'mediatype' => $mediatype,           // image | video | document
+            'mimetype' => $mimetype,
+            'media' => $base64,
+            'fileName' => $fileName,
+            'caption' => $caption,
+        ], fn ($v) => $v !== null));
+
+        return $response->successful() ? ($response->json() ?? []) : null;
+    }
+
+    /**
+     * Obtém o conteúdo (base64) de uma mensagem de mídia recebida, quando o webhook não o trouxe.
+     * Retorna { base64, mimetype, fileName } ou [] em falha.
+     */
+    public function fetchMediaBase64(WhatsappConnection $connection, array $message): array
+    {
+        try {
+            $response = $this->request($connection->token)->post($this->url("/chat/getBase64FromMediaMessage/{$connection->instance}"), [
+                'message' => $message,
+                'convertToMp4' => false,
+            ]);
+
+            return $response->successful() ? ($response->json() ?? []) : [];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
     private function request(?string $apiKey = null): PendingRequest
     {
         return Http::withHeaders([

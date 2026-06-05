@@ -19,6 +19,7 @@ use App\Http\Controllers\Panel\NotificationController;
 use App\Http\Controllers\Panel\OccurrenceController;
 use App\Http\Controllers\Panel\PaymentSettingController;
 use App\Http\Controllers\Panel\PersonController;
+use App\Http\Controllers\Panel\QuickReplyController;
 use App\Http\Controllers\Panel\ReportController;
 use App\Http\Controllers\Panel\ReservationController;
 use App\Http\Controllers\Panel\RoleController;
@@ -386,10 +387,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('configuracoes/whatsapp/testar', [WhatsappSettingController::class, 'test'])->name('settings.whatsapp.test');
     });
 
-    // Inbox de WhatsApp (atendimento) — Fase 2.
+    // Inbox de WhatsApp (atendimento) — Fase 2; mídia/respostas prontas — Fase 4.
     Route::middleware('permission:inbox:use')->group(function () {
         Route::get('inbox', [InboxController::class, 'index'])->name('inbox.index');
         Route::post('inbox/{conversation}/enviar', [InboxController::class, 'send'])->name('inbox.send');
+        Route::post('inbox/{conversation}/midia', [InboxController::class, 'sendMedia'])->name('inbox.sendMedia');
+        Route::get('inbox/midia/{object}', [InboxController::class, 'media'])->name('inbox.media');
         Route::post('inbox/{conversation}/atribuir', [InboxController::class, 'assign'])->name('inbox.assign');
         Route::post('inbox/{conversation}/status', [InboxController::class, 'toggleStatus'])->name('inbox.status');
     });
@@ -415,6 +418,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('configuracoes/chatbot', [WhatsappBotController::class, 'index'])->name('chatbot.index');
         Route::match(['put', 'patch'], 'configuracoes/chatbot/conexao/{connection}', [WhatsappBotController::class, 'updateConnection'])->name('chatbot.connection');
         Route::match(['put', 'patch'], 'configuracoes/chatbot/condominio/{condominium}', [WhatsappBotController::class, 'updateCondominium'])->name('chatbot.condominium');
+
+        // Respostas prontas (canned) — Fase 4.
+        Route::get('respostas-rapidas', [QuickReplyController::class, 'index'])->name('quick-replies.index');
+        Route::post('respostas-rapidas', [QuickReplyController::class, 'store'])->name('quick-replies.store');
+        Route::match(['put', 'patch'], 'respostas-rapidas/{quickReply}', [QuickReplyController::class, 'update'])->name('quick-replies.update');
+        Route::delete('respostas-rapidas/{quickReply}', [QuickReplyController::class, 'destroy'])->name('quick-replies.destroy');
     });
     }); // fim do painel administrativo (middleware 'panel')
 });

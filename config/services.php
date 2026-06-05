@@ -53,6 +53,8 @@ return [
         'key' => env('EVOLUTION_API_KEY'),
         // URL pública do webhook de recebimento (Fase 2). Se vazio, instâncias são criadas sem webhook.
         'webhook_url' => env('EVOLUTION_WEBHOOK_URL'),
+        // Tamanho máximo (MB) de mídia de WhatsApp a armazenar/enviar (Fase 4).
+        'media_max_mb' => (int) env('WHATSAPP_MEDIA_MAX_MB', 16),
     ],
 
 ];
