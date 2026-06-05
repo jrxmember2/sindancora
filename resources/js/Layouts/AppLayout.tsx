@@ -29,6 +29,7 @@ import {
     Headset,
     Bot,
     MessageSquareText,
+    Send,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -48,6 +49,7 @@ const navigation = [
     { name: 'Portaria', href: '/visitantes', icon: DoorOpen, permission: 'gatehouse:read' },
     { name: 'Atendimento', href: '/inbox', icon: MessagesSquare, permission: 'inbox:use' },
     { name: 'Setores', href: '/setores', icon: Headset, permission: 'sectors:manage' },
+    { name: 'Disparos', href: '/disparos', icon: Send, permission: 'campaigns:manage' },
     { name: 'Assistente IA', href: '/assistente', icon: Sparkles, permission: 'ai:use' },
 ];
 

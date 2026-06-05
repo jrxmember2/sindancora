@@ -113,6 +113,9 @@ class PermissionSeeder extends Seeder
 
             // Setores de atendimento + chatbot
             ['module' => 'sectors', 'action' => 'manage', 'description' => 'Gerenciar setores e o chatbot de WhatsApp'],
+
+            // Disparo em massa por WhatsApp
+            ['module' => 'campaigns', 'action' => 'manage', 'description' => 'Criar e enviar campanhas de WhatsApp'],
         ];
 
         foreach ($permissions as $perm) {

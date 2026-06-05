@@ -7,6 +7,7 @@ use App\Http\Controllers\Panel\ApiKeyController;
 use App\Http\Controllers\Panel\AssemblyController;
 use App\Http\Controllers\Panel\AssistantController;
 use App\Http\Controllers\Panel\AuditController;
+use App\Http\Controllers\Panel\CampaignController;
 use App\Http\Controllers\Panel\ChargeController;
 use App\Http\Controllers\Panel\CommonAreaController;
 use App\Http\Controllers\Panel\CondominiumController;
@@ -428,6 +429,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('respostas-rapidas', [QuickReplyController::class, 'store'])->name('quick-replies.store');
         Route::match(['put', 'patch'], 'respostas-rapidas/{quickReply}', [QuickReplyController::class, 'update'])->name('quick-replies.update');
         Route::delete('respostas-rapidas/{quickReply}', [QuickReplyController::class, 'destroy'])->name('quick-replies.destroy');
+    });
+
+    // Disparo em massa por WhatsApp — Fase 6 (iniciativa). Rotas estáticas antes de {campaign}.
+    Route::middleware('permission:campaigns:manage')->group(function () {
+        Route::get('disparos', [CampaignController::class, 'index'])->name('campaigns.index');
+        Route::get('disparos/criar', [CampaignController::class, 'create'])->name('campaigns.create');
+        Route::get('disparos/condominio/{condominium}/alvos', [CampaignController::class, 'targets'])->name('campaigns.targets');
+        Route::post('disparos/previa', [CampaignController::class, 'preview'])->name('campaigns.preview');
+        Route::post('disparos', [CampaignController::class, 'store'])->name('campaigns.store');
+        Route::get('disparos/descadastros', [CampaignController::class, 'optOuts'])->name('campaigns.optouts');
+        Route::post('disparos/descadastros', [CampaignController::class, 'storeOptOut'])->name('campaigns.optouts.store');
+        Route::delete('disparos/descadastros/{optOut}', [CampaignController::class, 'destroyOptOut'])->name('campaigns.optouts.destroy');
+        Route::get('disparos/{campaign}', [CampaignController::class, 'show'])->name('campaigns.show');
+        Route::post('disparos/{campaign}/enviar', [CampaignController::class, 'start'])->name('campaigns.start');
+        Route::post('disparos/{campaign}/cancelar', [CampaignController::class, 'cancel'])->name('campaigns.cancel');
+        Route::delete('disparos/{campaign}', [CampaignController::class, 'destroy'])->name('campaigns.destroy');
     });
     }); // fim do painel administrativo (middleware 'panel')
 });

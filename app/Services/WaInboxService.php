@@ -7,6 +7,7 @@ use App\Exceptions\StorageQuotaException;
 use App\Models\Tenant;
 use App\Models\WaConversation;
 use App\Models\WaMessage;
+use App\Models\WaOptOut;
 use App\Models\WhatsappConnection;
 use App\Services\StorageService;
 use Illuminate\Support\Facades\Log;
@@ -94,6 +95,11 @@ class WaInboxService
             'created_at' => now(),
         ]);
 
+        // Opt-out automático (LGPD/anti-ban): contato que responde SAIR/PARAR entra na lista.
+        if ($direction === 'in') {
+            $this->maybeOptOut($connection->tenant_id, $phone, $body);
+        }
+
         // Triagem do chatbot (Fase 3): só para mensagens recebidas e enquanto não roteada.
         // Resolvido pelo container para evitar ciclo de dependência (o bot usa este serviço).
         if ($direction === 'in' && $connection->bot_enabled && $conversation->bot_state !== 'routed') {
@@ -131,6 +137,28 @@ class WaInboxService
         WaConversationUpdated::dispatch($conversation->tenant_id, $conversation->id, $conversation->sector_id);
 
         return $message;
+    }
+
+    /** Palavras que disparam o descadastro automático. */
+    private const OPT_OUT_KEYWORDS = ['sair', 'parar', 'cancelar', 'descadastrar', 'stop'];
+
+    /** Registra opt-out quando a mensagem recebida é uma palavra de descadastro. */
+    private function maybeOptOut(string $tenantId, string $phone, ?string $body): void
+    {
+        $text = trim(mb_strtolower((string) $body));
+        if (! in_array($text, self::OPT_OUT_KEYWORDS, true)) {
+            return;
+        }
+
+        $normalized = WaOptOut::normalizePhone($phone);
+        if (! $normalized) {
+            return;
+        }
+
+        WaOptOut::firstOrCreate(
+            ['tenant_id' => $tenantId, 'phone' => $normalized],
+            ['reason' => 'Respondeu "'.$text.'"', 'created_at' => now()],
+        );
     }
 
     /** Armazena a mídia recebida via StorageService; retorna o id do objeto ou null em falha/cota. */

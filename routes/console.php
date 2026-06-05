@@ -22,3 +22,6 @@ Schedule::command('charges:mark-overdue')->dailyAt('06:00')->withoutOverlapping(
 
 // Expurga a lixeira de arquivos (remoção definitiva após 30 dias)
 Schedule::command('storage:purge-trash')->dailyAt('03:30')->withoutOverlapping();
+
+// Inicia campanhas de WhatsApp agendadas quando a data marcada chega
+Schedule::command('campaigns:dispatch-scheduled')->everyMinute()->withoutOverlapping();
