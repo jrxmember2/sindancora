@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     LayoutDashboard,
@@ -59,6 +59,7 @@ const adminNavigation = [
     { name: 'WhatsApp', href: '/configuracoes/whatsapp/conexoes', icon: MessageCircle, permission: 'settings:whatsapp' },
     { name: 'Chatbot', href: '/configuracoes/chatbot', icon: Bot, permission: 'sectors:manage' },
     { name: 'Respostas rápidas', href: '/respostas-rapidas', icon: MessageSquareText, permission: 'sectors:manage' },
+    { name: 'Relatório de atendimento', href: '/inbox/relatorios', icon: BarChart3, permission: 'sectors:manage' },
     { name: 'Auditoria', href: '/auditoria', icon: ClipboardList, permission: 'audit:read' },
 ];
 
@@ -78,6 +79,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     const unread = notifications?.unread_count ?? 0;
     const recent = notifications?.recent ?? [];
+
+    // Tempo real (Reverb): atualiza o sino ao receber notificação transmitida.
+    const userId = auth.user?.id;
+    useEffect(() => {
+        if (!window.Echo || !userId) return;
+        const channel = `App.Models.User.${userId}`;
+        window.Echo.private(channel).notification(() => router.reload({ only: ['notifications'] }));
+        return () => { window.Echo?.leave(channel); };
+    }, [userId]);
+
     const openNotification = (id: string) => router.post(route('notifications.read', id), {}, { preserveScroll: true });
     const markAllRead = () => router.post(route('notifications.read-all'), {}, { preserveScroll: true, onSuccess: () => setNotifOpen(false) });
 

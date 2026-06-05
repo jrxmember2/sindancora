@@ -28,6 +28,7 @@ use App\Http\Controllers\Panel\UnitController;
 use App\Http\Controllers\Panel\UserController;
 use App\Http\Controllers\Panel\WebhookController;
 use App\Http\Controllers\Panel\WhatsappBotController;
+use App\Http\Controllers\Panel\WhatsappReportController;
 use App\Http\Controllers\Panel\WhatsappConnectionController;
 use App\Http\Controllers\Panel\WhatsappSettingController;
 use Illuminate\Support\Facades\Route;
@@ -418,6 +419,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('configuracoes/chatbot', [WhatsappBotController::class, 'index'])->name('chatbot.index');
         Route::match(['put', 'patch'], 'configuracoes/chatbot/conexao/{connection}', [WhatsappBotController::class, 'updateConnection'])->name('chatbot.connection');
         Route::match(['put', 'patch'], 'configuracoes/chatbot/condominio/{condominium}', [WhatsappBotController::class, 'updateCondominium'])->name('chatbot.condominium');
+
+        // Relatórios de atendimento (WhatsApp) — Fase 5.
+        Route::get('inbox/relatorios', [WhatsappReportController::class, 'index'])->name('inbox.reports');
 
         // Respostas prontas (canned) — Fase 4.
         Route::get('respostas-rapidas', [QuickReplyController::class, 'index'])->name('quick-replies.index');
