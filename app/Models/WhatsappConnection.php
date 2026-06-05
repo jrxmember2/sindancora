@@ -17,7 +17,7 @@ class WhatsappConnection extends Model
 
     protected $fillable = [
         'tenant_id', 'name', 'instance', 'token', 'phone_number',
-        'status', 'bot_enabled', 'last_connected_at', 'created_by',
+        'status', 'bot_enabled', 'condominium_menu_header', 'last_connected_at', 'created_by',
     ];
 
     protected function casts(): array

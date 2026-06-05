@@ -22,9 +22,11 @@ use App\Http\Controllers\Panel\PersonController;
 use App\Http\Controllers\Panel\ReportController;
 use App\Http\Controllers\Panel\ReservationController;
 use App\Http\Controllers\Panel\RoleController;
+use App\Http\Controllers\Panel\SectorController;
 use App\Http\Controllers\Panel\UnitController;
 use App\Http\Controllers\Panel\UserController;
 use App\Http\Controllers\Panel\WebhookController;
+use App\Http\Controllers\Panel\WhatsappBotController;
 use App\Http\Controllers\Panel\WhatsappConnectionController;
 use App\Http\Controllers\Panel\WhatsappSettingController;
 use Illuminate\Support\Facades\Route;
@@ -400,6 +402,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('configuracoes/whatsapp/conexoes/{connection}/estado', [WhatsappConnectionController::class, 'state'])->name('whatsapp.connections.state');
         Route::match(['put', 'patch'], 'configuracoes/whatsapp/conexoes/{connection}/condominios', [WhatsappConnectionController::class, 'syncCondominiums'])->name('whatsapp.connections.condominiums');
         Route::delete('configuracoes/whatsapp/conexoes/{connection}', [WhatsappConnectionController::class, 'destroy'])->name('whatsapp.connections.destroy');
+    });
+
+    // Setores de atendimento + chatbot de triagem — Fase 3 (WhatsApp).
+    Route::middleware('permission:sectors:manage')->group(function () {
+        Route::get('setores', [SectorController::class, 'index'])->name('sectors.index');
+        Route::post('setores', [SectorController::class, 'store'])->name('sectors.store');
+        Route::match(['put', 'patch'], 'setores/{sector}', [SectorController::class, 'update'])->name('sectors.update');
+        Route::match(['put', 'patch'], 'setores/{sector}/membros', [SectorController::class, 'syncMembers'])->name('sectors.members');
+        Route::delete('setores/{sector}', [SectorController::class, 'destroy'])->name('sectors.destroy');
+
+        Route::get('configuracoes/chatbot', [WhatsappBotController::class, 'index'])->name('chatbot.index');
+        Route::match(['put', 'patch'], 'configuracoes/chatbot/conexao/{connection}', [WhatsappBotController::class, 'updateConnection'])->name('chatbot.connection');
+        Route::match(['put', 'patch'], 'configuracoes/chatbot/condominio/{condominium}', [WhatsappBotController::class, 'updateCondominium'])->name('chatbot.condominium');
     });
     }); // fim do painel administrativo (middleware 'panel')
 });
