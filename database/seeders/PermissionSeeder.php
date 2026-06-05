@@ -95,6 +95,7 @@ class PermissionSeeder extends Seeder
             ['module' => 'settings', 'action' => 'update',   'description' => 'Editar configurações'],
             ['module' => 'settings', 'action' => 'payments', 'description' => 'Configurar integração de pagamento'],
             ['module' => 'settings', 'action' => 'whatsapp', 'description' => 'Configurar integração de WhatsApp'],
+            ['module' => 'settings', 'action' => 'email',    'description' => 'Configurar SMTP/e-mail do tenant'],
 
             // API e Webhooks
             ['module' => 'api_keys',  'action' => 'manage', 'description' => 'Gerenciar chaves de API'],

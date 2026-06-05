@@ -77,15 +77,19 @@ function LinkModal({ person, availableUnits, linkTypes, onClose }: { person: Per
 export default function PersonShow({ person, linkTypes, availableUnits }: Props) {
     const [linkModal, setLinkModal] = useState(false);
     const [inviting, setInviting] = useState(false);
+    const [channels, setChannels] = useState<string[]>(['email']);
 
     const endLink = (linkId: string) => {
         if (confirm('Encerrar este vínculo?')) router.delete(route('persons.links.destroy', [person.id, linkId]));
     };
 
+    const toggleChannel = (c: string) => setChannels((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
+
     const sendInvite = () => {
+        if (channels.length === 0) return;
         const isResend = person.user?.status === 'invited';
-        if (!confirm(isResend ? 'Reenviar o convite de acesso ao portal?' : `Enviar convite de acesso ao portal para ${person.email}?`)) return;
-        router.post(route('persons.invite', person.id), {}, {
+        if (!confirm(isResend ? 'Reenviar o convite de acesso ao portal?' : 'Enviar convite de acesso ao portal?')) return;
+        router.post(route('persons.invite', person.id), { channels }, {
             preserveScroll: true,
             onStart: () => setInviting(true),
             onFinish: () => setInviting(false),
@@ -163,14 +167,27 @@ export default function PersonShow({ person, linkTypes, availableUnits }: Props)
 
                             {portalStatus !== 'active' && (
                                 person.email ? (
-                                    <button
-                                        onClick={sendInvite}
-                                        disabled={inviting}
-                                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                                    >
-                                        <Send className="h-3.5 w-3.5" />
-                                        {inviting ? 'Enviando…' : portalStatus === 'invited' ? 'Reenviar convite' : 'Convidar para o portal'}
-                                    </button>
+                                    <div className="space-y-2">
+                                        <p className="text-xs font-medium text-gray-500">Enviar convite por:</p>
+                                        <div className="flex gap-4">
+                                            <label className="flex items-center gap-1.5 text-sm text-gray-700">
+                                                <input type="checkbox" checked={channels.includes('email')} onChange={() => toggleChannel('email')} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                                E-mail
+                                            </label>
+                                            <label className={`flex items-center gap-1.5 text-sm ${person.phone ? 'text-gray-700' : 'text-gray-300'}`} title={person.phone ? undefined : 'Cadastre um telefone'}>
+                                                <input type="checkbox" disabled={!person.phone} checked={channels.includes('whatsapp')} onChange={() => toggleChannel('whatsapp')} className="rounded border-gray-300 text-green-600 focus:ring-green-500 disabled:opacity-50" />
+                                                WhatsApp
+                                            </label>
+                                        </div>
+                                        <button
+                                            onClick={sendInvite}
+                                            disabled={inviting || channels.length === 0}
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                                        >
+                                            <Send className="h-3.5 w-3.5" />
+                                            {inviting ? 'Enviando…' : portalStatus === 'invited' ? 'Reenviar convite' : 'Convidar para o portal'}
+                                        </button>
+                                    </div>
                                 ) : (
                                     <p className="text-xs text-gray-400">Cadastre um e-mail para poder convidar.</p>
                                 )

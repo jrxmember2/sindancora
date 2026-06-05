@@ -30,6 +30,7 @@ import {
     Bot,
     MessageSquareText,
     Send,
+    Mail,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -56,6 +57,7 @@ const navigation = [
 const adminNavigation = [
     { name: 'Perfis', href: '/roles', icon: Shield, permission: 'users:manage' },
     { name: 'Pagamentos', href: '/configuracoes/pagamentos', icon: Settings, permission: 'settings:payments' },
+    { name: 'E-mail (SMTP)', href: '/configuracoes/email', icon: Mail, permission: 'settings:email' },
     { name: 'API', href: '/configuracoes/api', icon: KeyRound, permission: 'api_keys:manage' },
     { name: 'Webhooks', href: '/configuracoes/webhooks', icon: Webhook, permission: 'webhooks:manage' },
     { name: 'WhatsApp', href: '/configuracoes/whatsapp/conexoes', icon: MessageCircle, permission: 'settings:whatsapp' },

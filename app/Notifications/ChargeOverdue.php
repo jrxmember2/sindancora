@@ -14,7 +14,13 @@ class ChargeOverdue extends Notification implements ShouldQueue
 {
     use BroadcastsNotification, Queueable;
 
-    public function __construct(public Charge $charge) {}
+    /** Tenant do job (usado pelo hook de fila p/ aplicar o SMTP do tenant no envio do e-mail). */
+    public ?string $tenantId;
+
+    public function __construct(public Charge $charge)
+    {
+        $this->tenantId = $charge->tenant_id;
+    }
 
     /** @return array<int, string|class-string> */
     public function via(object $notifiable): array
