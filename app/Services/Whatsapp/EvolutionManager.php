@@ -6,6 +6,7 @@ use App\Models\EvolutionSetting;
 use App\Models\WhatsappConnection;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Gerencia instâncias no servidor Evolution API (auto-hospedado), usando a chave GLOBAL do
@@ -49,16 +50,18 @@ class EvolutionManager
 
     /**
      * Cria a instância na Evolution. Retorna o payload (inclui o token/apikey da instância e,
-     * possivelmente, o primeiro QR). $webhookUrl liga o recebimento (Fase 2) se informado.
+     * possivelmente, o primeiro QR em qrcode.base64). Tenta com o webhook embutido; se a versão do
+     * servidor rejeitar esse formato, refaz a criação SEM webhook (o webhook é setado à parte depois).
      */
     public function createInstance(string $instance, ?string $webhookUrl = null): array
     {
-        $body = [
+        $base = [
             'instanceName' => $instance,
             'integration' => 'WHATSAPP-BAILEYS',
             'qrcode' => true,
         ];
 
+        $body = $base;
         if (filled($webhookUrl)) {
             $body['webhook'] = [
                 'url' => $webhookUrl,
@@ -68,13 +71,61 @@ class EvolutionManager
             ];
         }
 
-        return $this->request()->post($this->url('/instance/create'), $body)->json() ?? [];
+        $response = $this->request()->post($this->url('/instance/create'), $body);
+
+        // Algumas versões rejeitam o bloco webhook na criação → tenta criar sem ele.
+        if (! $response->successful() && filled($webhookUrl)) {
+            Log::warning('Evolution create com webhook falhou; recriando sem webhook', [
+                'status' => $response->status(),
+                'body' => mb_substr((string) $response->body(), 0, 500),
+            ]);
+            $response = $this->request()->post($this->url('/instance/create'), $base);
+        }
+
+        if (! $response->successful()) {
+            Log::warning('Evolution create falhou', [
+                'status' => $response->status(),
+                'body' => mb_substr((string) $response->body(), 0, 500),
+            ]);
+        }
+
+        return $response->json() ?? [];
+    }
+
+    /** Configura o webhook de recebimento de uma instância (à parte da criação). Best-effort. */
+    public function setWebhook(string $instance, string $url): bool
+    {
+        try {
+            return $this->request()->post($this->url("/webhook/set/{$instance}"), [
+                'webhook' => [
+                    'enabled' => true,
+                    'url' => $url,
+                    'byEvents' => false,
+                    'base64' => true,
+                    'events' => ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'],
+                ],
+            ])->successful();
+        } catch (\Throwable $e) {
+            Log::warning('Evolution setWebhook falhou', ['instance' => $instance, 'error' => $e->getMessage()]);
+
+            return false;
+        }
     }
 
     /** Solicita o QR Code / código de pareamento da instância. Retorna { base64, code, pairingCode }. */
     public function connect(string $instance): array
     {
-        return $this->request()->get($this->url("/instance/connect/{$instance}"))->json() ?? [];
+        $response = $this->request()->get($this->url("/instance/connect/{$instance}"));
+
+        if (! $response->successful()) {
+            Log::warning('Evolution connect falhou', [
+                'instance' => $instance,
+                'status' => $response->status(),
+                'body' => mb_substr((string) $response->body(), 0, 500),
+            ]);
+        }
+
+        return $response->json() ?? [];
     }
 
     /** Estado da conexão: { instance: { state: open|connecting|close } }. */

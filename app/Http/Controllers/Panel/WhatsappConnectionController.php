@@ -11,6 +11,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -74,9 +76,18 @@ class WhatsappConnectionController extends Controller
         $instance = $this->uniqueInstanceName($tenant->slug ?? 'tenant');
 
         $payload = $this->evolution->createInstance($instance, $this->evolution->webhookUrl());
-        $token = $payload['hash'] ?? $payload['instance']['apikey'] ?? $payload['apikey'] ?? null;
+        $hash = $payload['hash'] ?? null;
+        $token = is_array($hash) ? ($hash['apikey'] ?? null) : $hash;
+        $token = $token ?: ($payload['instance']['apikey'] ?? $payload['apikey'] ?? null);
 
-        WhatsappConnection::create([
+        // A criação falhou se não veio nem dados da instância nem token.
+        if (! isset($payload['instance']) && blank($token)) {
+            Log::warning('Conexão WhatsApp: instância não criada', ['instance' => $instance, 'resp' => $payload]);
+
+            return back()->with('error', 'Não foi possível criar a instância na Evolution: '.$this->evolutionError($payload).' Verifique a URL/versão do servidor.');
+        }
+
+        $connection = WhatsappConnection::create([
             'tenant_id' => $tenant->id,
             'name' => $data['name'],
             'instance' => $instance,
@@ -84,6 +95,17 @@ class WhatsappConnectionController extends Controller
             'status' => 'connecting',
             'created_by' => Auth::id(),
         ]);
+
+        // O primeiro QR já costuma vir na resposta da criação — guarda p/ o modal exibir de imediato.
+        $qr = $payload['qrcode']['base64'] ?? $payload['base64'] ?? null;
+        if (filled($qr)) {
+            Cache::put($this->qrCacheKey($connection->instance), $qr, now()->addSeconds(120));
+        }
+
+        // Webhook setado à parte (idempotente) — não depende do formato aceito na criação.
+        if ($url = $this->evolution->webhookUrl()) {
+            $this->evolution->setWebhook($instance, $url);
+        }
 
         return back()->with('success', 'Conexão criada. Leia o QR Code para parear o número.');
     }
@@ -94,11 +116,33 @@ class WhatsappConnectionController extends Controller
         $this->authorizeTenant($connection);
 
         $result = $this->evolution->connect($connection->instance);
+        $base64 = $result['base64'] ?? null;
+
+        // Fallback: se o /connect não trouxe QR (ex.: instância já em "connecting"), usa o da criação.
+        if (blank($base64)) {
+            $base64 = Cache::get($this->qrCacheKey($connection->instance));
+        }
 
         return response()->json([
-            'base64' => $result['base64'] ?? null,
+            'base64' => $base64,
             'code' => $result['code'] ?? ($result['pairingCode'] ?? null),
         ]);
+    }
+
+    private function qrCacheKey(string $instance): string
+    {
+        return "wa_qr_{$instance}";
+    }
+
+    /** Extrai uma mensagem legível do payload de erro da Evolution. */
+    private function evolutionError(array $payload): string
+    {
+        $msg = $payload['message'] ?? $payload['error'] ?? ($payload['response']['message'] ?? null);
+        if (is_array($msg)) {
+            $msg = implode('; ', array_map(fn ($m) => is_array($m) ? json_encode($m) : (string) $m, $msg));
+        }
+
+        return filled($msg) ? (string) $msg : 'resposta inesperada do servidor';
     }
 
     /** Estado da conexão; atualiza o registro e devolve o status normalizado. */
