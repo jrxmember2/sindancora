@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import type { PageProps } from '@/types';
 import { MessagesSquare, Send, UserCheck, CheckCircle2, RotateCcw, Paperclip, FileText, Zap, Download } from 'lucide-react';
 
 interface Conversation {
@@ -53,14 +54,24 @@ export default function InboxIndex({ conversations, selected, condominiums, sect
     const fileRef = useRef<HTMLInputElement>(null);
     const [qrOpen, setQrOpen] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const tenantId = usePage<PageProps>().props.tenant?.id;
 
-    // Polling (Reverb fica para a Fase 5).
+    // Tempo real (Reverb): atualiza ao receber/enviar mensagem. Mantém um poll lento de fallback.
     useEffect(() => {
-        const t = setInterval(() => {
-            router.reload({ only: ['conversations', 'selected'] });
-        }, 5000);
-        return () => clearInterval(t);
-    }, []);
+        const reload = () => router.reload({ only: ['conversations', 'selected'] });
+
+        const channel = window.Echo && tenantId ? `tenant.${tenantId}.inbox` : null;
+        if (channel) {
+            window.Echo!.private(channel).listen('.conversation.updated', reload);
+        }
+
+        const poll = setInterval(reload, channel ? 30000 : 5000);
+
+        return () => {
+            clearInterval(poll);
+            if (channel) window.Echo!.leave(channel);
+        };
+    }, [tenantId]);
 
     const reply = useForm({ body: '' });
     const send = (e: React.FormEvent) => {

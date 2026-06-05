@@ -4,13 +4,14 @@ namespace App\Notifications;
 
 use App\Models\Announcement;
 use App\Notifications\Channels\WhatsAppChannel;
+use App\Notifications\Concerns\BroadcastsNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
 class AnnouncementPublished extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use BroadcastsNotification, Queueable;
 
     public function __construct(public Announcement $announcement)
     {
@@ -19,7 +20,7 @@ class AnnouncementPublished extends Notification implements ShouldQueue
     /** @return array<int, string|class-string> */
     public function via(object $notifiable): array
     {
-        return ['database', WhatsAppChannel::class];
+        return ['database', 'broadcast', WhatsAppChannel::class];
     }
 
     public function toWhatsapp(object $notifiable): string

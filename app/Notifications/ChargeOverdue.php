@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Charge;
 use App\Notifications\Channels\WhatsAppChannel;
+use App\Notifications\Concerns\BroadcastsNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -11,14 +12,14 @@ use Illuminate\Notifications\Notification;
 
 class ChargeOverdue extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use BroadcastsNotification, Queueable;
 
     public function __construct(public Charge $charge) {}
 
     /** @return array<int, string|class-string> */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail', WhatsAppChannel::class];
+        return ['database', 'mail', 'broadcast', WhatsAppChannel::class];
     }
 
     public function toWhatsapp(object $notifiable): string

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\WaConversationUpdated;
 use App\Exceptions\StorageQuotaException;
 use App\Models\Tenant;
 use App\Models\WaConversation;
@@ -99,6 +100,8 @@ class WaInboxService
             app(WhatsappBotService::class)->handleIncoming($conversation, $body);
         }
 
+        WaConversationUpdated::dispatch($conversation->tenant_id, $conversation->id, $conversation->sector_id);
+
         return $conversation;
     }
 
@@ -113,7 +116,7 @@ class WaInboxService
     ): WaMessage {
         $conversation->update(['last_message_at' => now()]);
 
-        return WaMessage::create([
+        $message = WaMessage::create([
             'tenant_id' => $conversation->tenant_id,
             'conversation_id' => $conversation->id,
             'direction' => 'out',
@@ -124,6 +127,10 @@ class WaInboxService
             'sent_by' => $userId,
             'created_at' => now(),
         ]);
+
+        WaConversationUpdated::dispatch($conversation->tenant_id, $conversation->id, $conversation->sector_id);
+
+        return $message;
     }
 
     /** Armazena a mídia recebida via StorageService; retorna o id do objeto ou null em falha/cota. */
