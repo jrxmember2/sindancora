@@ -5,12 +5,18 @@ namespace App\Http\Controllers\Panel;
 use App\Http\Controllers\Controller;
 use App\Models\Condominium;
 use App\Models\Sector;
+use App\Models\StorageObject;
 use App\Models\WaConversation;
+use App\Models\WaMessage;
+use App\Models\WaQuickReply;
+use App\Services\StorageService;
 use App\Services\Whatsapp\EvolutionManager;
 use App\Services\WaInboxService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,6 +30,7 @@ class InboxController extends Controller
     public function __construct(
         private readonly WaInboxService $inbox,
         private readonly EvolutionManager $evolution,
+        private readonly StorageService $storage,
     ) {}
 
     public function index(Request $request): Response
@@ -75,16 +82,24 @@ class InboxController extends Controller
                     'sector' => $conversation->sector?->name,
                     'assignee' => $conversation->assignee?->name,
                     'assigned_to_me' => $conversation->assigned_to === Auth::id(),
-                    'messages' => $conversation->messages()->limit(200)->get()->map(fn ($m) => [
+                    'messages' => $conversation->messages()->with('storageObject:id,original_filename,mime_type,deleted_at')->limit(200)->get()->map(fn (WaMessage $m) => [
                         'id' => $m->id,
                         'direction' => $m->direction,
                         'body' => $m->body,
                         'is_bot' => $m->direction === 'out' && $m->sent_by === null,
+                        'media' => $this->mediaPayload($m),
                         'created_at' => $m->created_at?->toIso8601String(),
                     ]),
                 ];
             }
         }
+
+        // Respostas prontas que o atendente pode usar: globais (sem setor) + as dos seus setores.
+        $quickReplies = WaQuickReply::where('tenant_id', $tenant->id)
+            ->when(! $seeAll, fn ($q) => $q->where(fn ($w) => $w->whereNull('sector_id')->orWhereIn('sector_id', $mySectorIds)))
+            ->orderBy('sort_order')->orderBy('title')
+            ->get(['id', 'title', 'body', 'sector_id'])
+            ->map(fn ($r) => ['id' => $r->id, 'title' => $r->title, 'body' => $r->body, 'sector_id' => $r->sector_id]);
 
         // Setores disponíveis no filtro: todos do tenant (gestor) ou só os do atendente.
         $sectorsQuery = Sector::where('tenant_id', $tenant->id)->active();
@@ -99,6 +114,7 @@ class InboxController extends Controller
                 ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]),
             'sectors' => $sectorsQuery->orderBy('name')->get(['id', 'name'])
                 ->map(fn ($s) => ['value' => $s->id, 'label' => $s->name]),
+            'quickReplies' => $quickReplies,
             'filters' => [
                 'condominium_id' => $request->condominium_id,
                 'sector_id' => $request->sector_id,
@@ -112,6 +128,25 @@ class InboxController extends Controller
     private function canAccess(WaConversation $conversation, bool $seeAll, $mySectorIds): bool
     {
         return $seeAll || ($conversation->sector_id && $mySectorIds->contains($conversation->sector_id));
+    }
+
+    /** Serializa a mídia de uma mensagem (ou null). is_image controla a exibição inline. */
+    private function mediaPayload(WaMessage $message): ?array
+    {
+        if (! $message->media_type) {
+            return null;
+        }
+
+        $object = $message->storageObject;
+        $available = $object && $object->deleted_at === null;
+
+        return [
+            'type' => $message->media_type,
+            'name' => $object?->original_filename,
+            'mime' => $object?->mime_type,
+            'is_image' => $available && str_starts_with((string) $object->mime_type, 'image/'),
+            'url' => $available ? route('inbox.media', $object->id) : null,
+        ];
     }
 
     public function send(Request $request, WaConversation $conversation): RedirectResponse
@@ -134,6 +169,79 @@ class InboxController extends Controller
         $this->inbox->recordOutbound($conversation, $data['body'], $waId, Auth::id());
 
         return back(303);
+    }
+
+    /** Envia mídia (imagem/vídeo/documento) anexada pelo atendente. */
+    public function sendMedia(Request $request, WaConversation $conversation): RedirectResponse
+    {
+        $this->authorizeTenant($conversation);
+
+        $maxKb = config('services.evolution.media_max_mb') * 1024;
+        $data = $request->validate([
+            'file' => "required|file|max:{$maxKb}",
+            'caption' => 'nullable|string|max:1000',
+        ]);
+
+        $connection = $conversation->connection;
+        if (! $connection) {
+            return back()->with('error', 'Conexão indisponível.');
+        }
+
+        $file = $request->file('file');
+        $mime = $file->getMimeType() ?: 'application/octet-stream';
+        $mediatype = str_starts_with($mime, 'image/') ? 'image' : (str_starts_with($mime, 'video/') ? 'video' : 'document');
+        $contents = file_get_contents($file->getRealPath());
+
+        // Armazena primeiro (cota); StorageQuotaException → 402 tratado globalmente.
+        $object = $this->storage->storeRaw(
+            tenant: app('tenant'),
+            entityType: 'wa_media',
+            entityId: $conversation->id,
+            contents: $contents,
+            filename: $file->getClientOriginalName(),
+            mimeType: $mime,
+            visibility: 'tenant',
+            condominiumId: $conversation->condominium_id,
+        );
+
+        $payload = $this->evolution->sendMedia(
+            connection: $connection,
+            number: $conversation->contact_phone,
+            mediatype: $mediatype,
+            mimetype: $mime,
+            base64: base64_encode($contents),
+            fileName: $file->getClientOriginalName(),
+            caption: $data['caption'] ?? null,
+        );
+
+        if ($payload === null) {
+            $this->storage->delete($object, immediate: true); // desfaz o armazenamento se o envio falhou
+            return back()->with('error', 'Não foi possível enviar a mídia. Verifique se o número está conectado.');
+        }
+
+        $waId = $payload['key']['id'] ?? $payload['data']['key']['id'] ?? null;
+        $this->inbox->recordOutbound($conversation, $data['caption'] ?? null, $waId, Auth::id(), $mediatype, $object->id);
+
+        return back(303);
+    }
+
+    /** Redireciona para a URL assinada da mídia (escopo por tenant + setor da conversa). */
+    public function media(StorageObject $object): RedirectResponse|StreamedResponse
+    {
+        abort_unless($object->tenant_id === app('tenant')->id && $object->entity_type === 'wa_media', 403);
+        abort_if($object->deleted_at !== null, 404);
+
+        $conversation = WaConversation::where('tenant_id', $object->tenant_id)->find($object->entity_id);
+        abort_unless($conversation !== null, 404);
+        $this->authorizeTenant($conversation); // mesma regra de escopo por setor
+
+        $disk = Storage::disk($object->storage_provider);
+
+        try {
+            return redirect()->away($disk->temporaryUrl($object->storage_path, now()->addMinutes(10)));
+        } catch (\Throwable) {
+            return $disk->download($object->storage_path, $object->original_filename);
+        }
     }
 
     public function assign(WaConversation $conversation): RedirectResponse

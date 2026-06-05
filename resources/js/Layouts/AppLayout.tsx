@@ -28,6 +28,7 @@ import {
     MessagesSquare,
     Headset,
     Bot,
+    MessageSquareText,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -57,6 +58,7 @@ const adminNavigation = [
     { name: 'Webhooks', href: '/configuracoes/webhooks', icon: Webhook, permission: 'webhooks:manage' },
     { name: 'WhatsApp', href: '/configuracoes/whatsapp/conexoes', icon: MessageCircle, permission: 'settings:whatsapp' },
     { name: 'Chatbot', href: '/configuracoes/chatbot', icon: Bot, permission: 'sectors:manage' },
+    { name: 'Respostas rápidas', href: '/respostas-rapidas', icon: MessageSquareText, permission: 'sectors:manage' },
     { name: 'Auditoria', href: '/auditoria', icon: ClipboardList, permission: 'audit:read' },
 ];
 
