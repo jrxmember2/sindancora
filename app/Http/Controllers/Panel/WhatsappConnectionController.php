@@ -76,9 +76,7 @@ class WhatsappConnectionController extends Controller
         $instance = $this->uniqueInstanceName($tenant->slug ?? 'tenant');
 
         $payload = $this->evolution->createInstance($instance, $this->evolution->webhookUrl());
-        $hash = $payload['hash'] ?? null;
-        $token = is_array($hash) ? ($hash['apikey'] ?? null) : $hash;
-        $token = $token ?: ($payload['instance']['apikey'] ?? $payload['apikey'] ?? null);
+        $token = $this->resolveToken($payload);
 
         // A criação falhou se não veio nem dados da instância nem token.
         if (! isset($payload['instance']) && blank($token)) {
@@ -116,17 +114,49 @@ class WhatsappConnectionController extends Controller
         $this->authorizeTenant($connection);
 
         $result = $this->evolution->connect($connection->instance);
-        $base64 = $result['base64'] ?? null;
+
+        // Instância inexistente no servidor (criada antes de uma correção, ou Evolution reiniciada
+        // sem volume persistente) → recria na hora e tenta novamente.
+        if (($result['status'] ?? null) === 404) {
+            $this->recreateInstance($connection);
+            $result = $this->evolution->connect($connection->instance);
+        }
 
         // Fallback: se o /connect não trouxe QR (ex.: instância já em "connecting"), usa o da criação.
-        if (blank($base64)) {
-            $base64 = Cache::get($this->qrCacheKey($connection->instance));
-        }
+        $base64 = $result['base64'] ?? Cache::get($this->qrCacheKey($connection->instance));
 
         return response()->json([
             'base64' => $base64,
             'code' => $result['code'] ?? ($result['pairingCode'] ?? null),
         ]);
+    }
+
+    /** Recria a instância no servidor (mesmo nome) e guarda o QR/token/webhook. */
+    private function recreateInstance(WhatsappConnection $connection): void
+    {
+        $payload = $this->evolution->createInstance($connection->instance, $this->evolution->webhookUrl());
+
+        if ($token = $this->resolveToken($payload)) {
+            $connection->update(['token' => $token]);
+        }
+
+        $qr = $payload['qrcode']['base64'] ?? $payload['base64'] ?? null;
+        if (filled($qr)) {
+            Cache::put($this->qrCacheKey($connection->instance), $qr, now()->addSeconds(120));
+        }
+
+        if ($url = $this->evolution->webhookUrl()) {
+            $this->evolution->setWebhook($connection->instance, $url);
+        }
+    }
+
+    /** Extrai o token/apikey da instância do payload de criação (lida com hash string ou objeto). */
+    private function resolveToken(array $payload): ?string
+    {
+        $hash = $payload['hash'] ?? null;
+        $token = is_array($hash) ? ($hash['apikey'] ?? null) : $hash;
+
+        return $token ?: ($payload['instance']['apikey'] ?? $payload['apikey'] ?? null);
     }
 
     private function qrCacheKey(string $instance): string
