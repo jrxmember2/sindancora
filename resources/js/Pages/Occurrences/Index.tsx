@@ -1,12 +1,13 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { AlertCircle, Plus, Search, Eye, Pencil, Trash2 } from 'lucide-react';
+import { AlertCircle, Plus, Search, Eye, Pencil, Trash2, BarChart3 } from 'lucide-react';
 import { useState } from 'react';
 import type { PageProps } from '@/types';
 
 interface Option { value: string; label: string }
 interface Occurrence {
     id: string; title: string; category: string; priority: string; status: string;
+    due_at: string | null; sla_status: string | null;
     condominium: { id: string; name: string } | null;
     unit: { id: string; number: string } | null;
     assignee: { id: string; name: string } | null;
@@ -17,8 +18,15 @@ interface Props {
     categories: Record<string, string>;
     priorities: Record<string, string>;
     statuses: Record<string, string>;
-    filters: { search?: string; status?: string; category?: string; priority?: string; condominium_id?: string };
+    filters: { search?: string; status?: string; category?: string; priority?: string; condominium_id?: string; sla?: string };
 }
+
+const slaBadge: Record<string, { label: string; cls: string }> = {
+    overdue: { label: 'Atrasada', cls: 'bg-red-50 text-red-700' },
+    due_soon: { label: 'Vence em breve', cls: 'bg-amber-50 text-amber-700' },
+    on_time: { label: 'No prazo', cls: 'bg-green-50 text-green-700' },
+};
+const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—');
 
 const priorityStyle: Record<string, string> = {
     low: 'bg-gray-100 text-gray-600',
@@ -41,7 +49,7 @@ export default function OccurrencesIndex({ occurrences, condominiums, categories
     const apply = (extra: Record<string, string> = {}) =>
         router.get(route('occurrences.index'), {
             search, status: filters.status ?? '', category: filters.category ?? '',
-            priority: filters.priority ?? '', condominium_id: filters.condominium_id ?? '', ...extra,
+            priority: filters.priority ?? '', condominium_id: filters.condominium_id ?? '', sla: filters.sla ?? '', ...extra,
         }, { preserveState: true, replace: true });
 
     const destroy = (id: string, title: string) => {
@@ -57,11 +65,16 @@ export default function OccurrencesIndex({ occurrences, condominiums, categories
                         <AlertCircle className="h-6 w-6 text-blue-600" />
                         <h1 className="text-2xl font-bold text-gray-900">Ocorrências</h1>
                     </div>
-                    {can('occurrences:create') && (
-                        <Link href={route('occurrences.create')} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700">
-                            <Plus className="h-4 w-4" /> Nova Ocorrência
+                    <div className="flex gap-2">
+                        <Link href={route('occurrences.dashboard')} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
+                            <BarChart3 className="h-4 w-4" /> Painel
                         </Link>
-                    )}
+                        {can('occurrences:create') && (
+                            <Link href={route('occurrences.create')} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700">
+                                <Plus className="h-4 w-4" /> Nova Ocorrência
+                            </Link>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap gap-3">
@@ -81,6 +94,10 @@ export default function OccurrencesIndex({ occurrences, condominiums, categories
                         <option value="">Todas as categorias</option>
                         {Object.entries(categories).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                     </select>
+                    <select value={filters.sla ?? ''} onChange={e => apply({ sla: e.target.value })} className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
+                        <option value="">SLA: todos</option>
+                        <option value="overdue">Atrasadas</option>
+                    </select>
                 </div>
 
                 <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
@@ -92,13 +109,14 @@ export default function OccurrencesIndex({ occurrences, condominiums, categories
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Categoria</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Prioridade</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Prazo</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Responsável</th>
                                 <th className="px-4 py-3" />
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {occurrences.data.length === 0 && (
-                                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">Nenhuma ocorrência encontrada.</td></tr>
+                                <tr><td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-500">Nenhuma ocorrência encontrada.</td></tr>
                             )}
                             {occurrences.data.map(o => (
                                 <tr key={o.id} className="transition-colors hover:bg-gray-50">
@@ -112,6 +130,11 @@ export default function OccurrencesIndex({ occurrences, condominiums, categories
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusStyle[o.status] ?? ''}`}>{statuses[o.status] ?? o.status}</span>
+                                    </td>
+                                    <td className="px-4 py-3 text-xs">
+                                        {o.sla_status && slaBadge[o.sla_status]
+                                            ? <span className={`rounded-full px-2 py-0.5 font-medium ${slaBadge[o.sla_status].cls}`}>{slaBadge[o.sla_status].label}</span>
+                                            : <span className="text-gray-500">{fmtDate(o.due_at)}</span>}
                                     </td>
                                     <td className="px-4 py-3 text-xs text-gray-600">{o.assignee?.name ?? <span className="text-gray-400">—</span>}</td>
                                     <td className="px-4 py-3">

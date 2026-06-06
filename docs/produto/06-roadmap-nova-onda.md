@@ -43,8 +43,10 @@ Legenda esforço: 🟢 baixo · 🟡 médio · 🔴 alto. Valor: ⭐ alto difere
   - `maintenance_plans` + histórico `maintenance_records` (avanço automático da próxima data),
     categoria via Categorias customizáveis (tipo `maintenance`), alerta diário `maintenance:notify-due`.
     Ver `docs/tecnico/manutencao-preventiva.md`.
-- [ ] **B5. SLA/prazo em ocorrências** + acompanhamentos internos vs públicos + estatísticas ⭐ 🟡
-  - `deadline` na ocorrência, alertas (vence hoje / atrasada), nota interna, dashboard de chamados.
+- [x] **B5. SLA/prazo em ocorrências** + acompanhamentos internos vs públicos + estatísticas ⭐ 🟡 — concluída (06/06/2026)
+  - `due_at` (SLA por prioridade auto, configurável), alerta diário `occurrences:notify-sla`,
+    `occurrence_comments.is_internal` (nota interna/pública) e painel `/ocorrencias/painel`.
+    Ver `docs/tecnico/ocorrencias.md`. **Fase B concluída.**
 
 ### Fase C — Gestão de serviços e contas
 - [ ] **C7. Orçamentos/Cotações** (multi-fornecedor, comparar, aprovar, prazo, anexos) ⭐ 🔴

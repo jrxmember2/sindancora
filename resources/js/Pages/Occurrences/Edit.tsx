@@ -6,7 +6,7 @@ interface Option { value: string; label: string }
 interface UnitOption extends Option { condominium_id: string }
 interface Occurrence {
     id: string; condominium_id: string; unit_id: string | null; assigned_to: string | null;
-    title: string; description: string; category: string; priority: string;
+    title: string; description: string; category: string; priority: string; due_at: string | null;
 }
 interface Props {
     occurrence: Occurrence;
@@ -26,6 +26,7 @@ export default function OccurrenceEdit({ occurrence, condominiums, units, assign
         description: occurrence.description,
         category: occurrence.category,
         priority: occurrence.priority,
+        due_at: occurrence.due_at ? occurrence.due_at.slice(0, 16) : '',
     });
 
     return (

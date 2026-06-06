@@ -76,3 +76,26 @@ Ver `docs/produto/02-roadmap-mvp.md` §3.2.
   que usa `AssistantService::draftOccurrenceReply()` (contexto da ocorrência + últimos
   acompanhamentos + RAG) e preenche a caixa de comentário. O botão só aparece com `ai:use` e IA
   configurada (`canDraftAi`). SLA/prazo das ocorrências segue para a Fase B (item B5).
+
+## Nova onda — Fase B (B5): SLA, notas internas e painel
+
+- **SLA/prazo**: cada ocorrência tem `due_at` (prazo). Ao abrir, é calculado automaticamente a
+  partir da prioridade — dias por prioridade configuráveis por tenant em **Configurações →
+  SLA de chamados** (`OccurrenceSlaSetting`; fallback `Occurrence::SLA_DEFAULT_DAYS` =
+  baixa 7 / normal 5 / alta 2 / urgente 1). O prazo pode ser sobrescrito manualmente no
+  formulário. Accessor `sla_status` (`on_time`/`due_soon`(≤24h)/`overdue`/`null`) alimenta os
+  badges na listagem e no detalhe. Alterar a prioridade recalcula o prazo (se não houver override).
+- **Alerta de SLA**: comando `occurrences:notify-sla` (scheduler 08:00) varre
+  `Occurrence::dueForSlaAlert()` (abertas, dentro de 1 dia do prazo ou estouradas, ainda não
+  avisadas) e notifica **responsável + gestores** via `OccurrenceSlaDue` (db+mail+broadcast);
+  marca `sla_notified_at` (reaberto ao reabrir a ocorrência).
+- **Acompanhamentos internos vs públicos**: `occurrence_comments.is_internal`. No painel, o form
+  de comentário tem o checkbox "Nota interna" (**marcado por padrão**); notas internas não avisam
+  o morador (só o responsável) e **não aparecem no portal** (`Portal\OccurrenceController@show`
+  filtra `is_internal = false`). Comentário do morador é sempre público.
+- **Painel de chamados** (`/ocorrencias/painel`, `occurrences.dashboard`): contadores por status,
+  atrasadas, distribuição por prioridade/categoria, tempo médio de resolução e de 1ª resposta
+  (`first_response_at`), e carga por responsável. Acesso pelo botão "Painel" na listagem.
+- **Deploy**: `migrate --force` (colunas em `occurrences`/`occurrence_comments` + tabela
+  `occurrence_sla_settings`) + `optimize:clear` + rebuild. Sem `db:seed`. Scheduler:
+  `occurrences:notify-sla`.

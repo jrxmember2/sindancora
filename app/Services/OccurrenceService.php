@@ -4,22 +4,55 @@ namespace App\Services;
 
 use App\Models\Occurrence;
 use App\Models\OccurrenceComment;
+use App\Models\OccurrenceSlaSetting;
 use App\Models\User;
 use App\Notifications\OccurrenceUpdated;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 
 class OccurrenceService
 {
+    /** @var array<string, OccurrenceSlaSetting|null> cache de SLA por tenant na requisição */
+    private array $slaCache = [];
+
     public function __construct(private readonly WebhookService $webhooks) {}
 
-    /** Adiciona um comentário do usuário e notifica os participantes. */
-    public function addComment(Occurrence $occurrence, string $body): OccurrenceComment
+    /** Dias de SLA para a prioridade, considerando o override do tenant. */
+    public function slaDaysFor(string $tenantId, string $priority): int
     {
-        $comment = $this->log($occurrence, 'comment', $body);
+        $setting = $this->slaCache[$tenantId] ??= OccurrenceSlaSetting::where('tenant_id', $tenantId)->first();
+
+        return $setting
+            ? $setting->daysFor($priority)
+            : (Occurrence::SLA_DEFAULT_DAYS[$priority] ?? 5);
+    }
+
+    /** Define o prazo (due_at) pelo SLA da prioridade, se ainda não houver um. */
+    public function ensureDueAt(Occurrence $occurrence): Occurrence
+    {
+        if ($occurrence->due_at) {
+            return $occurrence;
+        }
+
+        $base = $occurrence->created_at ?? now();
+        $days = $this->slaDaysFor($occurrence->tenant_id, $occurrence->priority);
+
+        $occurrence->forceFill(['due_at' => $base->copy()->addDays($days)])->save();
+
+        return $occurrence;
+    }
+
+    /** Adiciona um comentário do usuário e notifica os participantes. */
+    public function addComment(Occurrence $occurrence, string $body, bool $isInternal = false): OccurrenceComment
+    {
+        $comment = $this->log($occurrence, 'comment', $body, null, $isInternal);
+
+        $this->markFirstResponse($occurrence);
 
         $author = Auth::user()?->name ?? 'Alguém';
-        $this->notifyParticipants($occurrence, "{$author} comentou na ocorrência.");
+        // Nota interna não avisa o morador (autor da ocorrência) — só o responsável.
+        $this->notifyParticipants($occurrence, "{$author} comentou na ocorrência.", excludeCreator: $isInternal);
 
         return $comment;
     }
@@ -35,7 +68,14 @@ class OccurrenceService
         $occurrence->forceFill([
             'status' => $newStatus,
             'closed_at' => $newStatus === 'closed' ? now() : null,
+            // Ao reabrir, reabre o ciclo de alerta de SLA.
+            'sla_notified_at' => $newStatus !== 'closed' ? null : $occurrence->sla_notified_at,
         ])->save();
+
+        // Sair de "aberta" conta como primeira resposta da gestão.
+        if ($from === 'open') {
+            $this->markFirstResponse($occurrence);
+        }
 
         $this->log($occurrence, 'status', null, ['from' => $from, 'to' => $newStatus]);
 
@@ -81,24 +121,35 @@ class OccurrenceService
         }
     }
 
-    private function log(Occurrence $occurrence, string $type, ?string $body, ?array $meta = null): OccurrenceComment
+    /** Marca a primeira resposta da gestão (ator diferente de quem abriu), para estatística. */
+    private function markFirstResponse(Occurrence $occurrence): void
+    {
+        if ($occurrence->first_response_at || Auth::id() === $occurrence->created_by) {
+            return;
+        }
+
+        $occurrence->forceFill(['first_response_at' => now()])->save();
+    }
+
+    private function log(Occurrence $occurrence, string $type, ?string $body, ?array $meta = null, bool $isInternal = false): OccurrenceComment
     {
         return $occurrence->comments()->create([
             'tenant_id' => $occurrence->tenant_id,
             'user_id' => Auth::id(),
             'type' => $type,
             'body' => $body,
+            'is_internal' => $isInternal,
             'meta' => $meta,
         ]);
     }
 
     /**
      * Notifica os participantes da ocorrência (autor e responsável),
-     * exceto quem está executando a ação.
+     * exceto quem está executando a ação. `excludeCreator` omite o autor (notas internas).
      */
-    private function notifyParticipants(Occurrence $occurrence, string $summary): void
+    private function notifyParticipants(Occurrence $occurrence, string $summary, bool $excludeCreator = false): void
     {
-        $userIds = collect([$occurrence->created_by, $occurrence->assigned_to])
+        $userIds = collect([$excludeCreator ? null : $occurrence->created_by, $occurrence->assigned_to])
             ->filter()
             ->reject(fn ($id) => $id === Auth::id())
             ->unique();

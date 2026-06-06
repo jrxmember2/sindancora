@@ -13,6 +13,7 @@ use App\Services\OccurrenceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -37,6 +38,7 @@ class OccurrenceController extends Controller
             ->when($request->category, fn ($q, $c) => $q->where('category', $c))
             ->when($request->priority, fn ($q, $p) => $q->where('priority', $p))
             ->when($request->condominium_id, fn ($q, $id) => $q->where('condominium_id', $id))
+            ->when($request->sla === 'overdue', fn ($q) => $q->where('status', '!=', 'closed')->where('due_at', '<', now()))
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -47,7 +49,56 @@ class OccurrenceController extends Controller
             'categories' => $this->categoryOptions($tenant->id),
             'priorities' => Occurrence::PRIORITIES,
             'statuses' => Occurrence::STATUSES,
-            'filters' => $request->only(['search', 'status', 'category', 'priority', 'condominium_id']),
+            'filters' => $request->only(['search', 'status', 'category', 'priority', 'condominium_id', 'sla']),
+        ]);
+    }
+
+    /** Painel de chamados: estatísticas agregadas de ocorrências do tenant. */
+    public function dashboard(Request $request): Response
+    {
+        $tenant = app('tenant');
+        $base = fn () => Occurrence::where('tenant_id', $tenant->id)
+            ->when($request->condominium_id, fn ($q, $id) => $q->where('condominium_id', $id));
+
+        $byStatus = $base()->select('status', DB::raw('count(*) as total'))->groupBy('status')->pluck('total', 'status');
+
+        $overdue = $base()->where('status', '!=', 'closed')->where('due_at', '<', now())->count();
+
+        $byPriority = $base()->where('status', '!=', 'closed')
+            ->select('priority', DB::raw('count(*) as total'))->groupBy('priority')->pluck('total', 'priority');
+
+        $byCategory = $base()->where('status', '!=', 'closed')
+            ->select('category', DB::raw('count(*) as total'))->groupBy('category')
+            ->orderByDesc('total')->pluck('total', 'category');
+
+        $avgResolutionHours = $base()->whereNotNull('closed_at')
+            ->value(DB::raw('avg(extract(epoch from (closed_at - created_at)) / 3600)'));
+
+        $avgFirstResponseHours = $base()->whereNotNull('first_response_at')
+            ->value(DB::raw('avg(extract(epoch from (first_response_at - created_at)) / 3600)'));
+
+        $byAssignee = $base()->where('status', '!=', 'closed')->whereNotNull('assigned_to')
+            ->select('assigned_to', DB::raw('count(*) as total'))
+            ->groupBy('assigned_to')->orderByDesc('total')->limit(8)->get();
+        $names = User::whereIn('id', $byAssignee->pluck('assigned_to'))->pluck('name', 'id');
+
+        $categories = $this->categoryOptions($tenant->id);
+
+        return Inertia::render('Occurrences/Dashboard', [
+            'stats' => [
+                'byStatus' => $byStatus,
+                'overdue' => $overdue,
+                'byPriority' => $byPriority,
+                'byCategory' => $byCategory->mapWithKeys(fn ($total, $cat) => [($categories[$cat] ?? $cat) => $total]),
+                'avgResolutionHours' => $avgResolutionHours ? round((float) $avgResolutionHours, 1) : null,
+                'avgFirstResponseHours' => $avgFirstResponseHours ? round((float) $avgFirstResponseHours, 1) : null,
+                'byAssignee' => $byAssignee->map(fn ($r) => ['name' => $names[$r->assigned_to] ?? '—', 'total' => $r->total]),
+            ],
+            'statuses' => Occurrence::STATUSES,
+            'priorities' => Occurrence::PRIORITIES,
+            'condominiums' => $this->condominiumOptions($tenant->id),
+            'filters' => $request->only(['condominium_id']),
+            'canConfigureSla' => Auth::user()->hasPermission('occurrences:update'),
         ]);
     }
 
@@ -76,6 +127,9 @@ class OccurrenceController extends Controller
         if ($assignee) {
             $this->service->assign($occurrence, $assignee);
         }
+
+        // Prazo automático pelo SLA da prioridade quando não informado manualmente.
+        $this->service->ensureDueAt($occurrence);
 
         $request->validate($this->attachmentRules());
         try {
@@ -131,6 +185,13 @@ class OccurrenceController extends Controller
         $newAssignee = $data['assigned_to'] ?? null;
         unset($data['assigned_to']);
         $oldAssignee = $occurrence->assigned_to;
+        $oldPriority = $occurrence->priority;
+
+        // Se a prioridade mudou e o prazo não foi informado manualmente, recalcula pelo SLA.
+        if (empty($data['due_at']) && ($data['priority'] ?? $oldPriority) !== $oldPriority) {
+            $data['due_at'] = ($occurrence->created_at ?? now())
+                ->copy()->addDays($this->service->slaDaysFor($occurrence->tenant_id, $data['priority']));
+        }
 
         $occurrence->update($data);
 
@@ -181,9 +242,12 @@ class OccurrenceController extends Controller
     public function addComment(Request $request, Occurrence $occurrence): RedirectResponse
     {
         $occurrence = $this->authorizeTenant($occurrence);
-        $data = $request->validate(['body' => 'required|string|max:2000']);
+        $data = $request->validate([
+            'body' => 'required|string|max:2000',
+            'is_internal' => 'boolean',
+        ]);
 
-        $this->service->addComment($occurrence, $data['body']);
+        $this->service->addComment($occurrence, $data['body'], $data['is_internal'] ?? false);
 
         return back()->with('success', 'Comentário adicionado.');
     }
@@ -216,6 +280,7 @@ class OccurrenceController extends Controller
             'description' => 'required|string|max:5000',
             'category' => 'required|in:'.implode(',', array_keys($this->categoryOptions($tenantId))),
             'priority' => 'required|in:'.implode(',', array_keys(Occurrence::PRIORITIES)),
+            'due_at' => 'nullable|date',
         ]);
     }
 
