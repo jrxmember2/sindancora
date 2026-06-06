@@ -15,7 +15,7 @@ interface Props {
 export default function OccurrenceCreate({ condominiums, units, assignableUsers, categories, priorities }: Props) {
     const form = useForm<OccurrenceFormData & { attachments: File[] }>({
         condominium_id: condominiums.length === 1 ? condominiums[0].value : '',
-        unit_id: '', assigned_to: '', title: '', description: '', category: 'maintenance', priority: 'normal',
+        unit_id: '', assigned_to: '', title: '', description: '', category: 'maintenance', priority: 'normal', due_at: '',
         attachments: [],
     });
 

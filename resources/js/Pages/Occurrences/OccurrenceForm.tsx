@@ -9,6 +9,7 @@ export interface OccurrenceFormData {
     description: string;
     category: string;
     priority: string;
+    due_at: string;
 }
 
 interface Option { value: string; label: string }
@@ -88,12 +89,18 @@ export default function OccurrenceForm({
                     </Field>
                 </div>
 
-                <Field label="Responsável" error={errors.assigned_to}>
-                    <select value={data.assigned_to} onChange={e => setData('assigned_to', e.target.value)} className={inputClass}>
-                        <option value="">Não atribuído</option>
-                        {assignableUsers.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
-                    </select>
-                </Field>
+                <div className="grid grid-cols-2 gap-4">
+                    <Field label="Responsável" error={errors.assigned_to}>
+                        <select value={data.assigned_to} onChange={e => setData('assigned_to', e.target.value)} className={inputClass}>
+                            <option value="">Não atribuído</option>
+                            {assignableUsers.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
+                        </select>
+                    </Field>
+                    <Field label="Prazo (SLA)" error={errors.due_at}>
+                        <input type="datetime-local" value={data.due_at} onChange={e => setData('due_at', e.target.value)} className={inputClass} />
+                        <p className="mt-1 text-xs text-gray-400">Em branco = calculado pela prioridade.</p>
+                    </Field>
+                </div>
 
                 <Field label="Descrição *" error={errors.description}>
                     <textarea

@@ -87,7 +87,7 @@ class OccurrenceController extends Controller
     public function show(Occurrence $occurrence): Response
     {
         $this->authorizeOwner($occurrence);
-        $occurrence->load(['condominium:id,name', 'unit:id,number', 'assignee:id,name', 'comments' => fn ($q) => $q->where('type', 'comment')->with('user:id,name'), 'attachments']);
+        $occurrence->load(['condominium:id,name', 'unit:id,number', 'assignee:id,name', 'comments' => fn ($q) => $q->where('type', 'comment')->where('is_internal', false)->with('user:id,name'), 'attachments']);
 
         return Inertia::render('Portal/Occurrences/Show', [
             'occurrence' => $occurrence,

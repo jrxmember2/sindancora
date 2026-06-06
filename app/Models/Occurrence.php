@@ -20,12 +20,28 @@ class Occurrence extends Model
     protected $fillable = [
         'tenant_id', 'condominium_id', 'unit_id', 'created_by', 'assigned_to',
         'title', 'description', 'category', 'priority', 'status', 'closed_at',
+        'due_at', 'first_response_at', 'sla_notified_at',
     ];
+
+    protected $appends = ['sla_status'];
 
     protected function casts(): array
     {
-        return ['closed_at' => 'datetime'];
+        return [
+            'closed_at' => 'datetime',
+            'due_at' => 'datetime',
+            'first_response_at' => 'datetime',
+            'sla_notified_at' => 'datetime',
+        ];
     }
+
+    /** Prazo padrão de atendimento (em dias) por prioridade — sobreposto pelo OccurrenceSlaSetting do tenant. */
+    public const SLA_DEFAULT_DAYS = [
+        'low' => 7,
+        'normal' => 5,
+        'high' => 2,
+        'urgent' => 1,
+    ];
 
     public const CATEGORIES = [
         'maintenance' => 'Manutenção',
@@ -69,6 +85,31 @@ class Occurrence extends Model
             'priority' => $this->priority,
             'status' => $this->status,
         ];
+    }
+
+    /** Situação do SLA: null (sem prazo ou encerrada) | overdue | due_soon (≤24h) | on_time. */
+    public function getSlaStatusAttribute(): ?string
+    {
+        if (! $this->due_at || $this->status === 'closed') {
+            return null;
+        }
+
+        $hours = now()->diffInHours($this->due_at, false);
+
+        if ($hours < 0) {
+            return 'overdue';
+        }
+
+        return $hours <= 24 ? 'due_soon' : 'on_time';
+    }
+
+    /** Ocorrências abertas no prazo de alerta ainda não notificadas neste ciclo. */
+    public function scopeDueForSlaAlert($query)
+    {
+        return $query->where('status', '!=', 'closed')
+            ->whereNotNull('due_at')
+            ->whereNull('sla_notified_at')
+            ->where('due_at', '<=', now()->addDay());
     }
 
     public function condominium(): BelongsTo

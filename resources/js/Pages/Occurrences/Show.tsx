@@ -8,12 +8,13 @@ import AttachmentList, { Attachment } from '@/Components/AttachmentList';
 interface Option { value: string; label: string }
 interface Named { id: string; name: string }
 interface Comment {
-    id: string; type: string; body: string | null; created_at: string;
+    id: string; type: string; body: string | null; created_at: string; is_internal: boolean;
     user: Named | null; meta: { from?: string; to?: string; assigned_to?: string | null } | null;
 }
 interface Occurrence {
     id: string; title: string; description: string; category: string; priority: string; status: string;
     created_at: string; closed_at: string | null; assigned_to: string | null;
+    due_at: string | null; sla_status: string | null;
     condominium: Named | null; unit: { id: string; number: string } | null;
     creator: Named | null; assignee: Named | null; comments: Comment[];
 }
@@ -36,12 +37,18 @@ const statusStyle: Record<string, string> = {
 };
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '');
 
+const slaBadge: Record<string, { label: string; cls: string }> = {
+    overdue: { label: 'SLA estourado', cls: 'bg-red-50 text-red-700' },
+    due_soon: { label: 'Vence em breve', cls: 'bg-amber-50 text-amber-700' },
+    on_time: { label: 'No prazo', cls: 'bg-green-50 text-green-700' },
+};
+
 export default function OccurrenceShow({ occurrence: o, attachments, assignableUsers, categories, priorities, statuses, canDraftAi }: Props) {
     const { auth } = usePage<PageProps>().props;
     const perms = auth.user?.permissions ?? [];
     const can = (p: string) => perms.includes('*') || perms.includes(p);
 
-    const commentForm = useForm({ body: '' });
+    const commentForm = useForm({ body: '', is_internal: true });
     const [drafting, setDrafting] = useState(false);
     const [draftError, setDraftError] = useState<string | null>(null);
 
@@ -63,7 +70,7 @@ export default function OccurrenceShow({ occurrence: o, attachments, assignableU
     const assign = (userId: string) => router.post(route('occurrences.assign', o.id), { assigned_to: userId }, { preserveScroll: true });
     const submitComment = () => commentForm.post(route('occurrences.comments.store', o.id), {
         preserveScroll: true,
-        onSuccess: () => commentForm.reset('body'),
+        onSuccess: () => commentForm.setData('body', ''),
     });
     const destroy = () => { if (confirm('Excluir esta ocorrência?')) router.delete(route('occurrences.destroy', o.id)); };
 
@@ -100,12 +107,16 @@ export default function OccurrenceShow({ occurrence: o, attachments, assignableU
                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusStyle[o.status] ?? ''}`}>{statuses[o.status] ?? o.status}</span>
                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${priorityStyle[o.priority] ?? ''}`}>{priorities[o.priority] ?? o.priority}</span>
                         <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">{categories[o.category] ?? o.category}</span>
+                        {o.sla_status && slaBadge[o.sla_status] && (
+                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${slaBadge[o.sla_status].cls}`}>{slaBadge[o.sla_status].label}</span>
+                        )}
                     </div>
                     <h1 className="text-2xl font-bold text-gray-900">{o.title}</h1>
                     <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 border-b border-gray-100 pb-4 text-xs text-gray-500">
                         {o.condominium && <span className="inline-flex items-center gap-1"><Building2 className="h-3.5 w-3.5" /> {o.condominium.name}{o.unit ? ` · ${o.unit.number}` : ''}</span>}
                         {o.creator && <span className="inline-flex items-center gap-1"><User className="h-3.5 w-3.5" /> {o.creator.name}</span>}
                         <span className="inline-flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Aberta em {fmt(o.created_at)}</span>
+                        {o.due_at && o.status !== 'closed' && <span className={`inline-flex items-center gap-1 ${o.sla_status === 'overdue' ? 'text-red-600' : o.sla_status === 'due_soon' ? 'text-amber-600' : ''}`}><Calendar className="h-3.5 w-3.5" /> Prazo {fmt(o.due_at)}</span>}
                         {o.closed_at && <span className="inline-flex items-center gap-1 text-green-600"><CheckCircle2 className="h-3.5 w-3.5" /> Encerrada em {fmt(o.closed_at)}</span>}
                     </div>
                     <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-gray-700">{o.description}</p>
@@ -161,10 +172,14 @@ export default function OccurrenceShow({ occurrence: o, attachments, assignableU
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     {c.type === 'comment' ? (
-                                        <>
-                                            <p className="text-sm"><span className="font-medium text-gray-900">{c.user?.name ?? 'Sistema'}</span> <span className="text-xs text-gray-400">{fmt(c.created_at)}</span></p>
+                                        <div className={c.is_internal ? 'rounded-lg bg-amber-50/60 px-3 py-2 ring-1 ring-amber-100' : ''}>
+                                            <p className="text-sm">
+                                                <span className="font-medium text-gray-900">{c.user?.name ?? 'Sistema'}</span>{' '}
+                                                <span className="text-xs text-gray-400">{fmt(c.created_at)}</span>
+                                                {c.is_internal && <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">nota interna</span>}
+                                            </p>
                                             <p className="mt-0.5 whitespace-pre-wrap text-sm text-gray-700">{c.body}</p>
-                                        </>
+                                        </div>
                                     ) : (
                                         <p className="text-sm text-gray-500">{timelineText(c)} <span className="text-xs text-gray-400">· {fmt(c.created_at)}</span></p>
                                     )}
@@ -184,6 +199,10 @@ export default function OccurrenceShow({ occurrence: o, attachments, assignableU
                             />
                             {commentForm.errors.body && <p className="mt-1 text-xs text-red-600">{commentForm.errors.body}</p>}
                             {draftError && <p className="mt-1 text-xs text-red-600">{draftError}</p>}
+                            <label className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+                                <input type="checkbox" checked={commentForm.data.is_internal} onChange={e => commentForm.setData('is_internal', e.target.checked)} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                Nota interna (não visível ao morador)
+                            </label>
                             <div className="mt-2 flex items-center justify-between">
                                 {canDraftAi ? (
                                     <button onClick={draftWithAi} disabled={drafting} className="inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm font-medium text-violet-700 transition-colors hover:bg-violet-100 disabled:opacity-50">

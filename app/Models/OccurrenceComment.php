@@ -12,12 +12,12 @@ class OccurrenceComment extends Model
     use BelongsToTenant, HasUuidKey;
 
     protected $fillable = [
-        'tenant_id', 'occurrence_id', 'user_id', 'type', 'body', 'meta',
+        'tenant_id', 'occurrence_id', 'user_id', 'type', 'body', 'is_internal', 'meta',
     ];
 
     protected function casts(): array
     {
-        return ['meta' => 'array'];
+        return ['meta' => 'array', 'is_internal' => 'boolean'];
     }
 
     public function occurrence(): BelongsTo

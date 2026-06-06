@@ -21,6 +21,7 @@ use App\Http\Controllers\Panel\MailSettingController;
 use App\Http\Controllers\Panel\NotificationController;
 use App\Http\Controllers\Panel\MaintenanceController;
 use App\Http\Controllers\Panel\OccurrenceController;
+use App\Http\Controllers\Panel\OccurrenceSlaController;
 use App\Http\Controllers\Panel\SupplierController;
 use App\Http\Controllers\Panel\PaymentSettingController;
 use App\Http\Controllers\Panel\PersonController;
@@ -193,9 +194,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('comunicados/{announcement}', [AnnouncementController::class, 'show'])->name('announcements.show');
     });
 
-    // Ocorrências — rotas estáticas (create) antes da dinâmica {occurrence} (show).
+    // Ocorrências — rotas estáticas (create, painel) antes da dinâmica {occurrence} (show).
     Route::middleware('permission:occurrences:read')->group(function () {
         Route::get('ocorrencias', [OccurrenceController::class, 'index'])->name('occurrences.index');
+        Route::get('ocorrencias/painel', [OccurrenceController::class, 'dashboard'])->name('occurrences.dashboard');
     });
     Route::middleware('permission:occurrences:create')->group(function () {
         Route::get('ocorrencias/create', [OccurrenceController::class, 'create'])->name('occurrences.create');
@@ -433,6 +435,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('configuracoes/email', [MailSettingController::class, 'edit'])->name('settings.email.edit');
         Route::match(['put', 'patch'], 'configuracoes/email', [MailSettingController::class, 'update'])->name('settings.email.update');
         Route::post('configuracoes/email/testar', [MailSettingController::class, 'test'])->name('settings.email.test');
+    });
+
+    // Configurações > SLA de chamados (dias por prioridade)
+    Route::middleware('permission:occurrences:update')->group(function () {
+        Route::get('configuracoes/ocorrencias', [OccurrenceSlaController::class, 'edit'])->name('settings.occurrence-sla.edit');
+        Route::match(['put', 'patch'], 'configuracoes/ocorrencias', [OccurrenceSlaController::class, 'update'])->name('settings.occurrence-sla.update');
     });
 
     // Categorias customizáveis (ocorrências/documentos)
