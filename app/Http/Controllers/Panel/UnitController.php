@@ -7,6 +7,7 @@ use App\Models\Block;
 use App\Models\Condominium;
 use App\Models\Pet;
 use App\Models\Unit;
+use App\Models\Vehicle;
 use App\Services\PlanLimitService;
 use App\Services\UnitRosterService;
 use Illuminate\Http\JsonResponse;
@@ -60,6 +61,7 @@ class UnitController extends Controller
             'typeLabels' => Unit::typeLabels(),
             'statusLabels' => Unit::statusLabels(),
             'petSpecies' => Pet::SPECIES,
+            'vehicleTypes' => Vehicle::TYPES,
         ]);
     }
 
@@ -86,7 +88,7 @@ class UnitController extends Controller
         $tenant = app('tenant');
         abort_unless($condominium->tenant_id === $tenant->id && $unit->condominium_id === $condominium->id, 403);
 
-        $unit->load(['activeLinks.person', 'pets']);
+        $unit->load(['activeLinks.person', 'pets', 'vehicles']);
 
         return Inertia::render('Units/Edit', [
             'condominium' => $condominium->only('id', 'name'),
@@ -98,11 +100,16 @@ class UnitController extends Controller
                     'id' => $p->id, 'name' => $p->name, 'species' => $p->species,
                     'breed' => $p->breed, 'notes' => $p->notes,
                 ])->values(),
+                'vehicles' => $unit->vehicles->map(fn (Vehicle $v) => [
+                    'id' => $v->id, 'type' => $v->type, 'plate' => $v->plate, 'brand_model' => $v->brand_model,
+                    'color' => $v->color, 'parking_spot' => $v->parking_spot, 'notes' => $v->notes,
+                ])->values(),
             ]),
             'blocks' => $condominium->blocks()->orderBy('name')->get(['id', 'name']),
             'typeLabels' => Unit::typeLabels(),
             'statusLabels' => Unit::statusLabels(),
             'petSpecies' => Pet::SPECIES,
+            'vehicleTypes' => Vehicle::TYPES,
         ]);
     }
 
@@ -155,6 +162,14 @@ class UnitController extends Controller
             'pets.*.species' => 'nullable|string|max:20',
             'pets.*.breed' => 'nullable|string|max:120',
             'pets.*.notes' => 'nullable|string|max:500',
+            'vehicles' => 'array',
+            'vehicles.*.id' => 'nullable|uuid',
+            'vehicles.*.type' => 'nullable|string|max:20',
+            'vehicles.*.plate' => 'nullable|string|max:10',
+            'vehicles.*.brand_model' => 'nullable|string|max:255',
+            'vehicles.*.color' => 'nullable|string|max:30',
+            'vehicles.*.parking_spot' => 'nullable|string|max:30',
+            'vehicles.*.notes' => 'nullable|string|max:500',
         ],
             $this->prefixRules('owners', $person),
             $this->prefixRules('tenants', $person),

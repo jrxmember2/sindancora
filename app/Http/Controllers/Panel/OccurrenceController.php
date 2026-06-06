@@ -20,8 +20,10 @@ class OccurrenceController extends Controller
 {
     use InteractsWithAttachments;
 
-    public function __construct(private readonly OccurrenceService $service)
-    {
+    public function __construct(
+        private readonly OccurrenceService $service,
+        private readonly \App\Services\AI\AssistantService $assistant,
+    ) {
     }
 
     public function index(Request $request): Response
@@ -42,7 +44,7 @@ class OccurrenceController extends Controller
         return Inertia::render('Occurrences/Index', [
             'occurrences' => $occurrences,
             'condominiums' => $this->condominiumOptions($tenant->id),
-            'categories' => Occurrence::CATEGORIES,
+            'categories' => $this->categoryOptions($tenant->id),
             'priorities' => Occurrence::PRIORITIES,
             'statuses' => Occurrence::STATUSES,
             'filters' => $request->only(['search', 'status', 'category', 'priority', 'condominium_id']),
@@ -99,11 +101,12 @@ class OccurrenceController extends Controller
             'occurrence' => $occurrence,
             'attachments' => $occurrence->attachmentsPayload(),
             'assignableUsers' => $this->userOptions($tenant->id),
-            'categories' => Occurrence::CATEGORIES,
+            'categories' => $this->categoryOptions($tenant->id),
             'priorities' => Occurrence::PRIORITIES,
             'statuses' => Occurrence::STATUSES,
             'canClose' => Auth::user()->hasPermission('occurrences:close'),
             'canUpdate' => Auth::user()->hasPermission('occurrences:update'),
+            'canDraftAi' => Auth::user()->hasPermission('ai:use') && $this->assistant->configured(),
         ]);
     }
 
@@ -185,6 +188,24 @@ class OccurrenceController extends Controller
         return back()->with('success', 'Comentário adicionado.');
     }
 
+    /** Sugere, via IA, um texto de resposta para a ocorrência (consumido por fetch na tela). */
+    public function draftReply(Occurrence $occurrence): \Illuminate\Http\JsonResponse
+    {
+        $occurrence = $this->authorizeTenant($occurrence);
+
+        if (! $this->assistant->configured()) {
+            return response()->json(['message' => 'O assistente de IA não está configurado.'], 422);
+        }
+
+        try {
+            $text = $this->assistant->draftOccurrenceReply(app('tenant'), $occurrence);
+        } catch (\App\Services\AI\AiException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['text' => $text]);
+    }
+
     private function validated(Request $request, string $tenantId): array
     {
         return $request->validate([
@@ -193,7 +214,7 @@ class OccurrenceController extends Controller
             'assigned_to' => "nullable|uuid|exists:users,id,tenant_id,{$tenantId}",
             'title' => 'required|string|max:200',
             'description' => 'required|string|max:5000',
-            'category' => 'required|in:'.implode(',', array_keys(Occurrence::CATEGORIES)),
+            'category' => 'required|in:'.implode(',', array_keys($this->categoryOptions($tenantId))),
             'priority' => 'required|in:'.implode(',', array_keys(Occurrence::PRIORITIES)),
         ]);
     }
@@ -207,9 +228,15 @@ class OccurrenceController extends Controller
                 ->get(['id', 'condominium_id', 'number'])
                 ->map(fn ($u) => ['value' => $u->id, 'label' => $u->number, 'condominium_id' => $u->condominium_id]),
             'assignableUsers' => $this->userOptions($tenantId),
-            'categories' => Occurrence::CATEGORIES,
+            'categories' => $this->categoryOptions($tenantId),
             'priorities' => Occurrence::PRIORITIES,
         ];
+    }
+
+    /** Categorias padrão + customizadas (ativas) do tenant. */
+    private function categoryOptions(string $tenantId): array
+    {
+        return \App\Models\Category::optionsFor($tenantId, 'occurrence', Occurrence::CATEGORIES);
     }
 
     private function authorizeTenant(Occurrence $occurrence): Occurrence

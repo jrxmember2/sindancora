@@ -1,6 +1,7 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { Pencil, Trash2, Building2, User, Calendar, CheckCircle2, MessageSquare, RefreshCw, UserCheck, Paperclip } from 'lucide-react';
+import { Pencil, Trash2, Building2, User, Calendar, CheckCircle2, MessageSquare, RefreshCw, UserCheck, Paperclip, Sparkles } from 'lucide-react';
+import { useState } from 'react';
 import type { PageProps } from '@/types';
 import AttachmentList, { Attachment } from '@/Components/AttachmentList';
 
@@ -23,6 +24,7 @@ interface Props {
     categories: Record<string, string>;
     priorities: Record<string, string>;
     statuses: Record<string, string>;
+    canDraftAi?: boolean;
 }
 
 const priorityStyle: Record<string, string> = {
@@ -34,12 +36,28 @@ const statusStyle: Record<string, string> = {
 };
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '');
 
-export default function OccurrenceShow({ occurrence: o, attachments, assignableUsers, categories, priorities, statuses }: Props) {
+export default function OccurrenceShow({ occurrence: o, attachments, assignableUsers, categories, priorities, statuses, canDraftAi }: Props) {
     const { auth } = usePage<PageProps>().props;
     const perms = auth.user?.permissions ?? [];
     const can = (p: string) => perms.includes('*') || perms.includes(p);
 
     const commentForm = useForm({ body: '' });
+    const [drafting, setDrafting] = useState(false);
+    const [draftError, setDraftError] = useState<string | null>(null);
+
+    const draftWithAi = async () => {
+        setDrafting(true);
+        setDraftError(null);
+        try {
+            const { data } = await window.axios.post(route('occurrences.draft-reply', o.id));
+            commentForm.setData('body', data.text ?? '');
+        } catch (e: unknown) {
+            const err = e as { response?: { data?: { message?: string } } };
+            setDraftError(err.response?.data?.message ?? 'Não foi possível gerar a sugestão agora.');
+        } finally {
+            setDrafting(false);
+        }
+    };
 
     const changeStatus = (status: string) => router.post(route('occurrences.status', o.id), { status }, { preserveScroll: true });
     const assign = (userId: string) => router.post(route('occurrences.assign', o.id), { assigned_to: userId }, { preserveScroll: true });
@@ -165,7 +183,13 @@ export default function OccurrenceShow({ occurrence: o, attachments, assignableU
                                 className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                             />
                             {commentForm.errors.body && <p className="mt-1 text-xs text-red-600">{commentForm.errors.body}</p>}
-                            <div className="mt-2 flex justify-end">
+                            {draftError && <p className="mt-1 text-xs text-red-600">{draftError}</p>}
+                            <div className="mt-2 flex items-center justify-between">
+                                {canDraftAi ? (
+                                    <button onClick={draftWithAi} disabled={drafting} className="inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm font-medium text-violet-700 transition-colors hover:bg-violet-100 disabled:opacity-50">
+                                        <Sparkles className="h-4 w-4" /> {drafting ? 'Gerando…' : 'Sugerir resposta com IA'}
+                                    </button>
+                                ) : <span />}
                                 <button onClick={submitComment} disabled={commentForm.processing || !commentForm.data.body.trim()} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50">
                                     Comentar
                                 </button>

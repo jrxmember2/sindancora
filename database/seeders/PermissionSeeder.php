@@ -117,6 +117,9 @@ class PermissionSeeder extends Seeder
 
             // Disparo em massa por WhatsApp
             ['module' => 'campaigns', 'action' => 'manage', 'description' => 'Criar e enviar campanhas de WhatsApp'],
+
+            // Categorias customizáveis (ocorrências/documentos)
+            ['module' => 'categories', 'action' => 'manage', 'description' => 'Gerenciar categorias customizáveis'],
         ];
 
         foreach ($permissions as $perm) {

@@ -74,3 +74,14 @@ configurado em produção (R2/MinIO) — ver `docs/produto/04-planos-limites-e-s
 
 Filtro por data e substituição de arquivo na edição. (Anexos de Comunicados/Ocorrências/Áreas e a rotina
 de expurgo da lixeira já foram implementados — ver `docs/tecnico/anexos.md` e `storage:purge-trash`.)
+
+## Vigência/validade (Fase A da nova onda)
+
+Documentos podem ter validade: colunas `valid_from`, `valid_until`, `renewal_alert_days` e
+`expiry_notified_at` (migration `2026_06_17_000001_add_validity_to_documents_table`). O model
+`Document` expõe os accessors `expiry_status` (`valid` | `expiring` | `expired`) e `days_until_expiry`,
+mostrados como badge na listagem. O comando agendado **`documents:notify-expiring`** (diário às 07:00)
+varre os documentos vencendo dentro da janela de alerta (`scopeDueForExpiryAlert`) e notifica os
+gestores (papéis de painel) via `App\Notifications\DocumentExpiring` (database + mail + broadcast),
+marcando `expiry_notified_at` para não repetir. Editar a validade reabre o alerta. Útil para AVCB,
+alvarás e contratos. As categorias agora são mescladas com as customizadas do tenant (ver `categorias.md`).
