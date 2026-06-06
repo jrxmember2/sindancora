@@ -37,7 +37,7 @@ class DocumentController extends Controller
         return Inertia::render('Documents/Index', [
             'documents' => $documents,
             'condominiums' => $this->condominiumOptions($tenant->id),
-            'categories' => Document::CATEGORIES,
+            'categories' => $this->categoryOptions($tenant->id),
             'visibilities' => Document::VISIBILITIES,
             'usage' => $this->storage->getUsageStats($tenant),
             'filters' => $request->only(['search', 'category', 'condominium_id']),
@@ -50,7 +50,7 @@ class DocumentController extends Controller
 
         return Inertia::render('Documents/Create', [
             'condominiums' => $this->condominiumOptions($tenant->id),
-            'categories' => Document::CATEGORIES,
+            'categories' => $this->categoryOptions($tenant->id),
             'visibilities' => Document::VISIBILITIES,
         ]);
     }
@@ -68,6 +68,9 @@ class DocumentController extends Controller
             'description' => $data['description'] ?? null,
             'category' => $data['category'],
             'visibility' => $data['visibility'],
+            'valid_from' => $data['valid_from'] ?? null,
+            'valid_until' => $data['valid_until'] ?? null,
+            'renewal_alert_days' => $data['renewal_alert_days'] ?? null,
         ]);
 
         try {
@@ -102,7 +105,7 @@ class DocumentController extends Controller
         return Inertia::render('Documents/Edit', [
             'document' => $document,
             'condominiums' => $this->condominiumOptions($document->tenant_id),
-            'categories' => Document::CATEGORIES,
+            'categories' => $this->categoryOptions($document->tenant_id),
             'visibilities' => Document::VISIBILITIES,
         ]);
     }
@@ -111,6 +114,11 @@ class DocumentController extends Controller
     {
         $document = $this->authorizeTenant($document);
         $data = $this->validated($request, $document->tenant_id, withFile: false);
+
+        // Se a validade mudou, libera novo alerta de vencimento.
+        if (($data['valid_until'] ?? null) != optional($document->valid_until)->toDateString()) {
+            $data['expiry_notified_at'] = null;
+        }
 
         $document->update($data);
 
@@ -163,8 +171,11 @@ class DocumentController extends Controller
             'condominium_id' => "required|uuid|exists:condominiums,id,tenant_id,{$tenantId}",
             'title' => 'required|string|max:200',
             'description' => 'nullable|string|max:2000',
-            'category' => 'required|in:'.implode(',', array_keys(Document::CATEGORIES)),
+            'category' => 'required|in:'.implode(',', array_keys($this->categoryOptions($tenantId))),
             'visibility' => 'required|in:'.implode(',', array_keys(Document::VISIBILITIES)),
+            'valid_from' => 'nullable|date',
+            'valid_until' => 'nullable|date|after_or_equal:valid_from',
+            'renewal_alert_days' => 'nullable|integer|min:0|max:365',
         ];
 
         if ($withFile) {
@@ -187,5 +198,11 @@ class DocumentController extends Controller
             ->orderBy('name')
             ->get(['id', 'name'])
             ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]);
+    }
+
+    /** Categorias padrão + customizadas (ativas) do tenant. */
+    private function categoryOptions(string $tenantId): array
+    {
+        return \App\Models\Category::optionsFor($tenantId, 'document', Document::CATEGORIES);
     }
 }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Panel\AssemblyController;
 use App\Http\Controllers\Panel\AssistantController;
 use App\Http\Controllers\Panel\AuditController;
 use App\Http\Controllers\Panel\CampaignController;
+use App\Http\Controllers\Panel\CategoryController;
 use App\Http\Controllers\Panel\ChargeController;
 use App\Http\Controllers\Panel\CommonAreaController;
 use App\Http\Controllers\Panel\CondominiumController;
@@ -208,6 +209,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('permission:occurrences:delete')->group(function () {
         Route::delete('ocorrencias/{occurrence}', [OccurrenceController::class, 'destroy'])->name('occurrences.destroy');
     });
+    // Sugestão de resposta por IA (precisa da permissão de IA)
+    Route::middleware('permission:ai:use')->group(function () {
+        Route::post('ocorrencias/{occurrence}/sugestao-ia', [OccurrenceController::class, 'draftReply'])->name('occurrences.draft-reply');
+    });
     // Ocorrência — detalhe (dinâmica, registrada após as estáticas acima)
     Route::middleware('permission:occurrences:read')->group(function () {
         Route::get('ocorrencias/{occurrence}', [OccurrenceController::class, 'show'])->name('occurrences.show');
@@ -388,6 +393,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('configuracoes/email', [MailSettingController::class, 'edit'])->name('settings.email.edit');
         Route::match(['put', 'patch'], 'configuracoes/email', [MailSettingController::class, 'update'])->name('settings.email.update');
         Route::post('configuracoes/email/testar', [MailSettingController::class, 'test'])->name('settings.email.test');
+    });
+
+    // Categorias customizáveis (ocorrências/documentos)
+    Route::middleware('permission:categories:manage')->group(function () {
+        Route::get('configuracoes/categorias', [CategoryController::class, 'index'])->name('categories.index');
+        Route::post('configuracoes/categorias', [CategoryController::class, 'store'])->name('categories.store');
+        Route::match(['put', 'patch'], 'configuracoes/categorias/{category}', [CategoryController::class, 'update'])->name('categories.update');
+        Route::delete('configuracoes/categorias/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
     });
 
     // Configurações > WhatsApp (Evolution API por tenant) — config legada de instância única.

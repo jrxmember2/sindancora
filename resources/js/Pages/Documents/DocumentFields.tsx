@@ -6,6 +6,9 @@ export interface DocumentMeta {
     description: string;
     category: string;
     visibility: string;
+    valid_from: string;
+    valid_until: string;
+    renewal_alert_days: string;
 }
 
 interface Props {
@@ -59,6 +62,22 @@ export default function DocumentFields({ data, setData, errors, condominiums, ca
             <Field label="Descrição" error={errors.description}>
                 <textarea value={data.description} onChange={e => setData('description', e.target.value)} rows={3} className={`${inputClass} resize-none`} maxLength={2000} />
             </Field>
+
+            <div className="rounded-lg border border-gray-100 bg-gray-50/60 p-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Vigência (opcional)</p>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <Field label="Válido a partir de" error={errors.valid_from}>
+                        <input type="date" value={data.valid_from} onChange={e => setData('valid_from', e.target.value)} className={inputClass} />
+                    </Field>
+                    <Field label="Válido até" error={errors.valid_until}>
+                        <input type="date" value={data.valid_until} onChange={e => setData('valid_until', e.target.value)} className={inputClass} />
+                    </Field>
+                    <Field label="Avisar quantos dias antes?" error={errors.renewal_alert_days}>
+                        <input type="number" min={0} max={365} value={data.renewal_alert_days} onChange={e => setData('renewal_alert_days', e.target.value)} placeholder="30" className={inputClass} />
+                    </Field>
+                </div>
+                <p className="mt-2 text-xs text-gray-400">Preenchendo "Válido até", os gestores recebem um alerta quando o documento estiver próximo do vencimento (ex.: AVCB, alvarás, contratos).</p>
+            </div>
         </>
     );
 }

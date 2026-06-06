@@ -1,16 +1,17 @@
 import { Link } from '@inertiajs/react';
-import { Plus, Trash2, X, UserRound, Users, Home, PawPrint } from 'lucide-react';
+import { Plus, Trash2, X, UserRound, Users, Home, PawPrint, Car } from 'lucide-react';
 import { maskPhone, maskCpf, maskDate } from '@/lib/masks';
 
 interface Block { id: string; name: string }
 
 export interface PersonItem { id?: string; name: string; cpf: string; birth_date: string; phones: string[]; emails: string[] }
 export interface PetItem { id?: string; name: string; species: string; breed: string; notes: string }
+export interface VehicleItem { id?: string; type: string; plate: string; brand_model: string; color: string; parking_spot: string; notes: string }
 
 export interface UnitFormData {
     number: string; block_id: string; floor: string; type: string;
     area_m2: string; fraction: string; status: string;
-    owners: PersonItem[]; tenants: PersonItem[]; family: PersonItem[]; pets: PetItem[];
+    owners: PersonItem[]; tenants: PersonItem[]; family: PersonItem[]; pets: PetItem[]; vehicles: VehicleItem[];
 }
 
 interface Props {
@@ -24,11 +25,13 @@ interface Props {
     typeLabels: Record<string, string>;
     statusLabels: Record<string, string>;
     petSpecies: Record<string, string>;
+    vehicleTypes: Record<string, string>;
     submitLabel: string;
 }
 
 export const emptyPerson = (): PersonItem => ({ name: '', cpf: '', birth_date: '', phones: [''], emails: [''] });
 export const emptyPet = (): PetItem => ({ name: '', species: 'dog', breed: '', notes: '' });
+export const emptyVehicle = (): VehicleItem => ({ type: 'car', plate: '', brand_model: '', color: '', parking_spot: '', notes: '' });
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
     return (
@@ -154,7 +157,41 @@ function PetsSection({ items, onChange, petSpecies }: { items: PetItem[]; onChan
     );
 }
 
-export default function UnitForm({ data, setData, errors, processing, onSubmit, condominium, blocks, typeLabels, statusLabels, petSpecies, submitLabel }: Props) {
+function VehiclesSection({ items, onChange, vehicleTypes }: { items: VehicleItem[]; onChange: (items: VehicleItem[]) => void; vehicleTypes: Record<string, string> }) {
+    const set = (i: number, patch: Partial<VehicleItem>) => onChange(items.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
+
+    return (
+        <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900"><Car className="h-5 w-5 text-blue-600" /> Veículos</h2>
+            <div className="space-y-3">
+                {items.map((v, i) => (
+                    <div key={i} className="rounded-lg border border-gray-200 p-4">
+                        <div className="flex items-start gap-3">
+                            <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-3">
+                                <Field label="Tipo">
+                                    <Select value={v.type} onChange={(val) => set(i, { type: val })}>
+                                        {Object.entries(vehicleTypes).map(([val, l]) => <option key={val} value={val}>{l}</option>)}
+                                    </Select>
+                                </Field>
+                                <Field label="Placa"><Input value={v.plate} onChange={(e) => set(i, { plate: e.target.value.toUpperCase() })} placeholder="ABC1D23" maxLength={10} /></Field>
+                                <Field label="Marca/Modelo"><Input value={v.brand_model} onChange={(e) => set(i, { brand_model: e.target.value })} placeholder="Ex.: Fiat Argo" /></Field>
+                                <Field label="Cor"><Input value={v.color} onChange={(e) => set(i, { color: e.target.value })} placeholder="Opcional" /></Field>
+                                <Field label="Vaga"><Input value={v.parking_spot} onChange={(e) => set(i, { parking_spot: e.target.value })} placeholder="Opcional" /></Field>
+                                <Field label="Observações"><Input value={v.notes} onChange={(e) => set(i, { notes: e.target.value })} placeholder="Opcional" /></Field>
+                            </div>
+                            <button type="button" onClick={() => onChange(items.filter((_, idx) => idx !== i))} className="mt-6 rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600" title="Remover veículo"><Trash2 className="h-4 w-4" /></button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <button type="button" onClick={() => onChange([...items, emptyVehicle()])} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">
+                <Plus className="h-4 w-4" /> Adicionar veículo
+            </button>
+        </div>
+    );
+}
+
+export default function UnitForm({ data, setData, errors, processing, onSubmit, condominium, blocks, typeLabels, statusLabels, petSpecies, vehicleTypes, submitLabel }: Props) {
     return (
         <div className="mx-auto max-w-3xl space-y-6">
             {/* Dados da unidade */}
@@ -196,6 +233,7 @@ export default function UnitForm({ data, setData, errors, processing, onSubmit, 
             <PeopleSection icon={UserRound} title="Inquilinos" items={data.tenants} onChange={(v) => setData('tenants', v)} addLabel="Adicionar inquilino" />
             <PeopleSection icon={Users} title="Familiares" items={data.family} onChange={(v) => setData('family', v)} addLabel="Adicionar familiar" />
             <PetsSection items={data.pets} onChange={(v) => setData('pets', v)} petSpecies={petSpecies} />
+            <VehiclesSection items={data.vehicles} onChange={(v) => setData('vehicles', v)} vehicleTypes={vehicleTypes} />
 
             <div className="flex justify-between">
                 <Link href={route('condominiums.units.index', condominium.id)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</Link>

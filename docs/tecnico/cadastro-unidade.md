@@ -52,3 +52,12 @@ do servidor são mascarados na inicialização; no envio vão mascarados e o bac
 A tela antiga de **Pessoas** (`PersonForm`) ainda edita só `phone`/`email` simples; ao editar por lá,
 as listas JSON `phones`/`emails` não são atualizadas. O fluxo rico é o da unidade. Unificar a tela de
 Pessoas com múltiplos contatos fica como follow-up.
+
+## Veículos (Fase A da nova onda)
+
+Além dos pets, o formulário da unidade agora cadastra **veículos** (tabela `vehicles`, migration
+`2026_06_17_000003_create_vehicles_table`): `type` (carro/moto/caminhão/bicicleta/outro), `plate`,
+`brand_model`, `color`, `parking_spot` (vaga), `notes`. Model `App\Models\Vehicle` (com `$table`
+explícito, igual ao Pet) e relação `Unit::vehicles()`. A persistência segue o mesmo padrão dos pets em
+`UnitRosterService::syncVehicles()` (upsert por `id`, ignora linha sem placa nem marca/modelo, remove
+os que não vieram, placa em maiúsculas). Útil para portaria/controle de acesso.

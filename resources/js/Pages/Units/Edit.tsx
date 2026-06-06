@@ -1,14 +1,15 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import UnitForm, { UnitFormData, PersonItem, PetItem } from './Form';
+import UnitForm, { UnitFormData, PersonItem, PetItem, VehicleItem } from './Form';
 import { maskCpf, maskPhone, isoToBrDate } from '@/lib/masks';
 
 interface ServerPerson { id: string; name: string; cpf: string | null; birth_date: string | null; phones: string[]; emails: string[] }
 interface ServerPet { id: string; name: string; species: string; breed: string | null; notes: string | null }
+interface ServerVehicle { id: string; type: string; plate: string | null; brand_model: string | null; color: string | null; parking_spot: string | null; notes: string | null }
 interface Unit {
     id: string; number: string; block_id: string | null; floor: number | null;
     type: string; area_m2: number | null; fraction: number | null; status: string;
-    owners: ServerPerson[]; tenants: ServerPerson[]; family: ServerPerson[]; pets: ServerPet[];
+    owners: ServerPerson[]; tenants: ServerPerson[]; family: ServerPerson[]; pets: ServerPet[]; vehicles: ServerVehicle[];
 }
 interface Props {
     condominium: { id: string; name: string };
@@ -17,6 +18,7 @@ interface Props {
     typeLabels: Record<string, string>;
     statusLabels: Record<string, string>;
     petSpecies: Record<string, string>;
+    vehicleTypes: Record<string, string>;
 }
 
 const toPerson = (p: ServerPerson): PersonItem => ({
@@ -28,8 +30,9 @@ const toPerson = (p: ServerPerson): PersonItem => ({
     emails: p.emails?.length ? p.emails : [''],
 });
 const toPet = (p: ServerPet): PetItem => ({ id: p.id, name: p.name ?? '', species: p.species ?? 'dog', breed: p.breed ?? '', notes: p.notes ?? '' });
+const toVehicle = (v: ServerVehicle): VehicleItem => ({ id: v.id, type: v.type ?? 'car', plate: v.plate ?? '', brand_model: v.brand_model ?? '', color: v.color ?? '', parking_spot: v.parking_spot ?? '', notes: v.notes ?? '' });
 
-export default function UnitEdit({ condominium, unit, blocks, typeLabels, statusLabels, petSpecies }: Props) {
+export default function UnitEdit({ condominium, unit, blocks, typeLabels, statusLabels, petSpecies, vehicleTypes }: Props) {
     const { data, setData, patch, processing, errors } = useForm<UnitFormData>({
         number: unit.number,
         block_id: unit.block_id ?? '',
@@ -42,6 +45,7 @@ export default function UnitEdit({ condominium, unit, blocks, typeLabels, status
         tenants: (unit.tenants ?? []).map(toPerson),
         family: (unit.family ?? []).map(toPerson),
         pets: (unit.pets ?? []).map(toPet),
+        vehicles: (unit.vehicles ?? []).map(toVehicle),
     });
 
     return (
@@ -55,7 +59,7 @@ export default function UnitEdit({ condominium, unit, blocks, typeLabels, status
                 <UnitForm
                     data={data} setData={setData} errors={errors} processing={processing}
                     onSubmit={() => patch(route('condominiums.units.update', [condominium.id, unit.id]))}
-                    condominium={condominium} blocks={blocks} typeLabels={typeLabels} statusLabels={statusLabels} petSpecies={petSpecies}
+                    condominium={condominium} blocks={blocks} typeLabels={typeLabels} statusLabels={statusLabels} petSpecies={petSpecies} vehicleTypes={vehicleTypes}
                     submitLabel="Salvar Alterações"
                 />
             </div>

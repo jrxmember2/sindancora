@@ -7,6 +7,7 @@ interface Option { value: string; label: string }
 interface Document {
     id: string; condominium_id: string; title: string; description: string | null;
     category: string; visibility: string;
+    valid_from: string | null; valid_until: string | null; renewal_alert_days: number | null;
     storage_object: { original_filename: string | null } | null;
 }
 interface Props {
@@ -23,6 +24,9 @@ export default function DocumentEdit({ document, condominiums, categories, visib
         description: document.description ?? '',
         category: document.category,
         visibility: document.visibility,
+        valid_from: document.valid_from?.slice(0, 10) ?? '',
+        valid_until: document.valid_until?.slice(0, 10) ?? '',
+        renewal_alert_days: document.renewal_alert_days != null ? String(document.renewal_alert_days) : '',
     });
 
     return (

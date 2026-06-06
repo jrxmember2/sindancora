@@ -17,7 +17,19 @@ class Document extends Model
     protected $fillable = [
         'tenant_id', 'condominium_id', 'storage_object_id', 'uploaded_by',
         'title', 'description', 'category', 'visibility',
+        'valid_from', 'valid_until', 'renewal_alert_days', 'expiry_notified_at',
     ];
+
+    protected $appends = ['expiry_status', 'days_until_expiry'];
+
+    protected function casts(): array
+    {
+        return [
+            'valid_from' => 'date',
+            'valid_until' => 'date',
+            'expiry_notified_at' => 'datetime',
+        ];
+    }
 
     public const CATEGORIES = [
         'minutes' => 'Ata',
@@ -37,6 +49,38 @@ class Document extends Model
         'residents' => 'public_to_residents',
         'restricted' => 'tenant',
     ];
+
+    /** Dias até o vencimento (negativo = vencido); null se não tem validade. */
+    public function getDaysUntilExpiryAttribute(): ?int
+    {
+        if (! $this->valid_until) {
+            return null;
+        }
+
+        return (int) round(now()->startOfDay()->diffInDays($this->valid_until->startOfDay(), false));
+    }
+
+    /** Situação da vigência: valid | expiring | expired | null (sem validade). */
+    public function getExpiryStatusAttribute(): ?string
+    {
+        $days = $this->days_until_expiry;
+        if ($days === null) {
+            return null;
+        }
+        if ($days < 0) {
+            return 'expired';
+        }
+
+        return $days <= ($this->renewal_alert_days ?? 30) ? 'expiring' : 'valid';
+    }
+
+    /** Documentos vencendo dentro da janela de alerta e ainda não notificados. */
+    public function scopeDueForExpiryAlert($query)
+    {
+        return $query->whereNotNull('valid_until')
+            ->whereNull('expiry_notified_at')
+            ->whereRaw('valid_until <= (CURRENT_DATE + COALESCE(renewal_alert_days, 30) * INTERVAL \'1 day\')');
+    }
 
     public function condominium(): BelongsTo
     {

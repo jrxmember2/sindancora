@@ -8,6 +8,7 @@ interface Option { value: string; label: string }
 interface StorageObj { file_size_bytes: number; original_filename: string | null; mime_type: string | null }
 interface Document {
     id: string; title: string; category: string; visibility: string; created_at: string;
+    valid_until: string | null; expiry_status: 'valid' | 'expiring' | 'expired' | null; days_until_expiry: number | null;
     condominium: { id: string; name: string } | null;
     storage_object: StorageObj | null;
     uploader: { id: string; name: string } | null;
@@ -26,6 +27,18 @@ const visibilityStyle: Record<string, string> = {
     residents: 'bg-green-50 text-green-700',
     restricted: 'bg-gray-100 text-gray-600',
 };
+
+function ValidityBadge({ d }: { d: Document }) {
+    if (!d.valid_until || d.expiry_status === null) return <span className="text-xs text-gray-400">—</span>;
+    const days = d.days_until_expiry ?? 0;
+    const label = d.expiry_status === 'expired'
+        ? `Vencido há ${Math.abs(days)} dia(s)`
+        : days === 0 ? 'Vence hoje' : `Vence em ${days} dia(s)`;
+    const style = d.expiry_status === 'expired'
+        ? 'bg-red-50 text-red-700'
+        : d.expiry_status === 'expiring' ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700';
+    return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${style}`}>{label}</span>;
+}
 
 function formatBytes(bytes: number): string {
     if (!bytes) return '—';
@@ -102,13 +115,14 @@ export default function DocumentsIndex({ documents, condominiums, categories, vi
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Categoria</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Visibilidade</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Condomínio</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Validade</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Tamanho</th>
                                 <th className="px-4 py-3" />
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {documents.data.length === 0 && (
-                                <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">Nenhum documento encontrado.</td></tr>
+                                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">Nenhum documento encontrado.</td></tr>
                             )}
                             {documents.data.map(d => (
                                 <tr key={d.id} className="transition-colors hover:bg-gray-50">
@@ -121,6 +135,7 @@ export default function DocumentsIndex({ documents, condominiums, categories, vi
                                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${visibilityStyle[d.visibility] ?? ''}`}>{visibilities[d.visibility] ?? d.visibility}</span>
                                     </td>
                                     <td className="px-4 py-3 text-xs text-gray-600">{d.condominium?.name ?? '—'}</td>
+                                    <td className="px-4 py-3"><ValidityBadge d={d} /></td>
                                     <td className="px-4 py-3 text-xs text-gray-500">{formatBytes(d.storage_object?.file_size_bytes ?? 0)}</td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center justify-end gap-1">

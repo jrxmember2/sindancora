@@ -6,6 +6,7 @@ use App\Models\Person;
 use App\Models\PersonUnitLink;
 use App\Models\Pet;
 use App\Models\Unit;
+use App\Models\Vehicle;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -31,6 +32,7 @@ class UnitRosterService
                 ->delete();
 
             $this->syncPets($unit, $data['pets'] ?? []);
+            $this->syncVehicles($unit, $data['vehicles'] ?? []);
         });
     }
 
@@ -133,6 +135,42 @@ class UnitRosterService
         }
 
         Pet::where('unit_id', $unit->id)
+            ->when($kept, fn ($q) => $q->whereNotIn('id', $kept))
+            ->delete();
+    }
+
+    private function syncVehicles(Unit $unit, array $vehicles): void
+    {
+        $kept = [];
+
+        foreach ($vehicles as $vehicle) {
+            // Linha em branco (sem placa nem marca/modelo) é ignorada.
+            if (trim($vehicle['plate'] ?? '') === '' && trim($vehicle['brand_model'] ?? '') === '') {
+                continue;
+            }
+
+            $attrs = [
+                'tenant_id' => $unit->tenant_id,
+                'unit_id' => $unit->id,
+                'type' => in_array($vehicle['type'] ?? '', array_keys(Vehicle::TYPES), true) ? $vehicle['type'] : 'car',
+                'plate' => $vehicle['plate'] ? mb_strtoupper(trim($vehicle['plate'])) : null,
+                'brand_model' => $vehicle['brand_model'] ?? null,
+                'color' => $vehicle['color'] ?? null,
+                'parking_spot' => $vehicle['parking_spot'] ?? null,
+                'notes' => $vehicle['notes'] ?? null,
+            ];
+
+            if (! empty($vehicle['id']) && ($existing = Vehicle::where('unit_id', $unit->id)->find($vehicle['id']))) {
+                $existing->update($attrs);
+                $kept[] = $existing->id;
+
+                continue;
+            }
+
+            $kept[] = Vehicle::create($attrs)->id;
+        }
+
+        Vehicle::where('unit_id', $unit->id)
             ->when($kept, fn ($q) => $q->whereNotIn('id', $kept))
             ->delete();
     }

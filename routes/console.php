@@ -25,3 +25,6 @@ Schedule::command('storage:purge-trash')->dailyAt('03:30')->withoutOverlapping()
 
 // Inicia campanhas de WhatsApp agendadas quando a data marcada chega
 Schedule::command('campaigns:dispatch-scheduled')->everyMinute()->withoutOverlapping();
+
+// Alerta de documentos vencendo (AVCB, alvarás, contratos) — uma vez por dia, de manhã
+Schedule::command('documents:notify-expiring')->dailyAt('07:00')->withoutOverlapping();

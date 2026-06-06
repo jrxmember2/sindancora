@@ -14,6 +14,7 @@ export default function DocumentCreate({ condominiums, categories, visibilities 
     const form = useForm<DocumentMeta & { file: File | null }>({
         condominium_id: condominiums.length === 1 ? condominiums[0].value : '',
         title: '', description: '', category: 'other', visibility: 'restricted', file: null,
+        valid_from: '', valid_until: '', renewal_alert_days: '',
     });
 
     const submit = () => form.post(route('documents.store'), { forceFormData: true });

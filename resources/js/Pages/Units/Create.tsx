@@ -8,12 +8,13 @@ interface Props {
     typeLabels: Record<string, string>;
     statusLabels: Record<string, string>;
     petSpecies: Record<string, string>;
+    vehicleTypes: Record<string, string>;
 }
 
-export default function UnitCreate({ condominium, blocks, typeLabels, statusLabels, petSpecies }: Props) {
+export default function UnitCreate({ condominium, blocks, typeLabels, statusLabels, petSpecies, vehicleTypes }: Props) {
     const { data, setData, post, processing, errors } = useForm<UnitFormData>({
         number: '', block_id: '', floor: '', type: 'apartment', area_m2: '', fraction: '', status: 'vacant',
-        owners: [emptyPerson()], tenants: [], family: [], pets: [],
+        owners: [emptyPerson()], tenants: [], family: [], pets: [], vehicles: [],
     });
 
     return (
@@ -27,7 +28,7 @@ export default function UnitCreate({ condominium, blocks, typeLabels, statusLabe
                 <UnitForm
                     data={data} setData={setData} errors={errors} processing={processing}
                     onSubmit={() => post(route('condominiums.units.store', condominium.id))}
-                    condominium={condominium} blocks={blocks} typeLabels={typeLabels} statusLabels={statusLabels} petSpecies={petSpecies}
+                    condominium={condominium} blocks={blocks} typeLabels={typeLabels} statusLabels={statusLabels} petSpecies={petSpecies} vehicleTypes={vehicleTypes}
                     submitLabel="Criar Unidade"
                 />
             </div>

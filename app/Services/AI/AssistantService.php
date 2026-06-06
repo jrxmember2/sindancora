@@ -84,6 +84,41 @@ class AssistantService
         ];
     }
 
+    /** Sugere uma resposta cordial para uma ocorrência, com base nos dados dela + RAG. */
+    public function draftOccurrenceReply(Tenant $tenant, Occurrence $occurrence): string
+    {
+        $system = $this->systemPrompt($tenant)."\n\nVocê redige a resposta do síndico/administração a uma "
+            ."ocorrência/chamado de morador. Seja claro, cordial e objetivo: reconheça o problema, informe o "
+            ."encaminhamento/prazo quando fizer sentido e mantenha um tom profissional. Escreva apenas o texto da "
+            ."resposta, pronto para enviar, sem saudações genéricas excessivas nem assinatura.";
+
+        $lastComments = $occurrence->comments()
+            ->where('type', 'comment')
+            ->latest()
+            ->limit(5)
+            ->get(['body'])
+            ->reverse()
+            ->pluck('body')
+            ->filter()
+            ->implode("\n- ");
+
+        $catLabel = Occurrence::CATEGORIES[$occurrence->category] ?? $occurrence->category;
+        $statusLabel = Occurrence::STATUSES[$occurrence->status] ?? $occurrence->status;
+
+        $details = "Ocorrência: {$occurrence->title}\nCategoria: {$catLabel}\nStatus: {$statusLabel}\n"
+            ."Descrição: {$occurrence->description}";
+        if ($lastComments !== '') {
+            $details .= "\nÚltimos acompanhamentos:\n- {$lastComments}";
+        }
+
+        $context = $this->buildContext($tenant, $occurrence->title.' '.$occurrence->description);
+
+        return $this->claude->complete($system, [[
+            'role' => 'user',
+            'content' => "Escreva uma resposta para esta ocorrência.\n\n{$details}\n\n{$context}",
+        ]], 1024);
+    }
+
     // --- contexto ---
 
     private function systemPrompt(Tenant $tenant): string

@@ -66,3 +66,13 @@ e o formulário de comentário. As unidades no form são filtradas no cliente pe
 Anexos (junto de Documentos 3.4), categorias configuráveis por condomínio, SLA por categoria,
 filtros por unidade/data, e a visão restrita do morador (portal — Fase 4).
 Ver `docs/produto/02-roadmap-mvp.md` §3.2.
+
+## Nova onda — Fase A
+
+- **Categorias customizáveis**: o select de categoria agora mescla as constantes com as categorias
+  do tenant (`Category::optionsFor(...)`, tipo `occurrence`). Ver `docs/tecnico/categorias.md`.
+- **Rascunho de resposta por IA**: na tela de detalhe, o botão "Sugerir resposta com IA" chama
+  `POST ocorrencias/{occurrence}/sugestao-ia` (`occurrences.draft-reply`, permissão `ai:use`),
+  que usa `AssistantService::draftOccurrenceReply()` (contexto da ocorrência + últimos
+  acompanhamentos + RAG) e preenche a caixa de comentário. O botão só aparece com `ai:use` e IA
+  configurada (`canDraftAi`). SLA/prazo das ocorrências segue para a Fase B (item B5).
