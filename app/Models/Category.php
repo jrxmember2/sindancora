@@ -30,6 +30,7 @@ class Category extends Model
         'occurrence' => 'Ocorrências',
         'document' => 'Documentos',
         'supplier' => 'Fornecedores',
+        'maintenance' => 'Manutenções',
     ];
 
     /**

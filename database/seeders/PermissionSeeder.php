@@ -126,6 +126,12 @@ class PermissionSeeder extends Seeder
             ['module' => 'suppliers', 'action' => 'read',   'description' => 'Visualizar fornecedores'],
             ['module' => 'suppliers', 'action' => 'update', 'description' => 'Editar fornecedores e avaliar'],
             ['module' => 'suppliers', 'action' => 'delete', 'description' => 'Remover fornecedores e avaliações'],
+
+            // Manutenção preventiva
+            ['module' => 'maintenance', 'action' => 'create', 'description' => 'Criar planos de manutenção'],
+            ['module' => 'maintenance', 'action' => 'read',   'description' => 'Visualizar manutenções'],
+            ['module' => 'maintenance', 'action' => 'update', 'description' => 'Editar manutenções e registrar execuções'],
+            ['module' => 'maintenance', 'action' => 'delete', 'description' => 'Remover manutenções e execuções'],
         ];
 
         foreach ($permissions as $perm) {
