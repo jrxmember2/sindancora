@@ -29,6 +29,7 @@ class Category extends Model
     public const TYPES = [
         'occurrence' => 'Ocorrências',
         'document' => 'Documentos',
+        'supplier' => 'Fornecedores',
     ];
 
     /**

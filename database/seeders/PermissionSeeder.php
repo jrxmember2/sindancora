@@ -120,6 +120,12 @@ class PermissionSeeder extends Seeder
 
             // Categorias customizáveis (ocorrências/documentos)
             ['module' => 'categories', 'action' => 'manage', 'description' => 'Gerenciar categorias customizáveis'],
+
+            // Fornecedores/prestadores
+            ['module' => 'suppliers', 'action' => 'create', 'description' => 'Cadastrar fornecedores'],
+            ['module' => 'suppliers', 'action' => 'read',   'description' => 'Visualizar fornecedores'],
+            ['module' => 'suppliers', 'action' => 'update', 'description' => 'Editar fornecedores e avaliar'],
+            ['module' => 'suppliers', 'action' => 'delete', 'description' => 'Remover fornecedores e avaliações'],
         ];
 
         foreach ($permissions as $perm) {

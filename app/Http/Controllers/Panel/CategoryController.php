@@ -27,6 +27,7 @@ class CategoryController extends Controller
             'defaults' => [
                 'occurrence' => \App\Models\Occurrence::CATEGORIES,
                 'document' => \App\Models\Document::CATEGORIES,
+                'supplier' => \App\Models\Supplier::CATEGORIES,
             ],
         ]);
     }

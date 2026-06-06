@@ -36,8 +36,9 @@ Legenda esforço: 🟢 baixo · 🟡 médio · 🔴 alto. Valor: ⭐ alto difere
     padrão dos pets do roster (ver `cadastro-unidade-roster`). Útil para portaria/controle de acesso.
 
 ### Fase B — Pacote "operação do síndico" (coração do Sindigest)
-- [ ] **B6. Cadastro de Fornecedores/Prestadores** + avaliação/rating + histórico ⭐ 🟡
-  - Entidade nova `suppliers` (hoje só existe `Person`). Base para B4/C7/C8.
+- [x] **B6. Cadastro de Fornecedores/Prestadores** + avaliação/rating + histórico ⭐ 🟡 — concluída (06/06/2026)
+  - Entidade `suppliers` (tenant-wide), pivô `supplier_condominium`, histórico `supplier_evaluations`
+    (nota média). Categoria via Categorias customizáveis (tipo `supplier`). Ver `docs/tecnico/fornecedores.md`.
 - [ ] **B4. Manutenção preventiva recorrente** ⭐ 🟡
   - Categoria, fornecedor, recorrência (anual/semestral/…), data estimada/realizada, alerta de atraso.
 - [ ] **B5. SLA/prazo em ocorrências** + acompanhamentos internos vs públicos + estatísticas ⭐ 🟡
