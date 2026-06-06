@@ -35,6 +35,7 @@ class RoleSeeder extends Seeder
                 'gatehouse:read', 'gatehouse:register', 'gatehouse:manage',
                 'inbox:use', 'sectors:manage', 'campaigns:manage',
                 'categories:manage',
+                'suppliers:create', 'suppliers:read', 'suppliers:update', 'suppliers:delete',
                 'audit:read',
             ],
         ],
@@ -56,6 +57,7 @@ class RoleSeeder extends Seeder
                 'gatehouse:read', 'gatehouse:register', 'gatehouse:manage',
                 'inbox:use', 'sectors:manage', 'campaigns:manage',
                 'categories:manage',
+                'suppliers:create', 'suppliers:read', 'suppliers:update', 'suppliers:delete',
                 'ai:use',
             ],
         ],
@@ -66,7 +68,7 @@ class RoleSeeder extends Seeder
                 'condominiums:read', 'units:read', 'persons:read',
                 'announcements:read', 'occurrences:read', 'occurrences:update',
                 'reservations:read', 'documents:read', 'documents:download',
-                'gatehouse:read',
+                'gatehouse:read', 'suppliers:read',
             ],
         ],
         'conselheiro' => [
@@ -76,7 +78,7 @@ class RoleSeeder extends Seeder
                 'condominiums:read', 'units:read',
                 'announcements:read', 'occurrences:read',
                 'reservations:read', 'documents:read', 'documents:download',
-                'reports:read', 'gatehouse:read',
+                'reports:read', 'gatehouse:read', 'suppliers:read',
             ],
         ],
         'morador' => [

@@ -20,6 +20,7 @@ use App\Http\Controllers\Panel\InboxController;
 use App\Http\Controllers\Panel\MailSettingController;
 use App\Http\Controllers\Panel\NotificationController;
 use App\Http\Controllers\Panel\OccurrenceController;
+use App\Http\Controllers\Panel\SupplierController;
 use App\Http\Controllers\Panel\PaymentSettingController;
 use App\Http\Controllers\Panel\PersonController;
 use App\Http\Controllers\Panel\QuickReplyController;
@@ -264,6 +265,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Reserva — detalhe (dinâmica, registrada após as estáticas acima)
     Route::middleware('permission:reservations:read')->group(function () {
         Route::get('reservas/{reservation}', [ReservationController::class, 'show'])->name('reservations.show');
+    });
+
+    // Fornecedores/prestadores — estáticas (criar) antes da dinâmica {supplier}.
+    Route::middleware('permission:suppliers:create')->group(function () {
+        Route::get('fornecedores/criar', [SupplierController::class, 'create'])->name('suppliers.create');
+        Route::post('fornecedores', [SupplierController::class, 'store'])->name('suppliers.store');
+    });
+    Route::middleware('permission:suppliers:update')->group(function () {
+        Route::get('fornecedores/{supplier}/editar', [SupplierController::class, 'edit'])->name('suppliers.edit');
+        Route::match(['put', 'patch'], 'fornecedores/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update');
+        Route::post('fornecedores/{supplier}/avaliacoes', [SupplierController::class, 'storeEvaluation'])->name('suppliers.evaluations.store');
+    });
+    Route::middleware('permission:suppliers:delete')->group(function () {
+        Route::delete('fornecedores/avaliacoes/{evaluation}', [SupplierController::class, 'destroyEvaluation'])->name('suppliers.evaluations.destroy');
+        Route::delete('fornecedores/{supplier}', [SupplierController::class, 'destroy'])->name('suppliers.destroy');
+    });
+    Route::middleware('permission:suppliers:read')->group(function () {
+        Route::get('fornecedores', [SupplierController::class, 'index'])->name('suppliers.index');
+        Route::get('fornecedores/{supplier}', [SupplierController::class, 'show'])->name('suppliers.show');
     });
 
     // Cobranças — rotas estáticas (criar, gerar) antes da dinâmica {charge}.
