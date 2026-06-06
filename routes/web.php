@@ -19,6 +19,7 @@ use App\Http\Controllers\Panel\GatehouseController;
 use App\Http\Controllers\Panel\InboxController;
 use App\Http\Controllers\Panel\MailSettingController;
 use App\Http\Controllers\Panel\NotificationController;
+use App\Http\Controllers\Panel\MaintenanceController;
 use App\Http\Controllers\Panel\OccurrenceController;
 use App\Http\Controllers\Panel\SupplierController;
 use App\Http\Controllers\Panel\PaymentSettingController;
@@ -284,6 +285,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('permission:suppliers:read')->group(function () {
         Route::get('fornecedores', [SupplierController::class, 'index'])->name('suppliers.index');
         Route::get('fornecedores/{supplier}', [SupplierController::class, 'show'])->name('suppliers.show');
+    });
+
+    // Manutenção preventiva — estáticas (criar) antes da dinâmica {maintenance}.
+    Route::middleware('permission:maintenance:create')->group(function () {
+        Route::get('manutencoes/criar', [MaintenanceController::class, 'create'])->name('maintenance.create');
+        Route::post('manutencoes', [MaintenanceController::class, 'store'])->name('maintenance.store');
+    });
+    Route::middleware('permission:maintenance:update')->group(function () {
+        Route::get('manutencoes/{maintenance}/editar', [MaintenanceController::class, 'edit'])->name('maintenance.edit');
+        Route::match(['put', 'patch'], 'manutencoes/{maintenance}', [MaintenanceController::class, 'update'])->name('maintenance.update');
+        Route::post('manutencoes/{maintenance}/execucoes', [MaintenanceController::class, 'registerExecution'])->name('maintenance.executions.store');
+    });
+    Route::middleware('permission:maintenance:delete')->group(function () {
+        Route::delete('manutencoes/execucoes/{record}', [MaintenanceController::class, 'destroyRecord'])->name('maintenance.executions.destroy');
+        Route::delete('manutencoes/{maintenance}', [MaintenanceController::class, 'destroy'])->name('maintenance.destroy');
+    });
+    Route::middleware('permission:maintenance:read')->group(function () {
+        Route::get('manutencoes', [MaintenanceController::class, 'index'])->name('maintenance.index');
+        Route::get('manutencoes/{maintenance}', [MaintenanceController::class, 'show'])->name('maintenance.show');
     });
 
     // Cobranças — rotas estáticas (criar, gerar) antes da dinâmica {charge}.

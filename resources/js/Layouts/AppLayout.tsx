@@ -33,6 +33,7 @@ import {
     Mail,
     Tags,
     Truck,
+    Wrench,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -48,6 +49,7 @@ const navigation = [
     { name: 'Cobranças', href: '/cobrancas', icon: Wallet, permission: 'charges:read' },
     { name: 'Despesas', href: '/despesas', icon: Receipt, permission: 'expenses:read' },
     { name: 'Fornecedores', href: '/fornecedores', icon: Truck, permission: 'suppliers:read' },
+    { name: 'Manutenção', href: '/manutencoes', icon: Wrench, permission: 'maintenance:read' },
     { name: 'Relatórios', href: '/relatorios', icon: BarChart3, permission: 'reports:read' },
     { name: 'Assembleias', href: '/assembleias', icon: Vote, permission: 'assemblies:read' },
     { name: 'Portaria', href: '/visitantes', icon: DoorOpen, permission: 'gatehouse:read' },

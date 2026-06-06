@@ -39,8 +39,10 @@ Legenda esforço: 🟢 baixo · 🟡 médio · 🔴 alto. Valor: ⭐ alto difere
 - [x] **B6. Cadastro de Fornecedores/Prestadores** + avaliação/rating + histórico ⭐ 🟡 — concluída (06/06/2026)
   - Entidade `suppliers` (tenant-wide), pivô `supplier_condominium`, histórico `supplier_evaluations`
     (nota média). Categoria via Categorias customizáveis (tipo `supplier`). Ver `docs/tecnico/fornecedores.md`.
-- [ ] **B4. Manutenção preventiva recorrente** ⭐ 🟡
-  - Categoria, fornecedor, recorrência (anual/semestral/…), data estimada/realizada, alerta de atraso.
+- [x] **B4. Manutenção preventiva recorrente** ⭐ 🟡 — concluída (06/06/2026)
+  - `maintenance_plans` + histórico `maintenance_records` (avanço automático da próxima data),
+    categoria via Categorias customizáveis (tipo `maintenance`), alerta diário `maintenance:notify-due`.
+    Ver `docs/tecnico/manutencao-preventiva.md`.
 - [ ] **B5. SLA/prazo em ocorrências** + acompanhamentos internos vs públicos + estatísticas ⭐ 🟡
   - `deadline` na ocorrência, alertas (vence hoje / atrasada), nota interna, dashboard de chamados.
 

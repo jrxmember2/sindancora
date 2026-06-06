@@ -28,3 +28,6 @@ Schedule::command('campaigns:dispatch-scheduled')->everyMinute()->withoutOverlap
 
 // Alerta de documentos vencendo (AVCB, alvarás, contratos) — uma vez por dia, de manhã
 Schedule::command('documents:notify-expiring')->dailyAt('07:00')->withoutOverlapping();
+
+// Alerta de manutenções preventivas próximas/atrasadas — uma vez por dia, de manhã
+Schedule::command('maintenance:notify-due')->dailyAt('07:30')->withoutOverlapping();
