@@ -76,16 +76,23 @@ class MaintenanceController extends Controller
         return redirect()->route('maintenance.index')->with('success', 'Manutenção cadastrada.');
     }
 
-    public function show(MaintenancePlan $maintenance): Response
+    public function show(Request $request, MaintenancePlan $maintenance): Response
     {
         $maintenance = $this->authorizeTenant($maintenance);
-        $maintenance->load(['condominium:id,name', 'supplier:id,name', 'records.supplier:id,name', 'records.author:id,name']);
+        $maintenance->load([
+            'condominium:id,name',
+            'supplier:id,name',
+            'records.supplier:id,name',
+            'records.author:id,name',
+            'records.expense:id,maintenance_record_id,status,due_date,amount,description',
+        ]);
 
         return Inertia::render('Maintenance/Show', [
             'plan' => $maintenance,
             'categories' => $this->categoryOptions($maintenance->tenant_id),
             'frequencies' => MaintenancePlan::FREQUENCIES,
             'suppliers' => $this->supplierOptions($maintenance->tenant_id),
+            'canGenerateExpense' => $this->canGenerateExpense($request),
         ]);
     }
 
@@ -127,9 +134,24 @@ class MaintenanceController extends Controller
         $data = $request->validate([
             'done_date' => 'required|date',
             'supplier_id' => ['nullable', 'uuid', "exists:suppliers,id,tenant_id,{$maintenance->tenant_id}"],
-            'cost' => 'nullable|numeric|min:0',
+            'cost' => [
+                Rule::requiredIf($request->boolean('generate_expense')),
+                'nullable',
+                'numeric',
+                $request->boolean('generate_expense') ? 'min:0.01' : 'min:0',
+            ],
             'notes' => 'nullable|string|max:2000',
+            'generate_expense' => 'boolean',
+            'expense_due_date' => [Rule::requiredIf($request->boolean('generate_expense')), 'nullable', 'date'],
+            'expense_document_number' => 'nullable|string|max:80',
+            'expense_reminder_days' => 'nullable|integer|min:0|max:60',
         ]);
+
+        $data['generate_expense'] = $request->boolean('generate_expense');
+
+        if ($data['generate_expense']) {
+            abort_unless($this->canGenerateExpense($request), 403);
+        }
 
         $this->service->registerExecution($maintenance, $data, $request->user());
 
@@ -179,6 +201,21 @@ class MaintenanceController extends Controller
             ->orderBy('name')
             ->get(['id', 'name'])
             ->map(fn ($s) => ['value' => $s->id, 'label' => $s->name]);
+    }
+
+    private function canGenerateExpense(Request $request): bool
+    {
+        $user = $request->user();
+
+        if (! $user?->hasPermission('expenses:create')) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return (bool) app('tenant')->activePlan()?->hasModule('financial');
     }
 
     private function authorizeTenant(MaintenancePlan $maintenance): MaintenancePlan

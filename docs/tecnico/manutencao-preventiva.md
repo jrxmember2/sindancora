@@ -24,8 +24,8 @@ Migrations: `2026_06_19_000001..2`. `tenant_id` direto em ambas; FKs `cascadeOnD
 - **Categoria** reusa as **Categorias customizáveis**: tipo `maintenance` em `Category::TYPES`,
   com lista-base `MaintenancePlan::CATEGORIES` (Elevador, Bombas, Gerador, Caixa d'água,
   Dedetização, AVCB/Incêndio, Ar-condicionado, Portões, Jardinagem, Outros).
-- **Custo** fica registrado na execução (histórico/relatório). A integração com Despesas/contas
-  a pagar é tema da Fase C8.
+- **Custo** fica registrado na execução (histórico) e, opcionalmente, gera uma conta a pagar vinculada
+  em `expenses` pela integração B4+B6+C8.
 
 ## Alerta agendado
 
@@ -35,6 +35,20 @@ Migrations: `2026_06_19_000001..2`. `tenant_id` direto em ambas; FKs `cascadeOnD
 - Notificação `MaintenanceDue` (`database` + `mail` + `broadcast`, enfileirada), ícone `wrench`.
 - Agendado em `routes/console.php`: `dailyAt('07:30')->withoutOverlapping()`.
 - Espelha o padrão de `documents:notify-expiring`/`DocumentExpiring` (Fase A).
+
+## Integração com contas a pagar
+
+- A execução de manutenção (`maintenance_records`) pode gerar uma conta em `expenses` quando o
+  usuário marca **Gerar conta a pagar** e informa custo. O vínculo fica em
+  `expenses.maintenance_record_id`.
+- A criação da conta ocorre na mesma transação de `MaintenanceService::registerExecution`: se a
+  conta não for criada, a execução também não fica salva pela metade.
+- A conta nasce como `pending`, categoria `maintenance`, fornecedor da execução/plano e
+  vencimento/documento/lembrete informados no registro da execução.
+- Regra de acesso: além de `maintenance:update`, gerar a conta exige `expenses:create` e plano com
+  módulo `financial` ativo (super admin continua com bypass global).
+- A tela da manutenção mostra a conta vinculada em cada execução; a tela de contas mostra a origem
+  em manutenção.
 
 ## Permissões
 

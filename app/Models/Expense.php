@@ -17,7 +17,7 @@ class Expense extends Model
         'tenant_id', 'condominium_id', 'category', 'description', 'amount',
         'status', 'expense_date', 'due_date', 'paid_at', 'paid_amount', 'payment_method',
         'supplier', 'supplier_id', 'document_number', 'reminder_days', 'reminder_sent_at',
-        'receipt_storage_object_id', 'notes', 'created_by',
+        'receipt_storage_object_id', 'maintenance_record_id', 'notes', 'created_by',
     ];
 
     protected $appends = ['display_status', 'display_status_label', 'days_until_due'];
@@ -73,6 +73,11 @@ class Expense extends Model
     public function supplierRecord(): BelongsTo
     {
         return $this->belongsTo(Supplier::class, 'supplier_id');
+    }
+
+    public function maintenanceRecord(): BelongsTo
+    {
+        return $this->belongsTo(MaintenanceRecord::class, 'maintenance_record_id');
     }
 
     public function creator(): BelongsTo

@@ -57,4 +57,22 @@ class Supplier extends Model
     {
         return $this->hasMany(SupplierEvaluation::class)->latest();
     }
+
+    /** @return HasMany<MaintenancePlan> */
+    public function maintenancePlans(): HasMany
+    {
+        return $this->hasMany(MaintenancePlan::class);
+    }
+
+    /** @return HasMany<MaintenanceRecord> */
+    public function maintenanceRecords(): HasMany
+    {
+        return $this->hasMany(MaintenanceRecord::class);
+    }
+
+    /** @return HasMany<Expense> */
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
 }

@@ -1,6 +1,7 @@
 import AppLayout from '@/Layouts/AppLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
+import type { PageProps } from '@/types';
 import ExpenseFields, { type Option } from './ExpenseFields';
 
 interface Expense {
@@ -20,6 +21,7 @@ interface Expense {
     document_number: string | null;
     reminder_days: number | null;
     notes: string | null;
+    maintenance_record: { plan: { id: string; title: string } | null } | null;
 }
 
 interface Props {
@@ -35,6 +37,11 @@ const dateOnly = (value?: string | null) => value?.slice(0, 10) ?? '';
 const today = new Date().toISOString().slice(0, 10);
 
 export default function ExpenseEdit({ expense, condominiums, suppliers, categories, statuses, paymentMethods }: Props) {
+    const { auth, tenant } = usePage<PageProps>().props;
+    const permissions = auth.user?.permissions ?? [];
+    const can = (permission: string) => permissions.includes('*') || permissions.includes(permission);
+    const canOpenMaintenance = can('maintenance:read') && (auth.user?.is_super_admin || (tenant?.plan?.modules ?? []).includes('maintenance'));
+
     const { data, setData, patch, processing, errors } = useForm({
         condominium_id: expense.condominium_id,
         category: expense.category,
@@ -68,6 +75,18 @@ export default function ExpenseEdit({ expense, condominiums, suppliers, categori
                 <h1 className="mt-1 text-2xl font-bold text-gray-900">Editar conta a pagar</h1>
             </div>
             <form onSubmit={submit} className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
+                {expense.maintenance_record?.plan && (
+                    <div className="mb-5 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                        Origem:{' '}
+                        {canOpenMaintenance ? (
+                            <Link href={route('maintenance.show', expense.maintenance_record.plan.id)} className="font-medium underline">
+                                {expense.maintenance_record.plan.title}
+                            </Link>
+                        ) : (
+                            <span className="font-medium">{expense.maintenance_record.plan.title}</span>
+                        )}
+                    </div>
+                )}
                 <ExpenseFields
                     data={data}
                     setData={setData}

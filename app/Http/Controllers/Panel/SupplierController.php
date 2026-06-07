@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Panel;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Condominium;
+use App\Models\Expense;
+use App\Models\MaintenancePlan;
+use App\Models\MaintenanceRecord;
 use App\Models\Supplier;
 use App\Models\SupplierEvaluation;
 use App\Rules\CpfCnpj;
@@ -21,8 +24,12 @@ class SupplierController extends Controller
         $tenant = app('tenant');
 
         $suppliers = Supplier::where('tenant_id', $tenant->id)
-            ->withCount('evaluations')
+            ->withCount([
+                'evaluations',
+                'maintenancePlans as active_maintenance_plans_count' => fn ($q) => $q->where('is_active', true),
+            ])
             ->withAvg('evaluations', 'score')
+            ->withSum(['expenses as open_expenses_sum_amount' => fn ($q) => $q->open()], 'amount')
             ->when($request->category, fn ($q, $c) => $q->where('category', $c))
             ->when($request->condominium_id, fn ($q, $id) => $q->whereHas('condominiums', fn ($c) => $c->where('condominiums.id', $id)))
             ->when($request->search, function ($q, $s) {
@@ -72,9 +79,43 @@ class SupplierController extends Controller
             ->loadAvg('evaluations', 'score')
             ->loadCount('evaluations');
 
+        $maintenancePlans = MaintenancePlan::where('tenant_id', $supplier->tenant_id)
+            ->where('supplier_id', $supplier->id)
+            ->with('condominium:id,name')
+            ->orderBy('next_due_date')
+            ->limit(6)
+            ->get(['id', 'tenant_id', 'condominium_id', 'title', 'category', 'frequency', 'next_due_date', 'alert_days', 'is_active']);
+
+        $maintenanceRecords = MaintenanceRecord::where('tenant_id', $supplier->tenant_id)
+            ->where('supplier_id', $supplier->id)
+            ->with([
+                'plan:id,condominium_id,title',
+                'plan.condominium:id,name',
+                'expense:id,maintenance_record_id,status,due_date,amount,description',
+            ])
+            ->latest('done_date')
+            ->limit(6)
+            ->get(['id', 'tenant_id', 'maintenance_plan_id', 'supplier_id', 'done_date', 'cost', 'notes']);
+
+        $expenses = Expense::where('tenant_id', $supplier->tenant_id)
+            ->where('supplier_id', $supplier->id)
+            ->with(['condominium:id,name', 'maintenanceRecord:id,maintenance_plan_id', 'maintenanceRecord.plan:id,title'])
+            ->orderByRaw("CASE WHEN status = 'paid' THEN 2 WHEN status = 'cancelled' THEN 3 ELSE 1 END")
+            ->orderBy('due_date')
+            ->limit(8)
+            ->get([
+                'id', 'tenant_id', 'condominium_id', 'supplier_id', 'maintenance_record_id',
+                'description', 'amount', 'status', 'due_date', 'paid_at', 'document_number',
+            ]);
+
         return Inertia::render('Suppliers/Show', [
             'supplier' => $supplier,
             'categories' => $this->categoryOptions($supplier->tenant_id),
+            'maintenanceCategories' => Category::optionsFor($supplier->tenant_id, 'maintenance', MaintenancePlan::CATEGORIES),
+            'supplierStats' => $this->supplierStats($supplier),
+            'maintenancePlans' => $maintenancePlans,
+            'maintenanceRecords' => $maintenanceRecords,
+            'expenses' => $expenses,
         ]);
     }
 
@@ -178,6 +219,33 @@ class SupplierController extends Controller
             ->orderBy('name')
             ->get(['id', 'name'])
             ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]);
+    }
+
+    private function supplierStats(Supplier $supplier): array
+    {
+        return [
+            'active_maintenance_plans' => MaintenancePlan::where('tenant_id', $supplier->tenant_id)
+                ->where('supplier_id', $supplier->id)
+                ->where('is_active', true)
+                ->count(),
+            'maintenance_records' => MaintenanceRecord::where('tenant_id', $supplier->tenant_id)
+                ->where('supplier_id', $supplier->id)
+                ->count(),
+            'open_expenses_total' => (float) Expense::where('tenant_id', $supplier->tenant_id)
+                ->where('supplier_id', $supplier->id)
+                ->open()
+                ->sum('amount'),
+            'overdue_expenses_total' => (float) Expense::where('tenant_id', $supplier->tenant_id)
+                ->where('supplier_id', $supplier->id)
+                ->open()
+                ->whereDate('due_date', '<', today()->toDateString())
+                ->sum('amount'),
+            'paid_this_month' => (float) Expense::where('tenant_id', $supplier->tenant_id)
+                ->where('supplier_id', $supplier->id)
+                ->where('status', 'paid')
+                ->whereBetween('paid_at', [now()->startOfMonth(), now()->endOfMonth()])
+                ->sum('paid_amount'),
+        ];
     }
 
     private function authorizeTenant(Supplier $supplier): Supplier
