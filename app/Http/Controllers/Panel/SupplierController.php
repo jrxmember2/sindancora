@@ -8,6 +8,7 @@ use App\Models\Condominium;
 use App\Models\Expense;
 use App\Models\MaintenancePlan;
 use App\Models\MaintenanceRecord;
+use App\Models\QuotationProposal;
 use App\Models\Supplier;
 use App\Models\SupplierEvaluation;
 use App\Rules\CpfCnpj;
@@ -27,6 +28,7 @@ class SupplierController extends Controller
             ->withCount([
                 'evaluations',
                 'maintenancePlans as active_maintenance_plans_count' => fn ($q) => $q->where('is_active', true),
+                'quotationProposals',
             ])
             ->withAvg('evaluations', 'score')
             ->withSum(['expenses as open_expenses_sum_amount' => fn ($q) => $q->open()], 'amount')
@@ -108,6 +110,13 @@ class SupplierController extends Controller
                 'description', 'amount', 'status', 'due_date', 'paid_at', 'document_number',
             ]);
 
+        $quotationProposals = QuotationProposal::where('tenant_id', $supplier->tenant_id)
+            ->where('supplier_id', $supplier->id)
+            ->with(['quotation:id,condominium_id,title,status', 'quotation.condominium:id,name'])
+            ->latest()
+            ->limit(8)
+            ->get(['id', 'tenant_id', 'quotation_id', 'supplier_id', 'amount', 'execution_days', 'valid_until', 'status']);
+
         return Inertia::render('Suppliers/Show', [
             'supplier' => $supplier,
             'categories' => $this->categoryOptions($supplier->tenant_id),
@@ -116,6 +125,7 @@ class SupplierController extends Controller
             'maintenancePlans' => $maintenancePlans,
             'maintenanceRecords' => $maintenanceRecords,
             'expenses' => $expenses,
+            'quotationProposals' => $quotationProposals,
         ]);
     }
 
@@ -229,6 +239,9 @@ class SupplierController extends Controller
                 ->where('is_active', true)
                 ->count(),
             'maintenance_records' => MaintenanceRecord::where('tenant_id', $supplier->tenant_id)
+                ->where('supplier_id', $supplier->id)
+                ->count(),
+            'quotation_proposals' => QuotationProposal::where('tenant_id', $supplier->tenant_id)
                 ->where('supplier_id', $supplier->id)
                 ->count(),
             'open_expenses_total' => (float) Expense::where('tenant_id', $supplier->tenant_id)

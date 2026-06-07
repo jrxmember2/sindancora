@@ -37,6 +37,7 @@ interface Plan {
     days_until_due: number | null;
     condominium: { id: string; name: string } | null;
     supplier: { id: string; name: string } | null;
+    quotation_proposal: { quotation: { id: string; title: string } | null } | null;
     records: ExecutionRecord[];
 }
 
@@ -70,8 +71,10 @@ export default function MaintenanceShow({ plan, categories, frequencies, supplie
     const permissions = auth.user?.permissions ?? [];
     const can = (permission: string) => permissions.includes('*') || permissions.includes(permission);
     const planAllowsFinancial = auth.user?.is_super_admin || (tenant?.plan?.modules ?? []).includes('financial');
+    const planAllowsQuotations = auth.user?.is_super_admin || (tenant?.plan?.modules ?? []).includes('quotations');
     const canOpenExpenses = can('expenses:read') && planAllowsFinancial;
     const canEditExpenses = can('expenses:update') && planAllowsFinancial;
+    const canOpenQuotations = can('quotations:read') && planAllowsQuotations;
 
     const today = new Date().toISOString().slice(0, 10);
     const form = useForm({
@@ -139,6 +142,18 @@ export default function MaintenanceShow({ plan, categories, frequencies, supplie
                     <p>Fornecedor padrão: <span className="font-medium">{plan.supplier?.name ?? '-'}</span></p>
                     <p>Última execução: <span className="font-medium">{fmtDate(plan.last_done_date)}</span></p>
                     <p>Alerta: {plan.alert_days} dia(s) de antecedência</p>
+                    {plan.quotation_proposal?.quotation && (
+                        <p>
+                            Origem:{' '}
+                            {canOpenQuotations ? (
+                                <Link href={route('quotations.show', plan.quotation_proposal.quotation.id)} className="font-medium text-blue-600 hover:underline">
+                                    {plan.quotation_proposal.quotation.title}
+                                </Link>
+                            ) : (
+                                <span className="font-medium">{plan.quotation_proposal.quotation.title}</span>
+                            )}
+                        </p>
+                    )}
                     {plan.description && <p className="border-t border-gray-100 pt-2 text-gray-600">{plan.description}</p>}
                 </div>
 

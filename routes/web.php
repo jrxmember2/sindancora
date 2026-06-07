@@ -22,6 +22,7 @@ use App\Http\Controllers\Panel\NotificationController;
 use App\Http\Controllers\Panel\MaintenanceController;
 use App\Http\Controllers\Panel\OccurrenceController;
 use App\Http\Controllers\Panel\OccurrenceSlaController;
+use App\Http\Controllers\Panel\QuotationController;
 use App\Http\Controllers\Panel\SupplierController;
 use App\Http\Controllers\Panel\PaymentSettingController;
 use App\Http\Controllers\Panel\PersonController;
@@ -306,6 +307,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('permission:maintenance:read')->group(function () {
         Route::get('manutencoes', [MaintenanceController::class, 'index'])->name('maintenance.index');
         Route::get('manutencoes/{maintenance}', [MaintenanceController::class, 'show'])->name('maintenance.show');
+    });
+
+    // Orçamentos/Cotações — propostas multi-fornecedor e aprovação.
+    Route::middleware('permission:quotations:create')->group(function () {
+        Route::get('orcamentos/criar', [QuotationController::class, 'create'])->name('quotations.create');
+        Route::post('orcamentos', [QuotationController::class, 'store'])->name('quotations.store');
+    });
+    Route::middleware('permission:quotations:update')->group(function () {
+        Route::get('orcamentos/{quotation}/editar', [QuotationController::class, 'edit'])->name('quotations.edit');
+        Route::match(['put', 'patch'], 'orcamentos/{quotation}', [QuotationController::class, 'update'])->name('quotations.update');
+        Route::post('orcamentos/{quotation}/propostas', [QuotationController::class, 'storeProposal'])->name('quotations.proposals.store');
+        Route::delete('orcamentos/propostas/{proposal}', [QuotationController::class, 'destroyProposal'])->name('quotations.proposals.destroy');
+    });
+    Route::middleware('permission:quotations:approve')->group(function () {
+        Route::post('orcamentos/propostas/{proposal}/aprovar', [QuotationController::class, 'approveProposal'])->name('quotations.proposals.approve');
+        Route::post('orcamentos/{quotation}/reprovar', [QuotationController::class, 'reject'])->name('quotations.reject');
+    });
+    Route::middleware('permission:quotations:delete')->group(function () {
+        Route::delete('orcamentos/{quotation}', [QuotationController::class, 'destroy'])->name('quotations.destroy');
+    });
+    Route::middleware('permission:quotations:read')->group(function () {
+        Route::get('orcamentos', [QuotationController::class, 'index'])->name('quotations.index');
+        Route::get('orcamentos/{quotation}', [QuotationController::class, 'show'])->name('quotations.show');
     });
 
     // Cobranças — rotas estáticas (criar, gerar) antes da dinâmica {charge}.

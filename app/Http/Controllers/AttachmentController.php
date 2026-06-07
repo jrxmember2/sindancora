@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Announcement;
 use App\Models\Occurrence;
 use App\Models\PersonUnitLink;
+use App\Models\QuotationProposal;
 use App\Models\StorageObject;
 use App\Models\User;
 use App\Services\StorageService;
@@ -66,6 +67,7 @@ class AttachmentController extends Controller
             'occurrence' => $user->hasPermission('occurrences:read') || $this->isOccurrenceAuthor($user, $object->entity_id),
             'common_area' => true, // áreas comuns são visíveis aos moradores do tenant
             'document' => $user->hasPermission('documents:read'),
+            'quotation_proposal' => $user->hasPermission('quotations:read') && $this->planAllows('quotations'),
             default => false,
         };
     }
@@ -83,8 +85,29 @@ class AttachmentController extends Controller
             'announcement' => $user->hasPermission('announcements:update'),
             'occurrence' => $user->hasPermission('occurrences:update') || $this->isOccurrenceAuthor($user, $object->entity_id),
             'common_area' => $user->hasPermission('reservations:approve'),
+            'quotation_proposal' => $this->canManageQuotationProposal($user, $object->entity_id),
             default => false,
         };
+    }
+
+    private function canManageQuotationProposal(User $user, ?string $proposalId): bool
+    {
+        if (! $proposalId || ! $user->hasPermission('quotations:update') || ! $this->planAllows('quotations')) {
+            return false;
+        }
+
+        $proposal = QuotationProposal::with('quotation:id,status')
+            ->where('tenant_id', app('tenant')->id)
+            ->find($proposalId);
+
+        return $proposal !== null
+            && $proposal->status !== 'approved'
+            && $proposal->quotation?->status !== 'approved';
+    }
+
+    private function planAllows(string $module): bool
+    {
+        return (bool) app('tenant')->activePlan()?->hasModule($module);
     }
 
     private function residentSeesAnnouncement(User $user, ?string $announcementId): bool

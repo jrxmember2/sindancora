@@ -29,6 +29,7 @@ class CheckPermission
         'campaigns' => 'whatsapp',
         'suppliers' => 'suppliers',
         'maintenance' => 'maintenance',
+        'quotations' => 'quotations',
     ];
 
     private const PLAN_MODULE_BY_PERMISSION = [

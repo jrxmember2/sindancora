@@ -132,6 +132,13 @@ class PermissionSeeder extends Seeder
             ['module' => 'maintenance', 'action' => 'read',   'description' => 'Visualizar manutenções'],
             ['module' => 'maintenance', 'action' => 'update', 'description' => 'Editar manutenções e registrar execuções'],
             ['module' => 'maintenance', 'action' => 'delete', 'description' => 'Remover manutenções e execuções'],
+
+            // Orçamentos/Cotações
+            ['module' => 'quotations', 'action' => 'create',  'description' => 'Criar orçamentos e cotações'],
+            ['module' => 'quotations', 'action' => 'read',    'description' => 'Visualizar orçamentos e propostas'],
+            ['module' => 'quotations', 'action' => 'update',  'description' => 'Editar orçamentos e propostas'],
+            ['module' => 'quotations', 'action' => 'approve', 'description' => 'Aprovar ou reprovar propostas'],
+            ['module' => 'quotations', 'action' => 'delete',  'description' => 'Remover orçamentos e propostas'],
         ];
 
         foreach ($permissions as $perm) {

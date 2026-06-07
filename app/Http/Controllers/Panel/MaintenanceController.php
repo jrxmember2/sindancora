@@ -82,6 +82,8 @@ class MaintenanceController extends Controller
         $maintenance->load([
             'condominium:id,name',
             'supplier:id,name',
+            'quotationProposal:id,quotation_id,supplier_name',
+            'quotationProposal.quotation:id,title',
             'records.supplier:id,name',
             'records.author:id,name',
             'records.expense:id,maintenance_record_id,status,due_date,amount,description',

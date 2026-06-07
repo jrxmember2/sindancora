@@ -49,7 +49,9 @@ Legenda esforço: 🟢 baixo · 🟡 médio · 🔴 alto. Valor: ⭐ alto difere
     Ver `docs/tecnico/ocorrencias.md`. **Fase B concluída.**
 
 ### Fase C — Gestão de serviços e contas
-- [ ] **C7. Orçamentos/Cotações** (multi-fornecedor, comparar, aprovar, prazo, anexos) ⭐ 🔴
+- [x] **C7. Orçamentos/Cotações** (multi-fornecedor, comparar, aprovar, prazo, anexos) ⭐ 🔴 — concluída (07/06/2026)
+  - `quotations` + `quotation_proposals`, anexos por `StorageObject`, aprovação transacional,
+    conversão opcional em manutenção e/ou conta a pagar. Ver `docs/tecnico/orcamentos.md`.
 - [ ] **C12. Obras** (orçamento aprovado vs final, cronograma, status) 🟡 🟡
 - [x] **C8. Contas a pagar** (lembrete + categoria + nota fiscal) 🟡 🟡 — concluída (07/06/2026), estendendo "Despesas".
   - Integração operacional B4+B6+C8 concluída (07/06/2026): execução de manutenção pode gerar conta

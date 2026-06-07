@@ -32,6 +32,7 @@ interface Expense {
     condominium: { name: string } | null;
     supplier_record: { name: string } | null;
     maintenance_record: { plan: { id: string; title: string } | null } | null;
+    quotation_proposal: { quotation: { id: string; title: string } | null } | null;
 }
 
 interface Summary {
@@ -97,7 +98,9 @@ export default function ExpensesIndex({ expenses, total, summary, condominiums, 
     const perms = auth.user?.permissions ?? [];
     const can = (permission: string) => perms.includes('*') || perms.includes(permission);
     const planAllowsMaintenance = auth.user?.is_super_admin || (tenant?.plan?.modules ?? []).includes('maintenance');
+    const planAllowsQuotations = auth.user?.is_super_admin || (tenant?.plan?.modules ?? []).includes('quotations');
     const canOpenMaintenance = can('maintenance:read') && planAllowsMaintenance;
+    const canOpenQuotations = can('quotations:read') && planAllowsQuotations;
 
     const apply = (params: Record<string, string>) => router.get(
         route('expenses.index'),
@@ -210,6 +213,16 @@ export default function ExpensesIndex({ expenses, total, summary, condominiums, 
                                                             {expense.maintenance_record.plan.title}
                                                         </Link>
                                                     ) : expense.maintenance_record.plan.title}
+                                                </p>
+                                            )}
+                                            {expense.quotation_proposal?.quotation && (
+                                                <p className="mt-1 text-xs text-gray-400">
+                                                    Origem:{' '}
+                                                    {canOpenQuotations ? (
+                                                        <Link href={route('quotations.show', expense.quotation_proposal.quotation.id)} className="text-blue-600 hover:underline">
+                                                            {expense.quotation_proposal.quotation.title}
+                                                        </Link>
+                                                    ) : expense.quotation_proposal.quotation.title}
                                                 </p>
                                             )}
                                         </td>

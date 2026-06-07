@@ -1,6 +1,6 @@
 # 04 — Planos, Limites e Controle de Storage
 
-> Versão: 1.0 — 31/05/2026
+> Versão: 1.1 — 07/06/2026
 > Finalidade: Definir os modelos comerciais, limites técnicos por plano e a estratégia de controle de armazenamento por tenant
 
 ---
@@ -48,6 +48,7 @@
 | Relatórios básicos | ✅ | ✅ | ✅ | ✅ |
 | Financeiro — cobranças manuais | ❌ | ✅ | ✅ | ✅ |
 | Financeiro — boleto/PIX (gateway) | ❌ | ❌ | ✅ | ✅ |
+| Orçamentos/Cotações multi-fornecedor | ❌ | ✅ | ✅ | ✅ |
 | Importação CSV de unidades/pessoas | ❌ | ✅ | ✅ | ✅ |
 | Exportação PDF/XLSX | ❌ | ✅ | ✅ | ✅ |
 | API pública com API Key | ❌ | ❌ | ✅ | ✅ |

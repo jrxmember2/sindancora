@@ -48,6 +48,7 @@ class PlanController extends Controller
         'gatehouse' => 'Portaria',
         'suppliers' => 'Fornecedores',
         'maintenance' => 'Manutenção preventiva',
+        'quotations' => 'Orçamentos/Cotações',
         'white_label' => 'White-label',
     ];
 

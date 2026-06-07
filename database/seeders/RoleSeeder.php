@@ -37,6 +37,7 @@ class RoleSeeder extends Seeder
                 'categories:manage',
                 'suppliers:create', 'suppliers:read', 'suppliers:update', 'suppliers:delete',
                 'maintenance:create', 'maintenance:read', 'maintenance:update', 'maintenance:delete',
+                'quotations:create', 'quotations:read', 'quotations:update', 'quotations:approve', 'quotations:delete',
                 'audit:read',
             ],
         ],
@@ -60,6 +61,7 @@ class RoleSeeder extends Seeder
                 'categories:manage',
                 'suppliers:create', 'suppliers:read', 'suppliers:update', 'suppliers:delete',
                 'maintenance:create', 'maintenance:read', 'maintenance:update', 'maintenance:delete',
+                'quotations:create', 'quotations:read', 'quotations:update', 'quotations:approve',
                 'ai:use',
             ],
         ],
@@ -70,7 +72,7 @@ class RoleSeeder extends Seeder
                 'condominiums:read', 'units:read', 'persons:read',
                 'announcements:read', 'occurrences:read', 'occurrences:update',
                 'reservations:read', 'documents:read', 'documents:download',
-                'gatehouse:read', 'suppliers:read', 'maintenance:read',
+                'gatehouse:read', 'suppliers:read', 'maintenance:read', 'quotations:read',
             ],
         ],
         'conselheiro' => [
@@ -80,7 +82,7 @@ class RoleSeeder extends Seeder
                 'condominiums:read', 'units:read',
                 'announcements:read', 'occurrences:read',
                 'reservations:read', 'documents:read', 'documents:download',
-                'reports:read', 'gatehouse:read', 'suppliers:read', 'maintenance:read',
+                'reports:read', 'gatehouse:read', 'suppliers:read', 'maintenance:read', 'quotations:read',
             ],
         ],
         'morador' => [

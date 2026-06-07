@@ -60,7 +60,7 @@ class PlanSeeder extends Seeder
                 'modules' => [
                     'condominiums', 'units', 'persons', 'announcements',
                     'occurrences', 'reservations', 'documents', 'portal', 'notifications',
-                    'financial', 'reports', 'import', 'suppliers', 'maintenance',
+                    'financial', 'reports', 'import', 'suppliers', 'maintenance', 'quotations',
                 ],
             ],
             [
@@ -87,7 +87,7 @@ class PlanSeeder extends Seeder
                     'condominiums', 'units', 'persons', 'announcements',
                     'occurrences', 'reservations', 'documents', 'portal', 'notifications',
                     'financial', 'reports', 'import', 'api', 'webhooks',
-                    'suppliers', 'maintenance',
+                    'suppliers', 'maintenance', 'quotations',
                 ],
             ],
             [
@@ -115,7 +115,7 @@ class PlanSeeder extends Seeder
                     'occurrences', 'reservations', 'documents', 'portal', 'notifications',
                     'financial', 'reports', 'import', 'api', 'webhooks',
                     'whatsapp', 'ai_assistant', 'assemblies', 'gatehouse',
-                    'suppliers', 'maintenance', 'white_label',
+                    'suppliers', 'maintenance', 'quotations', 'white_label',
                 ],
             ],
         ];
