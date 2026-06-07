@@ -38,14 +38,14 @@
         <tr><td class="label">Total recebido</td><td class="value">{{ $fmt($s['received']) }}</td></tr>
         <tr><td class="label">Em aberto</td><td class="value">{{ $fmt($s['open']) }}</td></tr>
         <tr><td class="label">Vencido (valor atualizado)</td><td class="value">{{ $fmt($s['overdue_total']) }}</td></tr>
-        <tr><td class="label">Despesas</td><td class="value">{{ $fmt($s['expenses']) }}</td></tr>
-        <tr class="total-row"><td class="label">Saldo (recebido − despesas)</td><td class="value">{{ $fmt($s['balance']) }}</td></tr>
+        <tr><td class="label">Contas pagas</td><td class="value">{{ $fmt($s['expenses']) }}</td></tr>
+        <tr class="total-row"><td class="label">Saldo (recebido − contas pagas)</td><td class="value">{{ $fmt($s['balance']) }}</td></tr>
     </table>
 
     <h2>Movimentação mensal</h2>
     <table>
         <thead>
-            <tr><th>Mês</th><th class="right">Cobrado</th><th class="right">Recebido</th><th class="right">Despesas</th></tr>
+            <tr><th>Mês</th><th class="right">Cobrado</th><th class="right">Recebido</th><th class="right">Contas pagas</th></tr>
         </thead>
         <tbody>
             @foreach ($report['months'] as $m)

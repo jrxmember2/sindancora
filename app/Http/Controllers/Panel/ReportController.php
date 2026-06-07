@@ -80,7 +80,7 @@ class ReportController extends Controller
     }
 
     /**
-     * Agrega os números do período: cobrado, recebido, em aberto, despesas, saldo,
+     * Agrega os números do período: cobrado, recebido, em aberto, contas pagas, saldo,
      * inadimplência e a quebra mensal.
      */
     private function build(Carbon $from, Carbon $to, ?string $condominiumId): array
@@ -101,7 +101,9 @@ class ReportController extends Controller
         $open = (clone $chargeBase())->whereIn('status', ['pending', 'overdue'])->sum('amount');
 
         $expenses = (clone $expenseBase())
-            ->whereBetween('expense_date', [$from->toDateString(), $to->toDateString()])->sum('amount');
+            ->where('status', 'paid')
+            ->whereBetween('paid_at', [$from, $to])
+            ->sum('paid_amount');
 
         // Inadimplentes: cobranças em aberto e vencidas (por unidade).
         $delinquentCharges = (clone $chargeBase())->overdue()
@@ -138,7 +140,9 @@ class ReportController extends Controller
                 'received' => (float) (clone $chargeBase())->where('status', 'paid')
                     ->whereBetween('paid_at', [$mStart, $mEnd])->sum('paid_amount'),
                 'expenses' => (float) (clone $expenseBase())
-                    ->whereBetween('expense_date', [$mStart->toDateString(), $mEnd->toDateString()])->sum('amount'),
+                    ->where('status', 'paid')
+                    ->whereBetween('paid_at', [$mStart, $mEnd])
+                    ->sum('paid_amount'),
             ];
 
             $cursor->addMonth();

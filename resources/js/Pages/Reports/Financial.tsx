@@ -72,7 +72,7 @@ export default function FinancialReport({ report, condominiums, filters, canExpo
                     <p className="mt-1 text-lg font-bold text-gray-900">{brl(s.received)}</p>
                 </div>
                 <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                    <div className="flex items-center gap-2 text-red-600"><TrendingDown className="h-4 w-4" /><span className="text-xs font-medium text-gray-500">Despesas</span></div>
+                    <div className="flex items-center gap-2 text-red-600"><TrendingDown className="h-4 w-4" /><span className="text-xs font-medium text-gray-500">Contas pagas</span></div>
                     <p className="mt-1 text-lg font-bold text-gray-900">{brl(s.expenses)}</p>
                 </div>
                 <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -92,7 +92,7 @@ export default function FinancialReport({ report, condominiums, filters, canExpo
                     <h2 className="border-b border-gray-100 px-4 py-3 text-sm font-semibold text-gray-900">Movimentação mensal</h2>
                     <table className="w-full text-sm">
                         <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            <tr><th className="px-4 py-2">Mês</th><th className="px-4 py-2 text-right">Cobrado</th><th className="px-4 py-2 text-right">Recebido</th><th className="px-4 py-2 text-right">Despesas</th></tr>
+                            <tr><th className="px-4 py-2">Mês</th><th className="px-4 py-2 text-right">Cobrado</th><th className="px-4 py-2 text-right">Recebido</th><th className="px-4 py-2 text-right">Contas pagas</th></tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {report.months.map((m) => (

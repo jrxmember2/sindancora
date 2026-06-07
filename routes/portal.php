@@ -42,23 +42,29 @@ Route::middleware(['auth', 'verified', 'resident'])
         Route::get('documentos/{document}/download', [DocumentController::class, 'download'])->name('documents.download');
 
         // Minhas cobranças
-        Route::get('cobrancas', [ChargeController::class, 'index'])->name('charges.index');
-        Route::get('cobrancas/{charge}/comprovante', [ChargeController::class, 'download'])->name('charges.download');
-        Route::post('cobrancas/{charge}/segunda-via', [ChargeController::class, 'secondCopy'])->name('charges.second-copy');
-        Route::get('cobrancas/{charge}', [ChargeController::class, 'show'])->name('charges.show');
+        Route::middleware('module:financial')->group(function () {
+            Route::get('cobrancas', [ChargeController::class, 'index'])->name('charges.index');
+            Route::get('cobrancas/{charge}/comprovante', [ChargeController::class, 'download'])->name('charges.download');
+            Route::post('cobrancas/{charge}/segunda-via', [ChargeController::class, 'secondCopy'])->name('charges.second-copy');
+            Route::get('cobrancas/{charge}', [ChargeController::class, 'show'])->name('charges.show');
+        });
 
         // Assembleias (presença + votação)
-        Route::get('assembleias', [AssemblyController::class, 'index'])->name('assemblies.index');
-        Route::get('assembleias/{assembly}', [AssemblyController::class, 'show'])->name('assemblies.show');
-        Route::post('assembleias/{assembly}/presenca', [AssemblyController::class, 'attend'])->name('assemblies.attend');
-        Route::post('assembleias/{assembly}/itens/{item}/voto', [AssemblyController::class, 'vote'])->name('assemblies.vote');
+        Route::middleware('module:assemblies')->group(function () {
+            Route::get('assembleias', [AssemblyController::class, 'index'])->name('assemblies.index');
+            Route::get('assembleias/{assembly}', [AssemblyController::class, 'show'])->name('assemblies.show');
+            Route::post('assembleias/{assembly}/presenca', [AssemblyController::class, 'attend'])->name('assemblies.attend');
+            Route::post('assembleias/{assembly}/itens/{item}/voto', [AssemblyController::class, 'vote'])->name('assemblies.vote');
+        });
 
         // Visitantes (pré-autorização com QR)
-        Route::get('visitantes', [VisitorAuthorizationController::class, 'index'])->name('visitors.index');
-        Route::get('visitantes/criar', [VisitorAuthorizationController::class, 'create'])->name('visitors.create');
-        Route::post('visitantes', [VisitorAuthorizationController::class, 'store'])->name('visitors.store');
-        Route::get('visitantes/{authorization}', [VisitorAuthorizationController::class, 'show'])->name('visitors.show');
-        Route::post('visitantes/{authorization}/revogar', [VisitorAuthorizationController::class, 'revoke'])->name('visitors.revoke');
+        Route::middleware('module:gatehouse')->group(function () {
+            Route::get('visitantes', [VisitorAuthorizationController::class, 'index'])->name('visitors.index');
+            Route::get('visitantes/criar', [VisitorAuthorizationController::class, 'create'])->name('visitors.create');
+            Route::post('visitantes', [VisitorAuthorizationController::class, 'store'])->name('visitors.store');
+            Route::get('visitantes/{authorization}', [VisitorAuthorizationController::class, 'show'])->name('visitors.show');
+            Route::post('visitantes/{authorization}/revogar', [VisitorAuthorizationController::class, 'revoke'])->name('visitors.revoke');
+        });
 
         // Minha unidade
         Route::get('minha-unidade', [UnitController::class, 'show'])->name('unit.show');

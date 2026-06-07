@@ -9,6 +9,7 @@ use App\Rules\CpfCnpj;
 use App\Services\TenantService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -80,6 +81,7 @@ class TenantController extends Controller
     public function suspend(Tenant $tenant): RedirectResponse
     {
         $tenant->update(['status' => 'suspended']);
+        $this->forgetTenantCache($tenant);
 
         return back()->with('success', "Tenant \"{$tenant->name}\" suspenso.");
     }
@@ -87,6 +89,7 @@ class TenantController extends Controller
     public function activate(Tenant $tenant): RedirectResponse
     {
         $tenant->update(['status' => 'active']);
+        $this->forgetTenantCache($tenant);
 
         return back()->with('success', "Tenant \"{$tenant->name}\" reativado.");
     }
@@ -100,10 +103,24 @@ class TenantController extends Controller
         $plan = Plan::findOrFail($data['plan_id']);
         $tenant->update(['plan_id' => $plan->id]);
 
-        if ($subscription = $tenant->activeSubscription) {
+        if ($subscription = $tenant->activeSubscription()->first()) {
             $subscription->update(['plan_id' => $plan->id]);
+        } else {
+            $tenant->activeSubscription()->create([
+                'plan_id' => $plan->id,
+                'status' => 'active',
+            ]);
         }
 
+        $this->forgetTenantCache($tenant);
+
         return back()->with('success', "Plano alterado para \"{$plan->display_name}\".");
+    }
+
+    private function forgetTenantCache(Tenant $tenant): void
+    {
+        foreach ($tenant->domains()->pluck('domain') as $domain) {
+            Cache::forget("tenant:domain:{$domain}");
+        }
     }
 }

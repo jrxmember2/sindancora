@@ -347,6 +347,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('permission:expenses:update')->group(function () {
         Route::get('despesas/{expense}/editar', [ExpenseController::class, 'edit'])->name('expenses.edit');
         Route::match(['put', 'patch'], 'despesas/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
+        Route::post('despesas/{expense}/pagar', [ExpenseController::class, 'markPaid'])->name('expenses.pay');
     });
     Route::middleware('permission:expenses:delete')->group(function () {
         Route::delete('despesas/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');

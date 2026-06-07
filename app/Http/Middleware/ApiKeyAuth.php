@@ -40,6 +40,11 @@ class ApiKeyAuth
             return $this->error('FORBIDDEN', 'Esta API Key não pertence a este domínio.', 403);
         }
 
+        $tenant = app()->bound('tenant') ? app('tenant') : null;
+        if (! $tenant?->activePlan()?->hasModule('api')) {
+            return $this->error('MODULE_NOT_AVAILABLE', 'A API publica nao esta disponivel no plano atual.', 402);
+        }
+
         if ($response = $this->enforceRateLimit($key)) {
             return $response;
         }

@@ -14,6 +14,12 @@ export interface TenantData {
     brand_name: string;
     logo_url: string | null;
     primary_color: string;
+    plan: {
+        id: string;
+        name: string;
+        display_name: string;
+        modules: string[];
+    } | null;
 }
 
 export interface FlashMessages {

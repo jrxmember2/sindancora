@@ -19,18 +19,15 @@ import type { PageProps } from '@/types';
 
 const nav = [
     { name: 'Início', href: '/portal', icon: Home, match: (p: string) => p === '/portal' },
-    { name: 'Comunicados', href: '/portal/comunicados', icon: Megaphone, match: (p: string) => p.startsWith('/portal/comunicados') },
-    { name: 'Cobranças', href: '/portal/cobrancas', icon: Wallet, match: (p: string) => p.startsWith('/portal/cobrancas') },
-    { name: 'Ocorrências', href: '/portal/ocorrencias', icon: AlertCircle, match: (p: string) => p.startsWith('/portal/ocorrencias') },
-    { name: 'Reservas', href: '/portal/reservas', icon: CalendarRange, match: (p: string) => p.startsWith('/portal/reservas') },
-    { name: 'Documentos', href: '/portal/documentos', icon: FileText, match: (p: string) => p.startsWith('/portal/documentos') },
-    { name: 'Assembleias', href: '/portal/assembleias', icon: Vote, match: (p: string) => p.startsWith('/portal/assembleias') },
-    { name: 'Visitantes', href: '/portal/visitantes', icon: DoorOpen, match: (p: string) => p.startsWith('/portal/visitantes') },
+    { name: 'Comunicados', href: '/portal/comunicados', icon: Megaphone, module: 'announcements', match: (p: string) => p.startsWith('/portal/comunicados') },
+    { name: 'Cobranças', href: '/portal/cobrancas', icon: Wallet, module: 'financial', match: (p: string) => p.startsWith('/portal/cobrancas') },
+    { name: 'Ocorrências', href: '/portal/ocorrencias', icon: AlertCircle, module: 'occurrences', match: (p: string) => p.startsWith('/portal/ocorrencias') },
+    { name: 'Reservas', href: '/portal/reservas', icon: CalendarRange, module: 'reservations', match: (p: string) => p.startsWith('/portal/reservas') },
+    { name: 'Documentos', href: '/portal/documentos', icon: FileText, module: 'documents', match: (p: string) => p.startsWith('/portal/documentos') },
+    { name: 'Assembleias', href: '/portal/assembleias', icon: Vote, module: 'assemblies', match: (p: string) => p.startsWith('/portal/assembleias') },
+    { name: 'Visitantes', href: '/portal/visitantes', icon: DoorOpen, module: 'gatehouse', match: (p: string) => p.startsWith('/portal/visitantes') },
     { name: 'Minha unidade', href: '/portal/minha-unidade', icon: Building2, match: (p: string) => p.startsWith('/portal/minha-unidade') },
 ];
-
-// Itens da barra inferior (mobile) — os 5 mais usados.
-const bottomNav = nav.slice(0, 5);
 
 function timeAgo(iso: string | null): string {
     if (!iso) return '';
@@ -54,6 +51,9 @@ export default function PortalLayout({ children, title }: { children: React.Reac
 
     const brandName = tenant?.brand_name ?? 'SindÂncora';
     const primaryColor = tenant?.primary_color ?? '#1e40af';
+    const canUseModule = (module?: string) => !module || tenant?.plan?.modules?.includes(module);
+    const visibleNav = nav.filter((item) => canUseModule(item.module));
+    const bottomNav = visibleNav.slice(0, 5);
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -155,7 +155,7 @@ export default function PortalLayout({ children, title }: { children: React.Reac
                 {/* Sidebar (desktop) */}
                 <aside className="hidden w-52 flex-shrink-0 lg:block">
                     <nav className="sticky top-20 space-y-1">
-                        {nav.map((item) => {
+                        {visibleNav.map((item) => {
                             const Icon = item.icon;
                             const active = item.match(path);
                             return (

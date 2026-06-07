@@ -33,11 +33,11 @@ class FinancialReportExport implements FromArray, WithTitle
         $rows[] = ['Total recebido', $s['received']];
         $rows[] = ['Em aberto', $s['open']];
         $rows[] = ['Vencido (atualizado)', $s['overdue_total']];
-        $rows[] = ['Despesas', $s['expenses']];
-        $rows[] = ['Saldo (recebido - despesas)', $s['balance']];
+        $rows[] = ['Contas pagas', $s['expenses']];
+        $rows[] = ['Saldo (recebido - contas pagas)', $s['balance']];
         $rows[] = [];
 
-        $rows[] = ['Mês', 'Cobrado', 'Recebido', 'Despesas'];
+        $rows[] = ['Mês', 'Cobrado', 'Recebido', 'Contas pagas'];
         foreach ($this->report['months'] as $m) {
             $rows[] = [$m['label'], $m['charged'], $m['received'], $m['expenses']];
         }
