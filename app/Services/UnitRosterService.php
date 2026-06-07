@@ -73,12 +73,15 @@ class UnitRosterService
     {
         $phones = $this->cleanPhones($item['phones'] ?? []);
         $emails = $this->cleanEmails($item['emails'] ?? []);
-        $cpf = preg_replace('/\D/', '', (string) ($item['cpf'] ?? '')) ?: null;
+        $personType = $this->personType($item['person_type'] ?? null);
+        $hasDocumentField = array_key_exists('document', $item) || array_key_exists('cpf', $item);
+        $document = preg_replace('/\D/', '', (string) ($item['document'] ?? $item['cpf'] ?? '')) ?: null;
 
         $attrs = [
             'tenant_id' => $tenantId,
+            'person_type' => $personType,
             'name' => trim($item['name']),
-            'birth_date' => $this->parseDate($item['birth_date'] ?? null),
+            'birth_date' => $personType === Person::TYPE_INDIVIDUAL ? $this->parseDate($item['birth_date'] ?? null) : null,
             'phones' => $phones,
             'emails' => $emails,
             'phone' => $phones[0] ?? null,   // principal (integrações)
@@ -86,9 +89,9 @@ class UnitRosterService
         ];
 
         // Com CPF: reaproveita a pessoa existente (respeita o unique tenant+cpf, evita duplicar).
-        if ($cpf) {
-            $person = Person::firstOrNew(['tenant_id' => $tenantId, 'cpf' => $cpf]);
-            $person->fill(array_merge($attrs, ['cpf' => $cpf]))->save();
+        if ($document) {
+            $person = Person::firstOrNew(['tenant_id' => $tenantId, 'cpf' => $document]);
+            $person->fill(array_merge($attrs, ['cpf' => $document]))->save();
 
             return $person;
         }
@@ -97,13 +100,20 @@ class UnitRosterService
         if (! empty($item['id'])) {
             $person = Person::where('tenant_id', $tenantId)->find($item['id']);
             if ($person) {
-                $person->fill($attrs)->save();
+                $person->fill($hasDocumentField ? array_merge($attrs, ['cpf' => null]) : $attrs)->save();
 
                 return $person;
             }
         }
 
-        return Person::create($attrs);
+        return Person::create($hasDocumentField ? array_merge($attrs, ['cpf' => null]) : $attrs);
+    }
+
+    private function personType(?string $value): string
+    {
+        return in_array($value, [Person::TYPE_INDIVIDUAL, Person::TYPE_COMPANY], true)
+            ? $value
+            : Person::TYPE_INDIVIDUAL;
     }
 
     private function syncPets(Unit $unit, array $pets): void

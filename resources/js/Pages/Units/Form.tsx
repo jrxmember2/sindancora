@@ -1,10 +1,11 @@
 import { Link } from '@inertiajs/react';
 import { Plus, Trash2, X, UserRound, Users, Home, PawPrint, Car } from 'lucide-react';
-import { maskPhone, maskCpf, maskDate } from '@/lib/masks';
+import { maskPhone, maskCpf, maskCnpj, maskDate } from '@/lib/masks';
 
 interface Block { id: string; name: string }
 
-export interface PersonItem { id?: string; name: string; cpf: string; birth_date: string; phones: string[]; emails: string[] }
+export type PersonType = 'individual' | 'company';
+export interface PersonItem { id?: string; person_type: PersonType; name: string; document: string; cpf: string; birth_date: string; phones: string[]; emails: string[] }
 export interface PetItem { id?: string; name: string; species: string; breed: string; notes: string }
 export interface VehicleItem { id?: string; type: string; plate: string; brand_model: string; color: string; parking_spot: string; notes: string }
 
@@ -29,7 +30,7 @@ interface Props {
     submitLabel: string;
 }
 
-export const emptyPerson = (): PersonItem => ({ name: '', cpf: '', birth_date: '', phones: [''], emails: [''] });
+export const emptyPerson = (): PersonItem => ({ person_type: 'individual', name: '', document: '', cpf: '', birth_date: '', phones: [''], emails: [''] });
 export const emptyPet = (): PetItem => ({ name: '', species: 'dog', breed: '', notes: '' });
 export const emptyVehicle = (): VehicleItem => ({ type: 'car', plate: '', brand_model: '', color: '', parking_spot: '', notes: '' });
 
@@ -80,26 +81,49 @@ function StringList({ label, values, onChange, mask, placeholder, inputType }: {
     );
 }
 
-function PersonFieldset({ person, onChange, onRemove }: { person: PersonItem; onChange: (p: PersonItem) => void; onRemove: () => void }) {
+function PersonFieldset({ person, onChange, onRemove, allowCompany = false }: { person: PersonItem; onChange: (p: PersonItem) => void; onRemove: () => void; allowCompany?: boolean }) {
     const set = (patch: Partial<PersonItem>) => onChange({ ...person, ...patch });
+    const personType: PersonType = allowCompany && person.person_type === 'company' ? 'company' : 'individual';
+    const isCompany = personType === 'company';
+    const document = person.document ?? person.cpf ?? '';
+    const setPersonType = (value: string) => {
+        const nextType: PersonType = value === 'company' ? 'company' : 'individual';
+        set({ person_type: nextType, document: '', cpf: '', birth_date: nextType === 'company' ? '' : person.birth_date });
+    };
+    const setDocument = (value: string) => {
+        const masked = isCompany ? maskCnpj(value) : maskCpf(value);
+        set({ document: masked, cpf: masked });
+    };
 
     return (
         <div className="rounded-lg border border-gray-200 p-4">
+            {allowCompany && (
+                <div className="mb-3 max-w-xs">
+                    <Field label="Tipo de pessoa">
+                        <Select value={personType} onChange={setPersonType}>
+                            <option value="individual">Pessoa física</option>
+                            <option value="company">Pessoa jurídica</option>
+                        </Select>
+                    </Field>
+                </div>
+            )}
             <div className="mb-3 flex items-start gap-3">
                 <div className="flex-1">
-                    <Field label="Nome">
-                        <Input value={person.name} onChange={(e) => set({ name: e.target.value })} placeholder="Nome completo" />
+                    <Field label={isCompany ? 'Razão social' : 'Nome'}>
+                        <Input value={person.name} onChange={(e) => set({ name: e.target.value })} placeholder={isCompany ? 'Razão social' : 'Nome completo'} />
                     </Field>
                 </div>
                 <button type="button" onClick={onRemove} className="mt-6 rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600" title="Remover pessoa"><Trash2 className="h-4 w-4" /></button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-                <Field label="CPF">
-                    <Input value={person.cpf} onChange={(e) => set({ cpf: maskCpf(e.target.value) })} placeholder="000.000.000-00" inputMode="numeric" />
+            <div className={isCompany ? 'grid grid-cols-1 gap-3' : 'grid grid-cols-2 gap-3'}>
+                <Field label={isCompany ? 'CNPJ' : 'CPF'}>
+                    <Input value={document} onChange={(e) => setDocument(e.target.value)} placeholder={isCompany ? '00.000.000/0000-00' : '000.000.000-00'} inputMode="numeric" />
                 </Field>
-                <Field label="Nascimento">
-                    <Input value={person.birth_date} onChange={(e) => set({ birth_date: maskDate(e.target.value) })} placeholder="dd/mm/aaaa" inputMode="numeric" />
-                </Field>
+                {!isCompany && (
+                    <Field label="Nascimento">
+                        <Input value={person.birth_date} onChange={(e) => set({ birth_date: maskDate(e.target.value) })} placeholder="dd/mm/aaaa" inputMode="numeric" />
+                    </Field>
+                )}
             </div>
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <StringList label="Telefones" values={person.phones} onChange={(phones) => set({ phones })} mask={maskPhone} placeholder="(00) 00000-0000" inputType="tel" />
@@ -109,13 +133,13 @@ function PersonFieldset({ person, onChange, onRemove }: { person: PersonItem; on
     );
 }
 
-function PeopleSection({ icon: Icon, title, items, onChange, addLabel }: { icon: typeof UserRound; title: string; items: PersonItem[]; onChange: (items: PersonItem[]) => void; addLabel: string }) {
+function PeopleSection({ icon: Icon, title, items, onChange, addLabel, allowCompany = false }: { icon: typeof UserRound; title: string; items: PersonItem[]; onChange: (items: PersonItem[]) => void; addLabel: string; allowCompany?: boolean }) {
     return (
         <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900"><Icon className="h-5 w-5 text-blue-600" /> {title}</h2>
             <div className="space-y-3">
                 {items.map((p, i) => (
-                    <PersonFieldset key={i} person={p} onChange={(np) => onChange(items.map((x, idx) => (idx === i ? np : x)))} onRemove={() => onChange(items.filter((_, idx) => idx !== i))} />
+                    <PersonFieldset key={i} person={p} onChange={(np) => onChange(items.map((x, idx) => (idx === i ? np : x)))} onRemove={() => onChange(items.filter((_, idx) => idx !== i))} allowCompany={allowCompany} />
                 ))}
             </div>
             <button type="button" onClick={() => onChange([...items, emptyPerson()])} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">
@@ -229,8 +253,8 @@ export default function UnitForm({ data, setData, errors, processing, onSubmit, 
                 </div>
             </div>
 
-            <PeopleSection icon={UserRound} title="Proprietários" items={data.owners} onChange={(v) => setData('owners', v)} addLabel="Adicionar proprietário" />
-            <PeopleSection icon={UserRound} title="Inquilinos" items={data.tenants} onChange={(v) => setData('tenants', v)} addLabel="Adicionar inquilino" />
+            <PeopleSection icon={UserRound} title="Proprietários" items={data.owners} onChange={(v) => setData('owners', v)} addLabel="Adicionar proprietário" allowCompany />
+            <PeopleSection icon={UserRound} title="Inquilinos" items={data.tenants} onChange={(v) => setData('tenants', v)} addLabel="Adicionar inquilino" allowCompany />
             <PeopleSection icon={Users} title="Familiares" items={data.family} onChange={(v) => setData('family', v)} addLabel="Adicionar familiar" />
             <PetsSection items={data.pets} onChange={(v) => setData('pets', v)} petSpecies={petSpecies} />
             <VehiclesSection items={data.vehicles} onChange={(v) => setData('vehicles', v)} vehicleTypes={vehicleTypes} />

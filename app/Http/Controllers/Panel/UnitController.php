@@ -136,7 +136,9 @@ class UnitController extends Controller
     {
         $person = [
             '*.id' => 'nullable|uuid',
+            '*.person_type' => 'nullable|in:individual,company',
             '*.name' => 'nullable|string|max:255',
+            '*.document' => 'nullable|string|max:20',
             '*.cpf' => 'nullable|string|max:20',
             '*.birth_date' => 'nullable|string|max:10',
             '*.phones' => 'array',
@@ -208,7 +210,9 @@ class UnitController extends Controller
 
                 return [
                     'id' => $p->id,
+                    'person_type' => $p->person_type ?: 'individual',
                     'name' => $p->name,
+                    'document' => $p->cpf,
                     'cpf' => $p->cpf,
                     'birth_date' => $p->birth_date?->format('Y-m-d'),
                     'phones' => ! empty($p->phones) ? $p->phones : array_values(array_filter([$p->phone, $p->phone2])),

@@ -14,10 +14,13 @@ class Person extends Model
 {
     use BelongsToTenant, HasAuditLog, HasUuidKey, SoftDeletes;
 
+    public const TYPE_INDIVIDUAL = 'individual';
+    public const TYPE_COMPANY = 'company';
+
     protected $table = 'persons';
 
     protected $fillable = [
-        'tenant_id', 'name', 'cpf', 'email', 'phone', 'phone2', 'phones', 'emails',
+        'tenant_id', 'person_type', 'name', 'cpf', 'email', 'phone', 'phone2', 'phones', 'emails',
         'birth_date', 'zip_code', 'street', 'number', 'complement',
         'neighborhood', 'city', 'state', 'notes', 'gateway_customer_id',
     ];
@@ -55,8 +58,14 @@ class Person extends Model
     public function getFormattedCpfAttribute(): ?string
     {
         if (! $this->cpf) return null;
-        $cpf = preg_replace('/\D/', '', $this->cpf);
-        if (strlen($cpf) !== 11) return $this->cpf;
-        return substr($cpf, 0, 3).'.'.substr($cpf, 3, 3).'.'.substr($cpf, 6, 3).'-'.substr($cpf, 9, 2);
+        $document = preg_replace('/\D/', '', $this->cpf);
+        if (strlen($document) === 11) {
+            return substr($document, 0, 3).'.'.substr($document, 3, 3).'.'.substr($document, 6, 3).'-'.substr($document, 9, 2);
+        }
+        if (strlen($document) === 14) {
+            return substr($document, 0, 2).'.'.substr($document, 2, 3).'.'.substr($document, 5, 3).'/'.substr($document, 8, 4).'-'.substr($document, 12, 2);
+        }
+
+        return $this->cpf;
     }
 }
