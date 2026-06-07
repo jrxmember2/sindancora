@@ -51,7 +51,7 @@ Legenda esforço: 🟢 baixo · 🟡 médio · 🔴 alto. Valor: ⭐ alto difere
 ### Fase C — Gestão de serviços e contas
 - [ ] **C7. Orçamentos/Cotações** (multi-fornecedor, comparar, aprovar, prazo, anexos) ⭐ 🔴
 - [ ] **C12. Obras** (orçamento aprovado vs final, cronograma, status) 🟡 🟡
-- [ ] **C8. Contas a pagar** (lembrete + categoria + nota fiscal) 🟡 🟡 — estende "Despesas".
+- [x] **C8. Contas a pagar** (lembrete + categoria + nota fiscal) 🟡 🟡 — concluída (07/06/2026), estendendo "Despesas".
 
 ### Fase D — Pessoas, relatórios e visão consolidada
 - [ ] **D9. Funcionários + controle de férias** (CTPS, admissão, alertas de férias) ⭐ 🟡

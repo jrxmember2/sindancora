@@ -17,6 +17,12 @@ class EnsureGatehouse
         $user = $request->user();
 
         if ($user && ($user->hasPermission('gatehouse:register') || $user->isGatehouse())) {
+            $plan = app()->bound('tenant') ? app('tenant')->activePlan() : null;
+
+            if ($plan && ! $plan->hasModule('gatehouse')) {
+                abort(402, 'O modulo gatehouse nao esta disponivel no seu plano atual.');
+            }
+
             return $next($request);
         }
 

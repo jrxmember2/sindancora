@@ -32,5 +32,8 @@ Schedule::command('documents:notify-expiring')->dailyAt('07:00')->withoutOverlap
 // Alerta de manutenções preventivas próximas/atrasadas — uma vez por dia, de manhã
 Schedule::command('maintenance:notify-due')->dailyAt('07:30')->withoutOverlapping();
 
+// Alerta de contas a pagar proximas do vencimento/vencidas - uma vez por dia, de manha
+Schedule::command('expenses:notify-due')->dailyAt('07:45')->withoutOverlapping();
+
 // Alerta de SLA de chamados (ocorrências) próximos do prazo ou atrasados — uma vez por dia
 Schedule::command('occurrences:notify-sla')->dailyAt('08:00')->withoutOverlapping();

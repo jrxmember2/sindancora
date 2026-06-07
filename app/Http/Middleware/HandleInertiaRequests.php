@@ -19,6 +19,7 @@ class HandleInertiaRequests extends Middleware
     {
         $tenant = app()->bound('tenant') ? app('tenant') : null;
         $user = $request->user();
+        $plan = $tenant?->activePlan();
 
         return [
             ...parent::share($request),
@@ -39,6 +40,16 @@ class HandleInertiaRequests extends Middleware
                 'brand_name' => $tenant->getBrandName(),
                 'logo_url' => $tenant->getLogoUrl(),
                 'primary_color' => $tenant->getPrimaryColor(),
+                'plan' => $plan ? [
+                    'id' => $plan->id,
+                    'name' => $plan->name,
+                    'display_name' => $plan->display_name,
+                    'modules' => $plan->modules()
+                        ->where('enabled', true)
+                        ->pluck('module')
+                        ->values()
+                        ->all(),
+                ] : null,
             ] : null,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

@@ -22,6 +22,8 @@ class DashboardController extends Controller
         $person = $this->resident();
         $condominiumIds = $this->condominiumIds();
         $userId = Auth::id();
+        $plan = app('tenant')->activePlan();
+        $hasFinancial = (bool) $plan?->hasModule('financial');
 
         $readIds = Announcement::query()
             ->whereIn('condominium_id', $condominiumIds ?: ['-'])
@@ -60,10 +62,12 @@ class DashboardController extends Controller
             ->where('visibility', 'residents')
             ->count();
 
-        $openCharges = Charge::query()
-            ->whereIn('unit_id', $this->unitIds() ?: ['-'])
-            ->whereIn('status', ['pending', 'overdue'])
-            ->sum('amount');
+        $openCharges = $hasFinancial
+            ? Charge::query()
+                ->whereIn('unit_id', $this->unitIds() ?: ['-'])
+                ->whereIn('status', ['pending', 'overdue'])
+                ->sum('amount')
+            : 0;
 
         return Inertia::render('Portal/Dashboard', [
             'resident' => [

@@ -46,6 +46,8 @@ class PlanController extends Controller
         'ai_assistant' => 'Assistente IA',
         'assemblies' => 'Assembleias',
         'gatehouse' => 'Portaria',
+        'suppliers' => 'Fornecedores',
+        'maintenance' => 'Manutenção preventiva',
         'white_label' => 'White-label',
     ];
 

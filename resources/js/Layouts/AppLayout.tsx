@@ -40,38 +40,38 @@ import type { PageProps } from '@/types';
 
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Condomínios', href: '/condominios', icon: Building2, permission: 'condominiums:read' },
-    { name: 'Pessoas', href: '/pessoas', icon: UserRound, permission: 'persons:read' },
+    { name: 'Condomínios', href: '/condominios', icon: Building2, permission: 'condominiums:read', module: 'condominiums' },
+    { name: 'Pessoas', href: '/pessoas', icon: UserRound, permission: 'persons:read', module: 'persons' },
     { name: 'Usuários', href: '/usuarios', icon: Users, permission: 'users:read' },
-    { name: 'Comunicados', href: '/comunicados', icon: Megaphone, permission: 'announcements:read' },
-    { name: 'Ocorrências', href: '/ocorrencias', icon: AlertCircle, permission: 'occurrences:read' },
-    { name: 'Reservas', href: '/reservas', icon: CalendarRange, permission: 'reservations:read' },
-    { name: 'Documentos', href: '/documentos', icon: FileText, permission: 'documents:read' },
-    { name: 'Cobranças', href: '/cobrancas', icon: Wallet, permission: 'charges:read' },
-    { name: 'Despesas', href: '/despesas', icon: Receipt, permission: 'expenses:read' },
-    { name: 'Fornecedores', href: '/fornecedores', icon: Truck, permission: 'suppliers:read' },
-    { name: 'Manutenção', href: '/manutencoes', icon: Wrench, permission: 'maintenance:read' },
-    { name: 'Relatórios', href: '/relatorios', icon: BarChart3, permission: 'reports:read' },
-    { name: 'Assembleias', href: '/assembleias', icon: Vote, permission: 'assemblies:read' },
-    { name: 'Portaria', href: '/visitantes', icon: DoorOpen, permission: 'gatehouse:read' },
-    { name: 'Atendimento', href: '/inbox', icon: MessagesSquare, permission: 'inbox:use' },
-    { name: 'Setores', href: '/setores', icon: Headset, permission: 'sectors:manage' },
-    { name: 'Disparos', href: '/disparos', icon: Send, permission: 'campaigns:manage' },
-    { name: 'Assistente IA', href: '/assistente', icon: Sparkles, permission: 'ai:use' },
+    { name: 'Comunicados', href: '/comunicados', icon: Megaphone, permission: 'announcements:read', module: 'announcements' },
+    { name: 'Ocorrências', href: '/ocorrencias', icon: AlertCircle, permission: 'occurrences:read', module: 'occurrences' },
+    { name: 'Reservas', href: '/reservas', icon: CalendarRange, permission: 'reservations:read', module: 'reservations' },
+    { name: 'Documentos', href: '/documentos', icon: FileText, permission: 'documents:read', module: 'documents' },
+    { name: 'Cobranças', href: '/cobrancas', icon: Wallet, permission: 'charges:read', module: 'financial' },
+    { name: 'Contas a pagar', href: '/despesas', icon: Receipt, permission: 'expenses:read', module: 'financial' },
+    { name: 'Fornecedores', href: '/fornecedores', icon: Truck, permission: 'suppliers:read', module: 'suppliers' },
+    { name: 'Manutenção', href: '/manutencoes', icon: Wrench, permission: 'maintenance:read', module: 'maintenance' },
+    { name: 'Relatórios', href: '/relatorios', icon: BarChart3, permission: 'reports:read', module: 'reports' },
+    { name: 'Assembleias', href: '/assembleias', icon: Vote, permission: 'assemblies:read', module: 'assemblies' },
+    { name: 'Portaria', href: '/visitantes', icon: DoorOpen, permission: 'gatehouse:read', module: 'gatehouse' },
+    { name: 'Atendimento', href: '/inbox', icon: MessagesSquare, permission: 'inbox:use', module: 'whatsapp' },
+    { name: 'Setores', href: '/setores', icon: Headset, permission: 'sectors:manage', module: 'whatsapp' },
+    { name: 'Disparos', href: '/disparos', icon: Send, permission: 'campaigns:manage', module: 'whatsapp' },
+    { name: 'Assistente IA', href: '/assistente', icon: Sparkles, permission: 'ai:use', module: 'ai_assistant' },
 ];
 
 const adminNavigation = [
     { name: 'Perfis', href: '/roles', icon: Shield, permission: 'users:manage' },
-    { name: 'Pagamentos', href: '/configuracoes/pagamentos', icon: Settings, permission: 'settings:payments' },
+    { name: 'Pagamentos', href: '/configuracoes/pagamentos', icon: Settings, permission: 'settings:payments', module: 'financial' },
     { name: 'E-mail (SMTP)', href: '/configuracoes/email', icon: Mail, permission: 'settings:email' },
     { name: 'Categorias', href: '/configuracoes/categorias', icon: Tags, permission: 'categories:manage' },
-    { name: 'SLA de chamados', href: '/configuracoes/ocorrencias', icon: Timer, permission: 'occurrences:update' },
-    { name: 'API', href: '/configuracoes/api', icon: KeyRound, permission: 'api_keys:manage' },
-    { name: 'Webhooks', href: '/configuracoes/webhooks', icon: Webhook, permission: 'webhooks:manage' },
-    { name: 'WhatsApp', href: '/configuracoes/whatsapp/conexoes', icon: MessageCircle, permission: 'settings:whatsapp' },
-    { name: 'Chatbot', href: '/configuracoes/chatbot', icon: Bot, permission: 'sectors:manage' },
-    { name: 'Respostas rápidas', href: '/respostas-rapidas', icon: MessageSquareText, permission: 'sectors:manage' },
-    { name: 'Relatório de atendimento', href: '/inbox/relatorios', icon: BarChart3, permission: 'sectors:manage' },
+    { name: 'SLA de chamados', href: '/configuracoes/ocorrencias', icon: Timer, permission: 'occurrences:update', module: 'occurrences' },
+    { name: 'API', href: '/configuracoes/api', icon: KeyRound, permission: 'api_keys:manage', module: 'api' },
+    { name: 'Webhooks', href: '/configuracoes/webhooks', icon: Webhook, permission: 'webhooks:manage', module: 'webhooks' },
+    { name: 'WhatsApp', href: '/configuracoes/whatsapp/conexoes', icon: MessageCircle, permission: 'settings:whatsapp', module: 'whatsapp' },
+    { name: 'Chatbot', href: '/configuracoes/chatbot', icon: Bot, permission: 'sectors:manage', module: 'whatsapp' },
+    { name: 'Respostas rápidas', href: '/respostas-rapidas', icon: MessageSquareText, permission: 'sectors:manage', module: 'whatsapp' },
+    { name: 'Relatório de atendimento', href: '/inbox/relatorios', icon: BarChart3, permission: 'sectors:manage', module: 'whatsapp' },
     { name: 'Auditoria', href: '/auditoria', icon: ClipboardList, permission: 'audit:read' },
 ];
 
@@ -106,8 +106,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     const perms = auth.user?.permissions ?? [];
     const can = (permission?: string) => !permission || perms.includes('*') || perms.includes(permission);
-    const visibleNav = navigation.filter((item) => can(item.permission));
-    const visibleAdminNav = adminNavigation.filter((item) => can(item.permission));
+    const canUseModule = (module?: string) => !module
+        || auth.user?.is_super_admin
+        || tenant?.plan?.modules?.includes(module);
+    const visibleNav = navigation.filter((item) => can(item.permission) && canUseModule(item.module));
+    const visibleAdminNav = adminNavigation.filter((item) => can(item.permission) && canUseModule(item.module));
 
     const brandName = tenant?.brand_name ?? 'SindÂncora';
     const primaryColor = tenant?.primary_color ?? '#1e40af';

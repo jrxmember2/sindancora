@@ -60,7 +60,7 @@ class PlanSeeder extends Seeder
                 'modules' => [
                     'condominiums', 'units', 'persons', 'announcements',
                     'occurrences', 'reservations', 'documents', 'portal', 'notifications',
-                    'financial', 'reports', 'import',
+                    'financial', 'reports', 'import', 'suppliers', 'maintenance',
                 ],
             ],
             [
@@ -87,6 +87,7 @@ class PlanSeeder extends Seeder
                     'condominiums', 'units', 'persons', 'announcements',
                     'occurrences', 'reservations', 'documents', 'portal', 'notifications',
                     'financial', 'reports', 'import', 'api', 'webhooks',
+                    'suppliers', 'maintenance',
                 ],
             ],
             [
@@ -113,7 +114,8 @@ class PlanSeeder extends Seeder
                     'condominiums', 'units', 'persons', 'announcements',
                     'occurrences', 'reservations', 'documents', 'portal', 'notifications',
                     'financial', 'reports', 'import', 'api', 'webhooks',
-                    'whatsapp', 'ai_assistant', 'assemblies', 'gatehouse', 'white_label',
+                    'whatsapp', 'ai_assistant', 'assemblies', 'gatehouse',
+                    'suppliers', 'maintenance', 'white_label',
                 ],
             ],
         ];
@@ -138,6 +140,10 @@ class PlanSeeder extends Seeder
                     ['enabled' => true],
                 );
             }
+
+            PlanModule::where('plan_id', $plan->id)
+                ->whereNotIn('module', $modules)
+                ->update(['enabled' => false]);
         }
     }
 }

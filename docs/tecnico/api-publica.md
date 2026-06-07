@@ -11,7 +11,9 @@
 única vez** na criação; guardamos só `key_hash` (sha256) e `key_prefix` (12 chars, para exibição).
 
 O tenant é resolvido pelo **domínio** (`ResolveTenant`) e a chave precisa pertencer a ele — chave de
-outro tenant no host errado → **403**. Chave ausente/inválida/expirada/revogada → **401**.
+outro tenant no host errado → **403**. Chave ausente/inválida/expirada/revogada → **401**. Se o plano
+ativo do tenant não tiver o módulo `api`, a autenticação por API Key retorna **402**
+`MODULE_NOT_AVAILABLE`; isso também corta chaves antigas após downgrade de plano.
 
 ## Escopos
 

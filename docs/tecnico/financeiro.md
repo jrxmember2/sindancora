@@ -1,6 +1,6 @@
 # Financeiro (Fase 5 — núcleo manual)
 
-> Status: implementado o financeiro **manual** (cobranças, despesas, inadimplência, relatórios e
+> Status: implementado o financeiro **manual** (cobranças, contas a pagar, inadimplência, relatórios e
 > "minhas cobranças" no portal). A integração com gateway **Asaas (boleto/PIX/webhook)** foi
 > entregue na Fase 5.4 — ver `docs/tecnico/financeiro-asaas.md`.
 
@@ -11,8 +11,11 @@
   `type` (`condo_fee/extra/fine/other`), `reference_month` (YYYY-MM), `amount`, `due_date`,
   `fine_rate`/`interest_rate` (%), `status` (`pending/paid/overdue/cancelled`), `paid_at`,
   `paid_amount`, `payment_method`, `receipt_storage_object_id`. Soft delete.
-- `expenses` (model `App\Models\Expense`): lançamento de despesa do condomínio (`category`,
-  `description`, `amount`, `expense_date`, `supplier`, comprovante). Soft delete.
+- `expenses` (model `App\Models\Expense`): contas a pagar/despesas do condomínio. Campos-chave:
+  `category`, `description`, `amount`, `status` (`pending/paid/overdue/cancelled`), `due_date`,
+  `expense_date` (competência), `paid_at`, `paid_amount`, `payment_method`, `supplier_id` opcional,
+  `supplier` livre para legado, `document_number`, `reminder_days`, `reminder_sent_at` e comprovante/
+  nota fiscal (`receipt_storage_object_id`). Soft delete.
 - Relações: `Unit::charges()`, `Condominium::charges()`/`expenses()`.
 
 ### Valor atualizado
@@ -25,8 +28,11 @@ portal e no relatório de inadimplência.
 
 `charges:create|read|update|delete|mark_paid` e `expenses:create|read|update|delete` (PermissionSeeder).
 No RoleSeeder: **admin** tem tudo; **síndico** opera cobranças (create/read/update/mark_paid),
-despesas (read/create/update) e relatórios (read/export). `reports:read|export` já existiam.
-Gating das rotas é **só por `permission:`** (convenção do `web.php`).
+contas a pagar (read/create/update) e relatórios (read/export). `reports:read|export` já existiam.
+Gating das rotas passa por `permission:` e o middleware `CheckPermission` também valida o módulo do
+plano (`financial` para cobranças/contas a pagar, `reports` para relatórios). O menu Inertia recebe
+`tenant.plan.modules` para esconder itens fora do plano; troca/suspensão/ativação de tenant limpa o
+cache `tenant:domain:*`.
 
 ## Cobranças (painel)
 
@@ -39,10 +45,20 @@ Gating das rotas é **só por `permission:`** (convenção do `web.php`).
 - Páginas `resources/js/Pages/Charges/` (`Index` com KPIs, `Create`/`Edit` via `ChargeForm`, `Show`
   com modal de pagamento, `Generate`).
 
-## Despesas (painel)
+## Contas a pagar (painel)
 
-`App\Http\Controllers\Panel\ExpenseController`: CRUD + comprovante (`expense_receipt`). Páginas
+`App\Http\Controllers\Panel\ExpenseController`: CRUD de contas a pagar + comprovante/nota fiscal
+(`expense_receipt`) + baixa rápida (`POST /despesas/{expense}/pagar`). Páginas
 `resources/js/Pages/Expenses/` (`Index`/`Create`/`Edit` + `ExpenseFields`).
+
+- Lançamentos antigos são migrados como `status=paid`, com `due_date=expense_date`,
+  `paid_at=expense_date` e `paid_amount=amount`, preservando os relatórios históricos.
+- Listagem mostra KPIs de aberto, vencido, próximos 7 dias e pago no mês; filtros por condomínio,
+  status, categoria, fornecedor e vencimento.
+- Fornecedor pode ser vinculado a `suppliers` (`supplier_id`) ou informado em texto livre (`supplier`)
+  para compatibilidade.
+- Lembrete: comando `expenses:notify-due` roda diariamente no scheduler e notifica gestores ativos
+  quando `days_until_due <= reminder_days`; marca `reminder_sent_at` para não repetir.
 
 ## Inadimplência + notificações
 
@@ -56,7 +72,8 @@ Gating das rotas é **só por `permission:`** (convenção do `web.php`).
 ## Relatórios + exportação
 
 - `App\Http\Controllers\Panel\ReportController`: agrega por período (cobrado, recebido, em aberto,
-  vencido, despesas, **saldo** = recebido − despesas), quebra mensal e inadimplência por unidade.
+  vencido, contas pagas, **saldo** = recebido − contas pagas), quebra mensal e inadimplência por
+  unidade. Contas pendentes não reduzem o saldo até a baixa (`status=paid`/`paid_at`).
 - Exportação: **PDF** via `barryvdh/laravel-dompdf` (view `resources/views/reports/financial.blade.php`,
   prestação de contas) e **XLSX** via `maatwebsite/excel` (`App\Exports\FinancialReportExport`).
 - Página `resources/js/Pages/Reports/Financial.tsx` (cards + tabela mensal + inadimplentes + export).
@@ -87,8 +104,8 @@ Asaas; estornos parciais.
 
 ## Validação
 
-`php -l` em todos os arquivos; `route:list` (25 rotas de painel financeiro + 3 `portal.charges`);
-`artisan list` mostra `charges:mark-overdue`; `npm run build` (tsc + Vite) verde. Migrations **não**
-rodadas localmente (banco pode ser prod). Deploy: `migrate --force` + `optimize:clear`; `db:seed
---force` (entrypoint) aplica as permissões `charges:delete`/`expenses:*`; o supervisor já roda o
-scheduler.
+`php -l` nos arquivos PHP alterados; `php artisan route:list --name=expenses` mostra 8 rotas de
+contas a pagar, incluindo `expenses.pay`; `php artisan list expenses` mostra `expenses:notify-due`;
+`npm run build` (`tsc && vite build`) verde. Migrations **não** rodadas localmente (banco pode ser
+prod). Deploy: `migrate --force` + `optimize:clear`; `db:seed --force` atualiza matriz de módulos dos
+planos (`suppliers`/`maintenance` e desabilitação dos não listados); o supervisor já roda o scheduler.
