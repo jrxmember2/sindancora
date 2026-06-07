@@ -22,7 +22,7 @@ class MaintenancePlan extends Model
     protected $table = 'maintenance_plans';
 
     protected $fillable = [
-        'tenant_id', 'condominium_id', 'supplier_id', 'category', 'title', 'description',
+        'tenant_id', 'condominium_id', 'supplier_id', 'quotation_proposal_id', 'category', 'title', 'description',
         'frequency', 'next_due_date', 'alert_days', 'last_done_date', 'last_notified_at', 'is_active',
     ];
 
@@ -71,6 +71,11 @@ class MaintenancePlan extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    public function quotationProposal(): BelongsTo
+    {
+        return $this->belongsTo(QuotationProposal::class, 'quotation_proposal_id');
     }
 
     /** @return HasMany<MaintenanceRecord> */

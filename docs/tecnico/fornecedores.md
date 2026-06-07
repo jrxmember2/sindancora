@@ -69,7 +69,10 @@ Reusa `maskCpfCnpj`/`maskPhone` de `lib/masks.ts` e o autocomplete ViaCEP no end
 - A listagem de fornecedores mostra manutenções ativas e total em aberto em contas a pagar.
 - O detalhe do fornecedor mostra cards de manutenção/financeiro, manutenções vinculadas, execuções
   recentes e contas do fornecedor. Os links respeitam permissão e módulos ativos do plano.
-- Essa visão cruza B6 (fornecedores), B4 (manutenção) e C8 (contas a pagar) sem duplicar dados.
+- Com C7, fornecedor também expõe `quotationProposals()`; a listagem mostra contagem de propostas e
+  o detalhe mostra propostas recentes com link para o orçamento quando permitido.
+- Essa visão cruza B6 (fornecedores), B4 (manutenção), C7 (orçamentos) e C8 (contas a pagar) sem
+  duplicar dados.
 
 ## Deploy
 

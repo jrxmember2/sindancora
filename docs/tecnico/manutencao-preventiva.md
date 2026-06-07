@@ -49,6 +49,9 @@ Migrations: `2026_06_19_000001..2`. `tenant_id` direto em ambas; FKs `cascadeOnD
   módulo `financial` ativo (super admin continua com bypass global).
 - A tela da manutenção mostra a conta vinculada em cada execução; a tela de contas mostra a origem
   em manutenção.
+- Com C7, uma proposta aprovada de orçamento pode criar um `maintenance_plan` vinculado por
+  `maintenance_plans.quotation_proposal_id`; a tela da manutenção mostra a origem em orçamento quando
+  houver esse vínculo.
 
 ## Permissões
 

@@ -23,6 +23,53 @@
 
 ## Última entrega implementada
 
+### C7. Orçamentos/Cotações
+
+Implementado nesta rodada, ainda exigindo deploy/migration no Easypanel depois do commit/push.
+
+O que foi entregue:
+
+- Novo módulo `quotations` habilitado nos planos Profissional, Business e Enterprise.
+- Cadastro/listagem/edição de orçamentos por condomínio, categoria, prazo e status.
+- Cadastro de propostas por fornecedor com valor, validade, prazo de execução, observações e anexos.
+- Comparativo de propostas na tela do orçamento, com menor valor em destaque.
+- Aprovação transacional de proposta:
+  - marca a proposta aprovada;
+  - rejeita as demais propostas recebidas;
+  - fecha o orçamento como aprovado;
+  - guarda aprovador, data e proposta vencedora.
+- Aprovação pode gerar manutenção preventiva e/ou conta a pagar, respeitando permissões e módulos do plano.
+- Contas a pagar e manutenção passam a mostrar a origem quando vierem de orçamento aprovado.
+- Fornecedores passam a mostrar quantidade e histórico recente de propostas em orçamentos.
+- Anexos usam `StorageObject` com `entity_type = quotation_proposal`.
+- Docs atualizados:
+  - `docs/tecnico/orcamentos.md`;
+  - `docs/tecnico/fornecedores.md`;
+  - `docs/tecnico/financeiro.md`;
+  - `docs/tecnico/manutencao-preventiva.md`;
+  - `docs/produto/04-planos-limites-e-storage.md`;
+  - `docs/produto/06-roadmap-nova-onda.md`.
+
+Arquivos-chave:
+
+- `database/migrations/2026_06_23_000001_create_quotations_tables.php`
+- `app/Models/Quotation.php`
+- `app/Models/QuotationProposal.php`
+- `app/Http/Controllers/Panel/QuotationController.php`
+- `app/Http/Controllers/AttachmentController.php`
+- `app/Models/Expense.php`
+- `app/Models/MaintenancePlan.php`
+- `app/Models/Supplier.php`
+- `resources/js/Pages/Quotations/`
+- `resources/js/Pages/Expenses/Index.tsx`
+- `resources/js/Pages/Expenses/Edit.tsx`
+- `resources/js/Pages/Maintenance/Show.tsx`
+- `resources/js/Pages/Suppliers/Index.tsx`
+- `resources/js/Pages/Suppliers/Show.tsx`
+- `routes/web.php`
+
+## Entregas anteriores recentes
+
 ### Cadastro de unidades com PF/PJ para proprietários e inquilinos
 
 Implementado após a entrega de fornecedores/manutenção. Escopo propositalmente limitado: **sem busca
@@ -97,6 +144,7 @@ Arquivos-chave:
 ## Validações locais já feitas
 
 - `php -l` nos PHP alterados.
+- `php artisan route:list --name=quotations --except-vendor`
 - `php artisan route:list --name=maintenance --except-vendor`
 - `php artisan route:list --name=suppliers --except-vendor`
 - `php artisan route:list --name=expenses --except-vendor`
@@ -132,18 +180,17 @@ Confirmar no Easypanel se há worker/cron com `php artisan schedule:run` ou `php
 
 ## Próximo passo sugerido
 
-O próximo item natural do roadmap é **C7. Orçamentos/Cotações**:
+O próximo item natural do roadmap é **C12. Obras**:
 
-- cotação multi-fornecedor;
-- comparação de propostas;
-- aprovação/reprovação;
-- anexos de orçamento;
-- prazo de validade;
-- conversão de orçamento aprovado em manutenção/obra/conta a pagar.
+- cadastro de obra/reforma por condomínio;
+- vínculo opcional com orçamento/proposta aprovada;
+- orçamento previsto vs custo final;
+- cronograma/status;
+- fornecedores envolvidos;
+- anexos e histórico;
+- vínculo com contas a pagar.
 
-Motivo: agora já existem fornecedores, manutenção e contas a pagar integrados; orçamentos vira a ponte antes de obras.
-
-Depois de C7, o próximo bloco recomendado é **C12. Obras**, usando orçamento aprovado vs custo final, cronograma/status e vínculo com contas a pagar.
+Motivo: fornecedores, manutenção, contas a pagar e orçamentos agora estão integrados. Obras deve usar essa base para fechar o ciclo de contratação, execução e controle financeiro.
 
 ## Cuidados para a próxima implementação
 

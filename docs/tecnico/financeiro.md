@@ -61,6 +61,9 @@ cache `tenant:domain:*`.
 - Contas geradas por execução de manutenção usam `maintenance_record_id`, preservando a trilha:
   manutenção -> execução -> conta a pagar. A criação automática exige `maintenance:update`,
   `expenses:create` e módulo `financial` ativo no plano.
+- Contas geradas por proposta aprovada de orçamento usam `quotation_proposal_id`, preservando a
+  trilha: orçamento -> proposta aprovada -> conta a pagar. A criação automática exige
+  `quotations:approve`, `expenses:create` e módulo `financial` ativo.
 - Lembrete: comando `expenses:notify-due` roda diariamente no scheduler e notifica gestores ativos
   quando `days_until_due <= reminder_days`; marca `reminder_sent_at` para não repetir.
 

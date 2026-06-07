@@ -39,6 +39,7 @@ interface Supplier {
 interface SupplierStats {
     active_maintenance_plans: number;
     maintenance_records: number;
+    quotation_proposals: number;
     open_expenses_total: number;
     overdue_expenses_total: number;
     paid_this_month: number;
@@ -78,6 +79,15 @@ interface Expense {
     maintenance_record: { plan: { id: string; title: string } | null } | null;
 }
 
+interface QuotationProposal {
+    id: string;
+    amount: string;
+    execution_days: number | null;
+    valid_until: string | null;
+    status: string;
+    quotation: { id: string; title: string; status: string; condominium: { id: string; name: string } | null } | null;
+}
+
 interface Props {
     supplier: Supplier;
     categories: Record<string, string>;
@@ -86,6 +96,7 @@ interface Props {
     maintenancePlans: MaintenancePlan[];
     maintenanceRecords: MaintenanceRecord[];
     expenses: Expense[];
+    quotationProposals: QuotationProposal[];
 }
 
 const expenseStatus: Record<string, string> = {
@@ -93,6 +104,12 @@ const expenseStatus: Record<string, string> = {
     paid: 'Paga',
     overdue: 'Vencida',
     cancelled: 'Cancelada',
+};
+
+const proposalStatus: Record<string, string> = {
+    received: 'Recebida',
+    approved: 'Aprovada',
+    rejected: 'Rejeitada',
 };
 
 function Stars({ value, className = 'h-4 w-4' }: { value: number; className?: string }) {
@@ -124,7 +141,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
     );
 }
 
-export default function SupplierShow({ supplier, categories, maintenanceCategories, supplierStats, maintenancePlans, maintenanceRecords, expenses }: Props) {
+export default function SupplierShow({ supplier, categories, maintenanceCategories, supplierStats, maintenancePlans, maintenanceRecords, expenses, quotationProposals }: Props) {
     const { auth, tenant } = usePage<PageProps>().props;
     const permissions = auth.user?.permissions ?? [];
     const can = (permission: string) => permissions.includes('*') || permissions.includes(permission);
@@ -132,6 +149,7 @@ export default function SupplierShow({ supplier, categories, maintenanceCategori
     const canOpenMaintenance = can('maintenance:read') && planAllows('maintenance');
     const canOpenExpenses = can('expenses:read') && planAllows('financial');
     const canEditExpenses = can('expenses:update') && planAllows('financial');
+    const canOpenQuotations = can('quotations:read') && planAllows('quotations');
 
     const form = useForm({ score: 5, comment: '' });
 
@@ -192,9 +210,10 @@ export default function SupplierShow({ supplier, categories, maintenanceCategori
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
                     <StatCard label="Manutenções ativas" value={supplierStats.active_maintenance_plans} />
                     <StatCard label="Execuções" value={supplierStats.maintenance_records} />
+                    <StatCard label="Propostas" value={supplierStats.quotation_proposals} />
                     <StatCard label="Em aberto" value={fmtMoney(supplierStats.open_expenses_total)} />
                     <StatCard label="Vencidas" value={fmtMoney(supplierStats.overdue_expenses_total)} />
                     <StatCard label="Pago no mês" value={fmtMoney(supplierStats.paid_this_month)} />
@@ -284,6 +303,33 @@ export default function SupplierShow({ supplier, categories, maintenanceCategori
                                 );
                             })}
                         </div>
+                    </div>
+                </div>
+
+                <div className="space-y-4 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+                    <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-700">Propostas em orçamentos</h2>
+                    <div className="divide-y divide-gray-50">
+                        {quotationProposals.length === 0 && <p className="py-4 text-sm text-gray-500">Nenhuma proposta registrada para este fornecedor.</p>}
+                        {quotationProposals.map(proposal => (
+                            <div key={proposal.id} className="flex items-start justify-between gap-3 py-3">
+                                <div>
+                                    {proposal.quotation && canOpenQuotations ? (
+                                        <Link href={route('quotations.show', proposal.quotation.id)} className="font-medium text-gray-900 hover:text-blue-600">{proposal.quotation.title}</Link>
+                                    ) : (
+                                        <p className="font-medium text-gray-900">{proposal.quotation?.title ?? '-'}</p>
+                                    )}
+                                    <p className="mt-0.5 text-xs text-gray-500">
+                                        {proposal.quotation?.condominium?.name ?? '-'}
+                                        {proposal.execution_days !== null ? ` · ${proposal.execution_days} dia(s)` : ''}
+                                        {proposal.valid_until ? ` · válido até ${fmtDate(proposal.valid_until)}` : ''}
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm font-semibold text-gray-900">{fmtMoney(proposal.amount)}</p>
+                                    <p className="text-xs text-gray-500">{proposalStatus[proposal.status] ?? proposal.status}</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
 

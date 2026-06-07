@@ -31,6 +31,7 @@ class Category extends Model
         'document' => 'Documentos',
         'supplier' => 'Fornecedores',
         'maintenance' => 'Manutenções',
+        'quotation' => 'Orçamentos/Cotações',
     ];
 
     /**

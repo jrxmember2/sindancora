@@ -29,6 +29,7 @@ class CategoryController extends Controller
                 'document' => \App\Models\Document::CATEGORIES,
                 'supplier' => \App\Models\Supplier::CATEGORIES,
                 'maintenance' => \App\Models\MaintenancePlan::CATEGORIES,
+                'quotation' => \App\Models\Quotation::CATEGORIES,
             ],
         ]);
     }

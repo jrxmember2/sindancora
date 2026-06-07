@@ -30,6 +30,8 @@ class ExpenseController extends Controller
                 'supplierRecord:id,name',
                 'maintenanceRecord:id,maintenance_plan_id',
                 'maintenanceRecord.plan:id,title',
+                'quotationProposal:id,quotation_id,supplier_name',
+                'quotationProposal.quotation:id,title',
             ])
             ->orderByRaw("CASE WHEN status = 'paid' THEN 2 WHEN status = 'cancelled' THEN 3 ELSE 1 END")
             ->orderBy('due_date')
@@ -93,7 +95,7 @@ class ExpenseController extends Controller
         $expense = $this->authorizeTenant($expense);
 
         return Inertia::render('Expenses/Edit', [
-            'expense' => $expense->load('receipt:id', 'maintenanceRecord.plan:id,title'),
+            'expense' => $expense->load('receipt:id', 'maintenanceRecord.plan:id,title', 'quotationProposal.quotation:id,title'),
             'condominiums' => $this->condominiumOptions($expense->tenant_id),
             'suppliers' => $this->supplierOptions($expense->tenant_id),
             'categories' => Expense::CATEGORIES,

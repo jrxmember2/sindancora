@@ -17,6 +17,7 @@ interface Supplier {
     evaluations_count: number;
     evaluations_avg_score: number | null;
     active_maintenance_plans_count: number;
+    quotation_proposals_count: number;
     open_expenses_sum_amount: string | null;
 }
 
@@ -102,6 +103,7 @@ export default function SuppliersIndex({ suppliers, categories, condominiums, fi
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Fornecedor</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Categoria</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Manutenções</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Orçamentos</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Em aberto</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Contato</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Avaliação</th>
@@ -110,7 +112,7 @@ export default function SuppliersIndex({ suppliers, categories, condominiums, fi
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {suppliers.data.length === 0 && (
-                                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">Nenhum fornecedor cadastrado.</td></tr>
+                                <tr><td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-500">Nenhum fornecedor cadastrado.</td></tr>
                             )}
                             {suppliers.data.map(supplier => (
                                 <tr key={supplier.id} className="transition-colors hover:bg-gray-50">
@@ -121,6 +123,7 @@ export default function SuppliersIndex({ suppliers, categories, condominiums, fi
                                     </td>
                                     <td className="px-4 py-3 text-xs text-gray-600">{supplier.category ? (categories[supplier.category] ?? supplier.category) : '-'}</td>
                                     <td className="px-4 py-3 text-xs text-gray-600">{supplier.active_maintenance_plans_count}</td>
+                                    <td className="px-4 py-3 text-xs text-gray-600">{supplier.quotation_proposals_count}</td>
                                     <td className="px-4 py-3 text-xs font-medium text-gray-700">{brl(supplier.open_expenses_sum_amount)}</td>
                                     <td className="px-4 py-3 text-xs text-gray-600">
                                         {supplier.contact_name ?? '-'}
