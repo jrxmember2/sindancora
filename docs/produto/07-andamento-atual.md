@@ -23,6 +23,44 @@
 
 ## Última entrega implementada
 
+### Correções de plano + identidade do tenant/condomínio
+
+Implementado após C7.
+
+O que foi entregue:
+
+- `PlanLimitService` passou a calcular uso real para recursos permanentes (`condominiums`, `units`,
+  `users`, `residents`, `storage_mb`) e sincronizar `tenant_usage_counters`.
+- Downgrade de plano agora bloqueia criação acima do limite mesmo que o contador antigo esteja
+  defasado. Exemplo: Enterprise -> Starter com 1 condomínio já cadastrado impede cadastrar o 2º.
+- `Admin\TenantController::changePlan()` sincroniza contadores permanentes após troca de plano.
+- Erros web de limite de plano/storage voltam com flash de erro em vez de página técnica.
+- Cadastro/edição de condomínio aceita logo (`StorageObject`, `entity_type = condominium_logo`) e a
+  listagem mostra thumbnail.
+- API de condomínios expõe `logo_url`.
+- Nova tela **Configurações -> Dados do tenant** (`settings.tenant.*`) para PF/PJ, razão social/nome,
+  nome fantasia, CPF/CNPJ, telefone, e-mail, endereço, cor principal e logo.
+- Logo do tenant usa `StorageObject` (`entity_type = tenant_logo`) e fica referenciada em
+  `tenants.settings.brand.logo_storage_object_id`.
+- `Tenant::getReportProfile()` centraliza os dados para relatórios; o PDF financeiro já usa esse
+  perfil no cabeçalho e deixa Sindâncora apenas como assinatura de sistema.
+- Doc técnica: `docs/tecnico/identidade-tenant-e-limites.md`.
+
+Arquivos-chave:
+
+- `app/Services/PlanLimitService.php`
+- `app/Http/Controllers/Panel/CondominiumController.php`
+- `app/Http/Controllers/Panel/TenantProfileController.php`
+- `app/Models/Condominium.php`
+- `app/Models/Tenant.php`
+- `resources/js/Pages/Condominiums/Index.tsx`
+- `resources/js/Pages/Condominiums/Create.tsx`
+- `resources/js/Pages/Condominiums/Edit.tsx`
+- `resources/js/Pages/Settings/TenantProfile.tsx`
+- `resources/views/reports/financial.blade.php`
+
+## Entregas anteriores recentes
+
 ### C7. Orçamentos/Cotações
 
 Implementado nesta rodada, ainda exigindo deploy/migration no Easypanel depois do commit/push.
@@ -67,8 +105,6 @@ Arquivos-chave:
 - `resources/js/Pages/Suppliers/Index.tsx`
 - `resources/js/Pages/Suppliers/Show.tsx`
 - `routes/web.php`
-
-## Entregas anteriores recentes
 
 ### Cadastro de unidades com PF/PJ para proprietários e inquilinos
 
@@ -144,6 +180,8 @@ Arquivos-chave:
 ## Validações locais já feitas
 
 - `php -l` nos PHP alterados.
+- `php artisan route:list --name=settings.tenant --except-vendor`
+- `php artisan route:list --name=condominiums --except-vendor`
 - `php artisan route:list --name=quotations --except-vendor`
 - `php artisan route:list --name=maintenance --except-vendor`
 - `php artisan route:list --name=suppliers --except-vendor`

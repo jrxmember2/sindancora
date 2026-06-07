@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Rules\CpfCnpj;
+use App\Services\PlanLimitService;
 use App\Services\TenantService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,10 @@ use Inertia\Response;
 
 class TenantController extends Controller
 {
-    public function __construct(private readonly TenantService $tenantService) {}
+    public function __construct(
+        private readonly TenantService $tenantService,
+        private readonly PlanLimitService $planLimitService,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -113,6 +117,7 @@ class TenantController extends Controller
         }
 
         $this->forgetTenantCache($tenant);
+        $this->planLimitService->syncPermanentCounters($tenant);
 
         return back()->with('success', "Plano alterado para \"{$plan->display_name}\".");
     }

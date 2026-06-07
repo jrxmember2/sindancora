@@ -3,14 +3,18 @@
 namespace App\Services;
 
 use App\Exceptions\PlanLimitException;
-use App\Models\PlanLimit;
+use App\Models\Condominium;
+use App\Models\StorageObject;
 use App\Models\Tenant;
 use App\Models\TenantLimit;
 use App\Models\TenantUsageCounter;
-use Illuminate\Support\Facades\DB;
+use App\Models\Unit;
+use App\Models\User;
 
 class PlanLimitService
 {
+    private const LIVE_RESOURCES = ['condominiums', 'units', 'users', 'residents', 'storage_mb'];
+
     public function check(Tenant $tenant, string $resource, int $increment = 1): void
     {
         $limit = $this->getLimit($tenant, $resource);
@@ -34,9 +38,16 @@ class PlanLimitService
 
     public function increment(Tenant $tenant, string $resource, int $by = 1): void
     {
-        TenantUsageCounter::where('tenant_id', $tenant->id)
-            ->where('resource', $resource)
-            ->increment('current_value', $by);
+        if ($this->usesLiveSource($resource)) {
+            $this->syncCounter($tenant, $resource, $this->currentFromLiveSource($tenant, $resource));
+
+            return;
+        }
+
+        TenantUsageCounter::firstOrCreate(
+            ['tenant_id' => $tenant->id, 'resource' => $resource],
+            ['current_value' => 0],
+        )->increment('current_value', $by);
     }
 
     public function incrementBy(Tenant $tenant, string $resource, int $by): void
@@ -46,9 +57,16 @@ class PlanLimitService
 
     public function decrement(Tenant $tenant, string $resource, int $by = 1): void
     {
-        TenantUsageCounter::where('tenant_id', $tenant->id)
-            ->where('resource', $resource)
-            ->decrement('current_value', max(0, $by));
+        if ($this->usesLiveSource($resource)) {
+            $this->syncCounter($tenant, $resource, $this->currentFromLiveSource($tenant, $resource));
+
+            return;
+        }
+
+        TenantUsageCounter::firstOrCreate(
+            ['tenant_id' => $tenant->id, 'resource' => $resource],
+            ['current_value' => 0],
+        )->decrement('current_value', max(0, $by));
     }
 
     public function getLimit(Tenant $tenant, string $resource): int
@@ -73,6 +91,13 @@ class PlanLimitService
 
     public function getCurrent(Tenant $tenant, string $resource): int
     {
+        if ($this->usesLiveSource($resource)) {
+            $current = $this->currentFromLiveSource($tenant, $resource);
+            $this->syncCounter($tenant, $resource, $current);
+
+            return $current;
+        }
+
         return TenantUsageCounter::where('tenant_id', $tenant->id)
             ->where('resource', $resource)
             ->value('current_value') ?? 0;
@@ -105,5 +130,35 @@ class PlanLimitService
         }
 
         return $summary;
+    }
+
+    public function syncPermanentCounters(Tenant $tenant): void
+    {
+        foreach (self::LIVE_RESOURCES as $resource) {
+            $this->syncCounter($tenant, $resource, $this->currentFromLiveSource($tenant, $resource));
+        }
+    }
+
+    private function usesLiveSource(string $resource): bool
+    {
+        return in_array($resource, self::LIVE_RESOURCES, true);
+    }
+
+    private function currentFromLiveSource(Tenant $tenant, string $resource): int
+    {
+        return match ($resource) {
+            'condominiums' => Condominium::where('tenant_id', $tenant->id)->count(),
+            'units' => Unit::where('tenant_id', $tenant->id)->count(),
+            'users' => User::where('tenant_id', $tenant->id)->count(),
+            'residents' => User::where('tenant_id', $tenant->id)
+                ->where(fn ($q) => $q
+                    ->whereNotNull('person_id')
+                    ->orWhereHas('userRoles.role', fn ($role) => $role->where('name', 'morador')))
+                ->count(),
+            'storage_mb' => (int) ceil(StorageObject::where('tenant_id', $tenant->id)
+                ->whereNull('deleted_at')
+                ->sum('file_size_bytes') / 1024 / 1024),
+            default => 0,
+        };
     }
 }

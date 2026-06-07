@@ -64,6 +64,7 @@ const navigation = [
 
 const adminNavigation = [
     { name: 'Perfis', href: '/roles', icon: Shield, permission: 'users:manage' },
+    { name: 'Dados do tenant', href: '/configuracoes/tenant', icon: Building2, permission: 'settings:update' },
     { name: 'Pagamentos', href: '/configuracoes/pagamentos', icon: Settings, permission: 'settings:payments', module: 'financial' },
     { name: 'E-mail (SMTP)', href: '/configuracoes/email', icon: Mail, permission: 'settings:email' },
     { name: 'Categorias', href: '/configuracoes/categorias', icon: Tags, permission: 'categories:manage' },

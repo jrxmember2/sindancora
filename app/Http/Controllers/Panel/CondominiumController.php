@@ -8,6 +8,7 @@ use App\Models\Person;
 use App\Models\CondominiumManager;
 use App\Rules\CpfCnpj;
 use App\Services\PlanLimitService;
+use App\Services\StorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,7 +16,10 @@ use Inertia\Response;
 
 class CondominiumController extends Controller
 {
-    public function __construct(private readonly PlanLimitService $planLimitService) {}
+    public function __construct(
+        private readonly PlanLimitService $planLimitService,
+        private readonly StorageService $storage,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -33,6 +37,7 @@ class CondominiumController extends Controller
         return Inertia::render('Condominiums/Index', [
             'condominiums' => $condominiums,
             'filters' => $request->only(['search', 'status']),
+            'usage' => $this->planLimitService->getUsageSummary($tenant)['condominiums'],
         ]);
     }
 
@@ -56,6 +61,7 @@ class CondominiumController extends Controller
             'cnpj' => ["nullable", "string", "max:18", new CpfCnpj, "unique:condominiums,cnpj,NULL,id,tenant_id,{$tenant->id}"],
             'email' => 'nullable|email|max:150',
             'phone' => 'nullable|string|max:20',
+            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'zip_code' => 'nullable|string|max:9',
             'street' => 'nullable|string|max:200',
             'number' => 'nullable|string|max:20',
@@ -65,7 +71,10 @@ class CondominiumController extends Controller
             'state' => 'nullable|string|size:2',
         ]);
 
+        unset($data['logo']);
+
         $condo = Condominium::create(array_merge($data, ['tenant_id' => $tenant->id]));
+        $this->syncLogo($request, $condo);
 
         $this->planLimitService->increment($tenant, 'condominiums');
 
@@ -119,6 +128,8 @@ class CondominiumController extends Controller
             'cnpj' => ["nullable", "string", "max:18", new CpfCnpj, "unique:condominiums,cnpj,{$condominium->id},id,tenant_id,{$tenant->id}"],
             'email' => 'nullable|email|max:150',
             'phone' => 'nullable|string|max:20',
+            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'remove_logo' => 'nullable|boolean',
             'zip_code' => 'nullable|string|max:9',
             'street' => 'nullable|string|max:200',
             'number' => 'nullable|string|max:20',
@@ -129,7 +140,10 @@ class CondominiumController extends Controller
             'status' => 'in:active,inactive',
         ]);
 
+        unset($data['logo'], $data['remove_logo']);
+
         $condominium->update($data);
+        $this->syncLogo($request, $condominium);
 
         return redirect()->route('condominiums.show', $condominium)->with('success', 'Condomínio atualizado.');
     }
@@ -223,5 +237,36 @@ class CondominiumController extends Controller
         $manager->update(['end_date' => now()->toDateString()]);
 
         return back()->with('success', 'Mandato encerrado.');
+    }
+
+    private function syncLogo(Request $request, Condominium $condominium): void
+    {
+        if (! $request->hasFile('logo') && ! $request->boolean('remove_logo')) {
+            return;
+        }
+
+        $settings = $condominium->settings ?? [];
+
+        if ($logo = $condominium->logoObject()) {
+            $this->storage->delete($logo);
+        }
+
+        data_forget($settings, 'brand.logo_storage_object_id');
+        data_forget($settings, 'brand.logo_url');
+
+        if ($request->hasFile('logo')) {
+            $logo = $this->storage->upload(
+                file: $request->file('logo'),
+                tenant: app('tenant'),
+                entityType: Condominium::LOGO_ENTITY,
+                entityId: $condominium->id,
+                visibility: 'tenant',
+                condominiumId: $condominium->id,
+            );
+
+            data_set($settings, 'brand.logo_storage_object_id', $logo->id);
+        }
+
+        $condominium->update(['settings' => $settings]);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\BelongsToTenant;
 use App\Traits\HasAuditLog;
 use App\Traits\HasUuidKey;
+use App\Services\StorageService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -14,6 +15,8 @@ class Condominium extends Model
 {
     use BelongsToTenant, HasAuditLog, HasUuidKey, SoftDeletes;
 
+    public const LOGO_ENTITY = 'condominium_logo';
+
     protected $table = 'condominiums';
 
     protected $fillable = [
@@ -21,6 +24,8 @@ class Condominium extends Model
         'zip_code', 'street', 'number', 'complement', 'neighborhood', 'city', 'state',
         'settings', 'status',
     ];
+
+    protected $appends = ['logo_url'];
 
     protected function casts(): array
     {
@@ -82,5 +87,37 @@ class Condominium extends Model
         return collect([$this->street, $this->number, $this->complement, $this->neighborhood, $this->city, $this->state])
             ->filter()
             ->implode(', ');
+    }
+
+    public function getLogoStorageObjectId(): ?string
+    {
+        return data_get($this->settings, 'brand.logo_storage_object_id')
+            ?? data_get($this->settings, 'logo_storage_object_id');
+    }
+
+    public function logoObject(): ?StorageObject
+    {
+        $objectId = $this->getLogoStorageObjectId();
+
+        if (! $objectId) {
+            return null;
+        }
+
+        return StorageObject::where('tenant_id', $this->tenant_id)
+            ->where('entity_type', self::LOGO_ENTITY)
+            ->where('entity_id', $this->id)
+            ->whereNull('deleted_at')
+            ->find($objectId);
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        if ($legacyUrl = data_get($this->settings, 'brand.logo_url')) {
+            return $legacyUrl;
+        }
+
+        $object = $this->logoObject();
+
+        return $object ? app(StorageService::class)->getSignedUrl($object) : null;
     }
 }
