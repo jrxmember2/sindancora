@@ -1,9 +1,9 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import UnitForm, { UnitFormData, PersonItem, PetItem, VehicleItem } from './Form';
-import { maskCpf, maskPhone, isoToBrDate } from '@/lib/masks';
+import { maskCnpj, maskCpf, maskPhone, isoToBrDate, onlyDigits } from '@/lib/masks';
 
-interface ServerPerson { id: string; name: string; cpf: string | null; birth_date: string | null; phones: string[]; emails: string[] }
+interface ServerPerson { id: string; person_type?: 'individual' | 'company' | null; name: string; document?: string | null; cpf: string | null; birth_date: string | null; phones: string[]; emails: string[] }
 interface ServerPet { id: string; name: string; species: string; breed: string | null; notes: string | null }
 interface ServerVehicle { id: string; type: string; plate: string | null; brand_model: string | null; color: string | null; parking_spot: string | null; notes: string | null }
 interface Unit {
@@ -21,14 +21,22 @@ interface Props {
     vehicleTypes: Record<string, string>;
 }
 
-const toPerson = (p: ServerPerson): PersonItem => ({
-    id: p.id,
-    name: p.name ?? '',
-    cpf: p.cpf ? maskCpf(p.cpf) : '',
-    birth_date: isoToBrDate(p.birth_date),
-    phones: p.phones?.length ? p.phones.map((x) => maskPhone(x)) : [''],
-    emails: p.emails?.length ? p.emails : [''],
-});
+const toPerson = (p: ServerPerson): PersonItem => {
+    const rawDocument = p.document ?? p.cpf ?? '';
+    const personType = p.person_type === 'company' || onlyDigits(rawDocument).length === 14 ? 'company' : 'individual';
+    const document = personType === 'company' ? maskCnpj(rawDocument) : maskCpf(rawDocument);
+
+    return {
+        id: p.id,
+        person_type: personType,
+        name: p.name ?? '',
+        document,
+        cpf: document,
+        birth_date: personType === 'individual' ? isoToBrDate(p.birth_date) : '',
+        phones: p.phones?.length ? p.phones.map((x) => maskPhone(x)) : [''],
+        emails: p.emails?.length ? p.emails : [''],
+    };
+};
 const toPet = (p: ServerPet): PetItem => ({ id: p.id, name: p.name ?? '', species: p.species ?? 'dog', breed: p.breed ?? '', notes: p.notes ?? '' });
 const toVehicle = (v: ServerVehicle): VehicleItem => ({ id: v.id, type: v.type ?? 'car', plate: v.plate ?? '', brand_model: v.brand_model ?? '', color: v.color ?? '', parking_spot: v.parking_spot ?? '', notes: v.notes ?? '' });
 

@@ -31,6 +31,9 @@ Premissas obrigatórias:
 - Sempre propor plano antes de alterações grandes.
 - Sempre criar ou atualizar documentação técnica quando implementar algo relevante.
 
+Antes de dar continuidade ao desenvolvimento, leia `docs/produto/07-andamento-atual.md` para o
+estado mais recente, validações, pendências de deploy e próximos passos sugeridos.
+
 Stack preferencial:
 - Backend: Laravel ou NestJS, conforme definido no início do projeto.
 - Banco: PostgreSQL.

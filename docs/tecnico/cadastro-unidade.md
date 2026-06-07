@@ -7,6 +7,8 @@ pessoas e pets da unidade.
 
 - **Proprietários, Inquilinos e Familiares** são todos `Person` vinculados à unidade via
   `person_unit_links.type` (`owner` / `tenant` / `dependent`). O 1º proprietário fica `is_primary`.
+- **Proprietários e Inquilinos** aceitam **Pessoa Física** ou **Pessoa Jurídica** no cadastro da
+  unidade. Para PJ, o campo principal muda para razão social + CNPJ; familiares continuam como PF.
 - **Pessoa** ganhou múltiplos contatos: colunas JSON `phones` e `emails` em `persons`. O **1º item de
   cada lista espelha** em `phone` / `email` (campos principais já usados por WhatsApp, cobranças e
   notificações) — telefones são guardados em **dígitos** (ex.: `11999998888`); a normalização para o
@@ -17,9 +19,11 @@ pessoas e pets da unidade.
 ## Sincronização (`App\Services\UnitRosterService`)
 
 `sync(Unit, $data)` roda em transação e:
-1. Para cada grupo (owners/tenants/family) faz **upsert da pessoa**: se houver **CPF**, reaproveita a
-   pessoa existente (respeita o unique `tenant+cpf`, **não duplica**); sem CPF, usa o `id` (edição) ou
-   cria nova. Grava `phones`/`emails` (limpos: dígitos/lowercase, sem vazios/duplicados) + principal.
+1. Para cada grupo (owners/tenants/family) faz **upsert da pessoa**: se houver **CPF/CNPJ**,
+   reaproveita a pessoa existente (respeita o unique `tenant+cpf`, **não duplica**); sem documento,
+   usa o `id` (edição) ou cria nova. O campo legado `persons.cpf` guarda os dígitos do CPF ou CNPJ,
+   com `persons.person_type` indicando PF/PJ. Grava `phones`/`emails` (limpos: dígitos/lowercase,
+   sem vazios/duplicados) + principal.
 2. Cria/atualiza o **vínculo** (`person_unit_links`) por tipo e remove os vínculos da unidade que não
    vieram no envio.
 3. Faz o mesmo para **pets** (upsert por `id`, remove os ausentes).
@@ -37,14 +41,15 @@ contam).
 ## Frontend
 
 `Units/Form.tsx` é o formulário único: seção **Dados da unidade** + seções repetíveis
-**Proprietários / Inquilinos / Familiares** (cada pessoa com nome, CPF e nascimento mascarados, e
-listas de **telefones**/**e-mails** com botões +/−) + seção **Pets**. Máscaras em
-`resources/js/lib/masks.ts` (`maskCpf`, `maskDate`, `maskPhone`, `isoToBrDate`). No `Edit`, os valores
-do servidor são mascarados na inicialização; no envio vão mascarados e o backend normaliza.
+**Proprietários / Inquilinos / Familiares**. Proprietários e inquilinos têm dropdown PF/PJ; PF usa
+nome + CPF + nascimento e PJ usa razão social + CNPJ. Todos mantêm listas de
+**telefones**/**e-mails** com botões +/−, além das seções **Pets** e **Veículos**. Máscaras em
+`resources/js/lib/masks.ts` (`maskCpf`, `maskCnpj`, `maskDate`, `maskPhone`, `isoToBrDate`). No `Edit`,
+os valores do servidor são mascarados na inicialização; no envio vão mascarados e o backend normaliza.
 
 ## Deploy
 
-`migrate --force` (colunas `persons.phones/emails` + tabela `pets`) + `optimize:clear`. Sem
+`migrate --force` (colunas `persons.phones/emails`, `persons.person_type` + tabela `pets`) + `optimize:clear`. Sem
 `db:seed`, sem env nova.
 
 ## Limitação conhecida
