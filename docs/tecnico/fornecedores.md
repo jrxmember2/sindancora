@@ -62,6 +62,15 @@ Páginas em `resources/js/Pages/Suppliers/`: `Index`, `Create`, `Edit`, `Show`, 
 Item de menu **"Fornecedores"** (ícone `Truck`) no `AppLayout`, gated por `suppliers:read`.
 Reusa `maskCpfCnpj`/`maskPhone` de `lib/masks.ts` e o autocomplete ViaCEP no endereço.
 
+## Integração operacional
+
+- `Supplier` agora expõe `maintenancePlans()`, `maintenanceRecords()` e `expenses()` para consolidar
+  uso do prestador na operação.
+- A listagem de fornecedores mostra manutenções ativas e total em aberto em contas a pagar.
+- O detalhe do fornecedor mostra cards de manutenção/financeiro, manutenções vinculadas, execuções
+  recentes e contas do fornecedor. Os links respeitam permissão e módulos ativos do plano.
+- Essa visão cruza B6 (fornecedores), B4 (manutenção) e C8 (contas a pagar) sem duplicar dados.
+
 ## Deploy
 
 `migrate --force` (3 tabelas) + `db:seed --force` (permissões `suppliers:*`) + `optimize:clear`

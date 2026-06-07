@@ -31,6 +31,7 @@ interface Expense {
     days_until_due: number | null;
     condominium: { name: string } | null;
     supplier_record: { name: string } | null;
+    maintenance_record: { plan: { id: string; title: string } | null } | null;
 }
 
 interface Summary {
@@ -92,9 +93,11 @@ function SummaryCard({ label, value, icon: Icon, tone }: { label: string; value:
 }
 
 export default function ExpensesIndex({ expenses, total, summary, condominiums, suppliers, categories, statuses, filters }: Props) {
-    const { auth } = usePage<PageProps>().props;
+    const { auth, tenant } = usePage<PageProps>().props;
     const perms = auth.user?.permissions ?? [];
     const can = (permission: string) => perms.includes('*') || perms.includes(permission);
+    const planAllowsMaintenance = auth.user?.is_super_admin || (tenant?.plan?.modules ?? []).includes('maintenance');
+    const canOpenMaintenance = can('maintenance:read') && planAllowsMaintenance;
 
     const apply = (params: Record<string, string>) => router.get(
         route('expenses.index'),
@@ -199,6 +202,16 @@ export default function ExpensesIndex({ expenses, total, summary, condominiums, 
                                                 {supplierName ? ` · ${supplierName}` : ''}
                                                 {expense.document_number ? ` · Doc. ${expense.document_number}` : ''}
                                             </p>
+                                            {expense.maintenance_record?.plan && (
+                                                <p className="mt-1 text-xs text-gray-400">
+                                                    Origem:{' '}
+                                                    {canOpenMaintenance ? (
+                                                        <Link href={route('maintenance.show', expense.maintenance_record.plan.id)} className="text-blue-600 hover:underline">
+                                                            {expense.maintenance_record.plan.title}
+                                                        </Link>
+                                                    ) : expense.maintenance_record.plan.title}
+                                                </p>
+                                            )}
                                         </td>
                                         <td className="px-4 py-3">
                                             <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusClass[expense.display_status] ?? 'bg-gray-100 text-gray-600'}`}>

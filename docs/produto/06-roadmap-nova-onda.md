@@ -52,6 +52,8 @@ Legenda esforço: 🟢 baixo · 🟡 médio · 🔴 alto. Valor: ⭐ alto difere
 - [ ] **C7. Orçamentos/Cotações** (multi-fornecedor, comparar, aprovar, prazo, anexos) ⭐ 🔴
 - [ ] **C12. Obras** (orçamento aprovado vs final, cronograma, status) 🟡 🟡
 - [x] **C8. Contas a pagar** (lembrete + categoria + nota fiscal) 🟡 🟡 — concluída (07/06/2026), estendendo "Despesas".
+  - Integração operacional B4+B6+C8 concluída (07/06/2026): execução de manutenção pode gerar conta
+    a pagar vinculada; fornecedor mostra manutenções, execuções e contas consolidadas.
 
 ### Fase D — Pessoas, relatórios e visão consolidada
 - [ ] **D9. Funcionários + controle de férias** (CTPS, admissão, alertas de férias) ⭐ 🟡

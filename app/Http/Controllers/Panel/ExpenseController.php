@@ -25,7 +25,12 @@ class ExpenseController extends Controller
         $tenant = app('tenant');
 
         $expenses = $this->filteredQuery($request, $tenant->id)
-            ->with(['condominium:id,name', 'supplierRecord:id,name'])
+            ->with([
+                'condominium:id,name',
+                'supplierRecord:id,name',
+                'maintenanceRecord:id,maintenance_plan_id',
+                'maintenanceRecord.plan:id,title',
+            ])
             ->orderByRaw("CASE WHEN status = 'paid' THEN 2 WHEN status = 'cancelled' THEN 3 ELSE 1 END")
             ->orderBy('due_date')
             ->paginate(20)
@@ -88,7 +93,7 @@ class ExpenseController extends Controller
         $expense = $this->authorizeTenant($expense);
 
         return Inertia::render('Expenses/Edit', [
-            'expense' => $expense->load('receipt:id'),
+            'expense' => $expense->load('receipt:id', 'maintenanceRecord.plan:id,title'),
             'condominiums' => $this->condominiumOptions($expense->tenant_id),
             'suppliers' => $this->supplierOptions($expense->tenant_id),
             'categories' => Expense::CATEGORIES,

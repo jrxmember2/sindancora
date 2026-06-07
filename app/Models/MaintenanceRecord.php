@@ -6,6 +6,7 @@ use App\Traits\BelongsToTenant;
 use App\Traits\HasUuidKey;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Execução registrada de um plano de manutenção (compõe o histórico).
@@ -36,6 +37,11 @@ class MaintenanceRecord extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    public function expense(): HasOne
+    {
+        return $this->hasOne(Expense::class, 'maintenance_record_id');
     }
 
     public function author(): BelongsTo
