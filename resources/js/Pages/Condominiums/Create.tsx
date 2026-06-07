@@ -43,6 +43,7 @@ export default function CondominiumCreate() {
 
     const { data, setData, post, processing, errors } = useForm({
         name: '', cnpj: '', email: '', phone: '',
+        logo: null as File | null,
         zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '',
     });
 
@@ -57,7 +58,7 @@ export default function CondominiumCreate() {
 
     const next = () => setStep(s => Math.min(s + 1, STEPS.length - 1));
     const prev = () => setStep(s => Math.max(s - 1, 0));
-    const submit = () => post(route('condominiums.store'));
+    const submit = () => post(route('condominiums.store'), { forceFormData: true });
 
     return (
         <AppLayout>
@@ -100,6 +101,15 @@ export default function CondominiumCreate() {
                             </div>
                             <Field label="E-mail" error={errors.email}>
                                 <Input type="email" value={data.email} onChange={e => setData('email', e.target.value)} placeholder="contato@condominio.com.br" />
+                            </Field>
+                            <Field label="Logo do condomínio" error={errors.logo}>
+                                <input
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp"
+                                    onChange={e => setData('logo', e.target.files?.[0] ?? null)}
+                                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200"
+                                />
+                                <p className="mt-1 text-xs text-gray-500">PNG, JPG ou WEBP até 2 MB.</p>
                             </Field>
                         </>
                     )}
@@ -162,6 +172,7 @@ export default function CondominiumCreate() {
                                 )}
                                 {data.email && <p className="text-sm text-gray-600">✉ {data.email}</p>}
                                 {data.phone && <p className="text-sm text-gray-600">☎ {data.phone}</p>}
+                                {data.logo && <p className="text-sm text-gray-600">Logo: {data.logo.name}</p>}
                             </div>
                             <p className="text-sm text-gray-500">Revise as informações acima e clique em <strong>Cadastrar</strong> para confirmar.</p>
                         </div>

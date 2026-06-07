@@ -159,6 +159,11 @@ CREATE TABLE tenant_usage_counters (
 
 ### 3.1 PlanLimitService
 
+Implementação atual: para recursos permanentes (`condominiums`, `units`, `users`, `residents` e
+`storage_mb`), o serviço calcula o uso pela base real e sincroniza `tenant_usage_counters`. O contador
+continua útil para dashboard/histórico, mas não é a única fonte de verdade. Isso evita que downgrade
+de plano permita criar acima do limite por contador desatualizado.
+
 ```php
 // app/Services/PlanLimitService.php
 

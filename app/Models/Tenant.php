@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasUuidKey;
+use App\Services\StorageService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Tenant extends Model
 {
     use HasUuidKey, SoftDeletes;
+
+    public const LOGO_ENTITY = 'tenant_logo';
 
     protected $fillable = [
         'name', 'slug', 'document', 'email', 'phone', 'status', 'plan_id', 'settings',
@@ -115,11 +118,48 @@ class Tenant extends Model
 
     public function getLogoUrl(): ?string
     {
+        if ($object = $this->logoObject()) {
+            return app(StorageService::class)->getSignedUrl($object);
+        }
+
         return $this->getSettings('brand.logo_url');
     }
 
     public function getPrimaryColor(): string
     {
         return $this->getSettings('brand.primary_color', '#1e40af');
+    }
+
+    public function getLogoStorageObjectId(): ?string
+    {
+        return $this->getSettings('brand.logo_storage_object_id');
+    }
+
+    public function logoObject(): ?StorageObject
+    {
+        $objectId = $this->getLogoStorageObjectId();
+
+        if (! $objectId) {
+            return null;
+        }
+
+        return StorageObject::where('tenant_id', $this->id)
+            ->where('entity_type', self::LOGO_ENTITY)
+            ->where('entity_id', $this->id)
+            ->whereNull('deleted_at')
+            ->find($objectId);
+    }
+
+    public function getReportProfile(): array
+    {
+        return [
+            'person_type' => $this->getSettings('profile.person_type', 'company'),
+            'legal_name' => $this->getSettings('profile.legal_name', $this->name),
+            'trade_name' => $this->getSettings('profile.trade_name', $this->getBrandName()),
+            'document' => $this->getSettings('profile.document', $this->document),
+            'email' => $this->getSettings('profile.email', $this->email),
+            'phone' => $this->getSettings('profile.phone', $this->phone),
+            'address' => $this->getSettings('profile.address', []),
+        ];
     }
 }

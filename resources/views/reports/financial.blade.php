@@ -9,6 +9,9 @@
         h1 { font-size: 18px; color: #111827; margin: 0 0 2px; }
         h2 { font-size: 13px; color: #1e40af; margin: 18px 0 6px; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; }
         .muted { color: #6b7280; font-size: 11px; }
+        .header { border-bottom: 1px solid #e5e7eb; margin-bottom: 14px; padding-bottom: 10px; }
+        .logo { max-height: 46px; max-width: 130px; object-fit: contain; margin-bottom: 6px; }
+        .co-brand { color: #9ca3af; font-size: 9px; margin-top: 4px; }
         table { width: 100%; border-collapse: collapse; margin-top: 4px; }
         th, td { text-align: left; padding: 5px 8px; font-size: 11px; }
         thead th { background: #f3f4f6; color: #6b7280; text-transform: uppercase; font-size: 10px; }
@@ -23,14 +26,32 @@
 @php
     $fmt = fn ($v) => 'R$ ' . number_format((float) $v, 2, ',', '.');
     $s = $report['summary'];
+    $profile = $tenant->getReportProfile();
+    $address = collect([
+        data_get($profile, 'address.street'),
+        data_get($profile, 'address.number'),
+        data_get($profile, 'address.complement'),
+        data_get($profile, 'address.neighborhood'),
+        data_get($profile, 'address.city'),
+        data_get($profile, 'address.state'),
+    ])->filter()->implode(', ');
 @endphp
 <body>
-    <h1>Prestação de Contas</h1>
-    <p class="muted">
-        {{ $tenant->getBrandName() }} ·
-        Período de {{ $from->format('d/m/Y') }} a {{ $to->format('d/m/Y') }} ·
-        Emitido em {{ now()->format('d/m/Y H:i') }}
-    </p>
+    <div class="header">
+        @if ($tenant->getLogoUrl())
+            <img src="{{ $tenant->getLogoUrl() }}" class="logo" alt="{{ $tenant->getBrandName() }}">
+        @endif
+        <h1>{{ $tenant->getBrandName() }}</h1>
+        <p class="muted">
+            {{ data_get($profile, 'legal_name') }}
+            @if (data_get($profile, 'document')) · {{ data_get($profile, 'document') }} @endif
+            @if (data_get($profile, 'email')) · {{ data_get($profile, 'email') }} @endif
+            @if (data_get($profile, 'phone')) · {{ data_get($profile, 'phone') }} @endif
+            @if ($address) <br>{{ $address }} @endif
+        </p>
+        <p class="muted">Prestação de Contas · Período de {{ $from->format('d/m/Y') }} a {{ $to->format('d/m/Y') }} · Emitido em {{ now()->format('d/m/Y H:i') }}</p>
+        <p class="co-brand">Gerado pelo Sindâncora</p>
+    </div>
 
     <h2>Resumo</h2>
     <table class="summary">

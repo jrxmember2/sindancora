@@ -15,6 +15,7 @@ class CondominiumResource extends JsonResource
             'cnpj' => $this->cnpj,
             'email' => $this->email,
             'phone' => $this->phone,
+            'logo_url' => $this->logo_url,
             'status' => $this->status,
             'address' => [
                 'zip_code' => $this->zip_code,

@@ -56,12 +56,14 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         // Limite de plano → 402
         $exceptions->render(function (PlanLimitException $e, Request $request) {
+            $message = "Limite do plano atingido para '{$e->resource}': {$e->current}/{$e->limit} ({$e->planName}).";
+
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'error' => [
                         'code' => 'PLAN_LIMIT_EXCEEDED',
-                        'message' => "Limite do plano atingido para '{$e->resource}': {$e->current}/{$e->limit} ({$e->planName}).",
+                        'message' => $message,
                         'resource' => $e->resource,
                         'current' => $e->current,
                         'limit' => $e->limit,
@@ -69,6 +71,8 @@ return Application::configure(basePath: dirname(__DIR__))
                     ],
                 ], 402);
             }
+
+            return redirect()->back()->with('error', $message);
         });
 
         // Cota de storage → 402
@@ -86,5 +90,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     ],
                 ], 402);
             }
+
+            return redirect()->back()->with('error', $e->getMessage());
         });
     })->create();

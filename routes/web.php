@@ -31,6 +31,7 @@ use App\Http\Controllers\Panel\ReportController;
 use App\Http\Controllers\Panel\ReservationController;
 use App\Http\Controllers\Panel\RoleController;
 use App\Http\Controllers\Panel\SectorController;
+use App\Http\Controllers\Panel\TenantProfileController;
 use App\Http\Controllers\Panel\UnitController;
 use App\Http\Controllers\Panel\UserController;
 use App\Http\Controllers\Panel\WebhookController;
@@ -387,6 +388,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('permission:reports:export')->group(function () {
         Route::get('relatorios/financeiro/pdf', [ReportController::class, 'exportPdf'])->name('reports.pdf');
         Route::get('relatorios/financeiro/xlsx', [ReportController::class, 'exportXlsx'])->name('reports.xlsx');
+    });
+
+    // Configurações > Dados do tenant (marca e cadastro para relatórios)
+    Route::middleware('permission:settings:update')->group(function () {
+        Route::get('configuracoes/tenant', [TenantProfileController::class, 'edit'])->name('settings.tenant.edit');
+        Route::post('configuracoes/tenant', [TenantProfileController::class, 'update'])->name('settings.tenant.update');
     });
 
     // Configurações > Pagamentos (integração Asaas por tenant)

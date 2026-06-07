@@ -6,15 +6,22 @@ import { useState } from 'react';
 interface Manager { person: { name: string }; role: string }
 interface Condominium {
     id: string; name: string; cnpj: string | null; city: string | null; state: string | null;
-    status: string; blocks_count: number; units_count: number; active_managers: Manager[];
+    status: string; logo_url: string | null; blocks_count: number; units_count: number; active_managers: Manager[];
+}
+interface Usage {
+    current: number;
+    limit: number;
+    unlimited: boolean;
 }
 interface Props {
     condominiums: { data: Condominium[]; meta: any };
     filters: { search?: string; status?: string };
+    usage: Usage;
 }
 
-export default function CondominiumsIndex({ condominiums, filters }: Props) {
+export default function CondominiumsIndex({ condominiums, filters, usage }: Props) {
     const [search, setSearch] = useState(filters.search ?? '');
+    const canCreate = usage.unlimited || usage.current < usage.limit;
 
     const applySearch = () => router.get(route('condominiums.index'), { search }, { preserveState: true });
 
@@ -25,11 +32,20 @@ export default function CondominiumsIndex({ condominiums, filters }: Props) {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">Condomínios</h1>
-                        <p className="mt-1 text-sm text-gray-500">{condominiums.data.length} condomínio(s) cadastrado(s)</p>
+                        <p className="mt-1 text-sm text-gray-500">
+                            {usage.current} condomínio(s) cadastrado(s)
+                            {!usage.unlimited && ` de ${usage.limit} permitido(s) no plano`}
+                        </p>
                     </div>
-                    <Link href={route('condominiums.create')} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
-                        <Plus className="h-4 w-4" /> Novo Condomínio
-                    </Link>
+                    {canCreate ? (
+                        <Link href={route('condominiums.create')} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+                            <Plus className="h-4 w-4" /> Novo Condomínio
+                        </Link>
+                    ) : (
+                        <button disabled className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-400">
+                            <Plus className="h-4 w-4" /> Limite atingido
+                        </button>
+                    )}
                 </div>
 
                 {/* Busca */}
@@ -55,9 +71,11 @@ export default function CondominiumsIndex({ condominiums, filters }: Props) {
                         <Building2 className="mx-auto h-12 w-12 text-gray-400" />
                         <h3 className="mt-4 text-lg font-semibold text-gray-900">Nenhum condomínio cadastrado</h3>
                         <p className="mt-2 text-sm text-gray-500">Comece cadastrando o primeiro condomínio.</p>
-                        <Link href={route('condominiums.create')} className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
-                            <Plus className="h-4 w-4" /> Cadastrar Condomínio
-                        </Link>
+                        {canCreate && (
+                            <Link href={route('condominiums.create')} className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+                                <Plus className="h-4 w-4" /> Cadastrar Condomínio
+                            </Link>
+                        )}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -65,9 +83,13 @@ export default function CondominiumsIndex({ condominiums, filters }: Props) {
                             <Link key={condo.id} href={route('condominiums.show', condo.id)} className="block rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
                                 <div className="p-5">
                                     <div className="flex items-start justify-between gap-2">
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100">
-                                            <Building2 className="h-5 w-5 text-blue-600" />
-                                        </div>
+                                        {condo.logo_url ? (
+                                            <img src={condo.logo_url} alt={condo.name} className="h-12 w-12 shrink-0 rounded-lg border border-gray-100 object-contain bg-white" />
+                                        ) : (
+                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-100">
+                                                <Building2 className="h-5 w-5 text-blue-600" />
+                                            </div>
+                                        )}
                                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${condo.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
                                             {condo.status === 'active' ? 'Ativo' : 'Inativo'}
                                         </span>
