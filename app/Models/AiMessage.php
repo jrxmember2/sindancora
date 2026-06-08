@@ -12,11 +12,14 @@ class AiMessage extends Model
 
     public $timestamps = false; // só created_at (useCurrent)
 
-    protected $fillable = ['conversation_id', 'role', 'content'];
+    protected $fillable = ['conversation_id', 'role', 'content', 'sources'];
 
     protected function casts(): array
     {
-        return ['created_at' => 'datetime'];
+        return [
+            'created_at' => 'datetime',
+            'sources' => 'array',
+        ];
     }
 
     public function conversation(): BelongsTo

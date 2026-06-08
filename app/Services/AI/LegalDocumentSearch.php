@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 class LegalDocumentSearch
 {
     /**
-     * @return array<int,array{title:string,category:string,content:string}>
+     * @return array<int,array{id:string,title:string,category:string,content:string}>
      */
     public function search(string $query, int $limit = 5): array
     {
@@ -34,8 +34,9 @@ class LegalDocumentSearch
             ->whereRaw("to_tsvector('portuguese', lc.content) @@ plainto_tsquery('portuguese', ?)", [$query])
             ->orderByRaw("ts_rank(to_tsvector('portuguese', lc.content), plainto_tsquery('portuguese', ?)) DESC", [$query])
             ->limit($limit)
-            ->get(['ld.title as title', 'ld.category as category', 'lc.content as content'])
+            ->get(['ld.id as id', 'ld.title as title', 'ld.category as category', 'lc.content as content'])
             ->map(fn ($r) => [
+                'id' => (string) $r->id,
                 'title' => (string) $r->title,
                 'category' => (string) $r->category,
                 'content' => (string) $r->content,
@@ -51,8 +52,9 @@ class LegalDocumentSearch
             ->where('ld.is_active', true)
             ->where('lc.content', 'like', '%'.$query.'%')
             ->limit($limit)
-            ->get(['ld.title as title', 'ld.category as category', 'lc.content as content'])
+            ->get(['ld.id as id', 'ld.title as title', 'ld.category as category', 'lc.content as content'])
             ->map(fn ($r) => [
+                'id' => (string) $r->id,
                 'title' => (string) $r->title,
                 'category' => (string) $r->category,
                 'content' => (string) $r->content,

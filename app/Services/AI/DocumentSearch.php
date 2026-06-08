@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\DB;
 class DocumentSearch
 {
     /**
-     * @return array<int,array{title:string,content:string}>
+     * @return array<int,array{id:string,title:string,category:string,content:string}>
      */
-    public function search(string $tenantId, string $query, int $limit = 5): array
+    public function search(string $tenantId, string $query, int $limit = 5, ?string $condominiumId = null): array
     {
         $query = trim($query);
         if ($query === '') {
@@ -22,41 +22,53 @@ class DocumentSearch
         }
 
         try {
-            return $this->fullText($tenantId, $query, $limit);
+            return $this->fullText($tenantId, $query, $limit, $condominiumId);
         } catch (\Throwable) {
-            return $this->ilike($tenantId, $query, $limit);
+            return $this->ilike($tenantId, $query, $limit, $condominiumId);
         }
     }
 
-    private function fullText(string $tenantId, string $query, int $limit): array
+    private function fullText(string $tenantId, string $query, int $limit, ?string $condominiumId): array
     {
         return DocumentChunk::query()
             ->from('document_chunks as dc')
             ->join('documents as d', 'd.id', '=', 'dc.document_id')
             ->where('dc.tenant_id', $tenantId)
+            ->when($condominiumId, fn ($q, $id) => $q->where('d.condominium_id', $id))
             ->whereNull('d.deleted_at')
             ->where('d.is_current', true)
             ->where('d.is_ai_searchable', true)
             ->whereRaw("to_tsvector('portuguese', dc.content) @@ plainto_tsquery('portuguese', ?)", [$query])
             ->orderByRaw("ts_rank(to_tsvector('portuguese', dc.content), plainto_tsquery('portuguese', ?)) DESC", [$query])
             ->limit($limit)
-            ->get(['d.title as title', 'dc.content as content'])
-            ->map(fn ($r) => ['title' => (string) $r->title, 'content' => (string) $r->content])
+            ->get(['d.id as id', 'd.title as title', 'd.category as category', 'dc.content as content'])
+            ->map(fn ($r) => [
+                'id' => (string) $r->id,
+                'title' => (string) $r->title,
+                'category' => (string) $r->category,
+                'content' => (string) $r->content,
+            ])
             ->all();
     }
 
-    private function ilike(string $tenantId, string $query, int $limit): array
+    private function ilike(string $tenantId, string $query, int $limit, ?string $condominiumId): array
     {
         return DB::table('document_chunks as dc')
             ->join('documents as d', 'd.id', '=', 'dc.document_id')
             ->where('dc.tenant_id', $tenantId)
+            ->when($condominiumId, fn ($q, $id) => $q->where('d.condominium_id', $id))
             ->whereNull('d.deleted_at')
             ->where('d.is_current', true)
             ->where('d.is_ai_searchable', true)
             ->where('dc.content', 'like', '%'.$query.'%')
             ->limit($limit)
-            ->get(['d.title as title', 'dc.content as content'])
-            ->map(fn ($r) => ['title' => (string) $r->title, 'content' => (string) $r->content])
+            ->get(['d.id as id', 'd.title as title', 'd.category as category', 'dc.content as content'])
+            ->map(fn ($r) => [
+                'id' => (string) $r->id,
+                'title' => (string) $r->title,
+                'category' => (string) $r->category,
+                'content' => (string) $r->content,
+            ])
             ->all();
     }
 }

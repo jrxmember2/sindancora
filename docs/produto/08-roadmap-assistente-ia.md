@@ -74,11 +74,14 @@ Status: implementado.
 
 ### 6. Fluxo do assistente para o sindico
 
+Status: implementado.
+
 - Se o usuario tiver um condominio, selecionar automaticamente.
 - Se tiver mais de um, exibir dropdown obrigatorio de condominio.
 - Escopar conversas, busca documental e respostas ao condominio selecionado.
-- Responder citando as fontes consultadas quando houver documentos relevantes.
-- Recusar assuntos fora do dominio condominial.
+- Responder citando as fontes consultadas quando houver documentos/base legal relevantes.
+- Reforcar que a base legal e apoio informativo e que temas juridicos sensiveis exigem apoio
+  profissional.
 
 ## Ordem de implementacao
 
