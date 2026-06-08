@@ -3,8 +3,11 @@
 namespace App\Services\AI;
 
 use App\Models\AiConversation;
+use App\Models\AiLegalDocument;
 use App\Models\Announcement;
 use App\Models\Charge;
+use App\Models\Condominium;
+use App\Models\Document;
 use App\Models\Occurrence;
 use App\Models\Reservation;
 use App\Models\Tenant;
@@ -29,7 +32,7 @@ class AssistantService
     }
 
     /** Responde a uma mensagem na conversa, com histórico + contexto do tenant + RAG. */
-    public function chat(AiConversation $conversation, Tenant $tenant, string $userText): string
+    public function chat(AiConversation $conversation, Tenant $tenant, string $userText, ?Condominium $condominium = null): string
     {
         // Histórico (texto puro armazenado), em ordem cronológica.
         $messages = $conversation->messages()
@@ -38,22 +41,27 @@ class AssistantService
             ->all();
 
         // A última mensagem recebe o contexto (mantém o prefixo de sistema cacheável estável).
-        $context = $this->buildContext($tenant, $userText);
-        $messages[] = ['role' => 'user', 'content' => $userText."\n\n".$context];
+        $context = $this->buildContext($tenant, $userText, $condominium);
+        $messages[] = ['role' => 'user', 'content' => $userText."\n\n".$context['content']];
 
         $answer = $this->ai->complete($this->systemPrompt($tenant), $messages, 2048);
 
         // Persiste a mensagem do usuário (sem o contexto) e a resposta.
         $conversation->messages()->create(['role' => 'user', 'content' => $userText]);
-        $conversation->messages()->create(['role' => 'assistant', 'content' => $answer]);
+        $conversation->messages()->create([
+            'role' => 'assistant',
+            'content' => $answer,
+            'sources' => $context['sources'],
+        ]);
+        $conversation->touch();
 
         return $answer;
     }
 
     /** Diagnóstico da inadimplência atual com sugestões de ação. */
-    public function analyzeDelinquency(Tenant $tenant): string
+    public function analyzeDelinquency(Tenant $tenant, ?Condominium $condominium = null): string
     {
-        $data = $this->delinquencyContext($tenant);
+        $data = $this->delinquencyContext($tenant, $condominium);
 
         $system = $this->systemPrompt($tenant)."\n\nVocê está produzindo um diagnóstico de inadimplência. "
             ."Seja prático e direto: resuma a situação, aponte prioridades e sugira ações concretas (régua de cobrança, "
@@ -66,7 +74,7 @@ class AssistantService
     }
 
     /** Gera um rascunho de comunicado (título + corpo) a partir de um pedido em linguagem natural. */
-    public function draftAnnouncement(Tenant $tenant, string $prompt): array
+    public function draftAnnouncement(Tenant $tenant, string $prompt, ?Condominium $condominium = null): array
     {
         $system = $this->systemPrompt($tenant)."\n\nVocê redige comunicados de condomínio claros e cordiais. "
             ."Responda ESTRITAMENTE em JSON válido no formato {\"title\": \"...\", \"body\": \"...\"}, sem texto fora do JSON. "
@@ -74,7 +82,7 @@ class AssistantService
 
         $raw = $this->ai->complete($system, [[
             'role' => 'user',
-            'content' => "Escreva um comunicado sobre: {$prompt}",
+            'content' => trim(($condominium ? "Condominio selecionado: {$condominium->name}\n\n" : '')."Escreva um comunicado sobre: {$prompt}"),
         ]], 2048);
 
         $json = $this->extractJson($raw);
@@ -88,6 +96,8 @@ class AssistantService
     /** Sugere uma resposta cordial para uma ocorrência, com base nos dados dela + RAG. */
     public function draftOccurrenceReply(Tenant $tenant, Occurrence $occurrence): string
     {
+        $occurrence->loadMissing('condominium:id,name');
+
         $system = $this->systemPrompt($tenant)."\n\nVocê redige a resposta do síndico/administração a uma "
             ."ocorrência/chamado de morador. Seja claro, cordial e objetivo: reconheça o problema, informe o "
             ."encaminhamento/prazo quando fizer sentido e mantenha um tom profissional. Escreva apenas o texto da "
@@ -112,11 +122,11 @@ class AssistantService
             $details .= "\nÚltimos acompanhamentos:\n- {$lastComments}";
         }
 
-        $context = $this->buildContext($tenant, $occurrence->title.' '.$occurrence->description);
+        $context = $this->buildContext($tenant, $occurrence->title.' '.$occurrence->description, $occurrence->condominium);
 
         return $this->ai->complete($system, [[
             'role' => 'user',
-            'content' => "Escreva uma resposta para esta ocorrência.\n\n{$details}\n\n{$context}",
+            'content' => "Escreva uma resposta para esta ocorrência.\n\n{$details}\n\n{$context['content']}",
         ]], 1024);
     }
 
@@ -129,46 +139,92 @@ class AssistantService
             ."Ajuda o síndico/administrador com dúvidas sobre o condomínio, finanças, ocorrências, reservas e documentos. "
             ."Responda em português do Brasil, de forma objetiva e profissional. Use SOMENTE as informações do contexto "
             ."fornecido em cada pergunta (dados do condomínio e trechos de documentos); se algo não estiver no contexto, "
-            ."diga que não tem essa informação em vez de inventar. Responda diretamente, sem expor seu raciocínio.";
+            ."diga que não tem essa informação em vez de inventar. Quando usar trechos de documentos ou base legal, cite "
+            ."os marcadores das fontes fornecidas, como [D1] ou [L1]. A base legal global é apoio informativo e não "
+            ."substitui análise jurídica profissional. Responda diretamente, sem expor seu raciocínio.";
     }
 
-    private function buildContext(Tenant $tenant, string $query): string
+    /**
+     * @return array{content:string,sources:array<int,array{label:string,type:string,id:string,title:string,category:string,scope:string}>}
+     */
+    private function buildContext(Tenant $tenant, string $query, ?Condominium $condominium = null): array
     {
-        $parts = ["<contexto_do_condominio>", $this->structuredSummary($tenant)];
+        $sources = [];
+        $parts = [
+            '<contexto_do_condominio>',
+            '<regras_de_resposta>',
+            'Escopo da conversa: '.($condominium ? "somente o condominio {$condominium->name}." : 'tenant inteiro.'),
+            'Ao usar documento do condominio, cite o marcador [D#]. Ao usar base legal global, cite o marcador [L#].',
+            'Se o contexto nao trouxer a informacao solicitada, diga isso claramente.',
+            '</regras_de_resposta>',
+            $this->structuredSummary($tenant, $condominium),
+        ];
 
-        $docs = $this->search->search($tenant->id, $query, 5);
+        $docs = $this->search->search($tenant->id, $query, 5, $condominium?->id);
         if ($docs !== []) {
             $parts[] = "\n<trechos_de_documentos>";
-            foreach ($docs as $d) {
-                $parts[] = "[{$d['title']}] ".trim($d['content']);
+            foreach ($docs as $index => $d) {
+                $label = 'D'.($index + 1);
+                $category = Document::CATEGORIES[$d['category']] ?? $d['category'];
+                $parts[] = "[{$label}] Documento: {$d['title']} ({$category})\n".trim($d['content']);
+                $sources[] = [
+                    'label' => $label,
+                    'type' => 'document',
+                    'id' => $d['id'],
+                    'title' => $d['title'],
+                    'category' => $category,
+                    'scope' => $condominium?->name ?? 'Tenant',
+                ];
             }
-            $parts[] = "</trechos_de_documentos>";
+            $parts[] = '</trechos_de_documentos>';
         }
 
         $legalDocs = $this->legalSearch->search($query, 5);
         if ($legalDocs !== []) {
             $parts[] = "\n<base_legal_global>";
-            foreach ($legalDocs as $d) {
-                $parts[] = "[{$d['title']} / {$d['category']}] ".trim($d['content']);
+            foreach ($legalDocs as $index => $d) {
+                $label = 'L'.($index + 1);
+                $category = AiLegalDocument::CATEGORIES[$d['category']] ?? $d['category'];
+                $parts[] = "[{$label}] Base legal: {$d['title']} ({$category})\n".trim($d['content']);
+                $sources[] = [
+                    'label' => $label,
+                    'type' => 'legal',
+                    'id' => $d['id'],
+                    'title' => $d['title'],
+                    'category' => $category,
+                    'scope' => 'Base legal global',
+                ];
             }
-            $parts[] = "</base_legal_global>";
+            $parts[] = '</base_legal_global>';
         }
 
-        $parts[] = "</contexto_do_condominio>";
+        $parts[] = '</contexto_do_condominio>';
 
-        return implode("\n", $parts);
+        return [
+            'content' => implode("\n", $parts),
+            'sources' => $sources,
+        ];
     }
 
-    private function structuredSummary(Tenant $tenant): string
+    private function structuredSummary(Tenant $tenant, ?Condominium $condominium = null): string
     {
-        $overdue = Charge::where('tenant_id', $tenant->id)->overdue();
+        $overdue = Charge::where('tenant_id', $tenant->id)
+            ->when($condominium, fn ($q, $c) => $q->where('condominium_id', $c->id))
+            ->overdue();
         $overdueCount = (clone $overdue)->count();
         $overdueTotal = (clone $overdue)->sum('amount');
 
-        $openOccurrences = Occurrence::where('tenant_id', $tenant->id)->whereIn('status', ['open', 'in_progress'])->count();
-        $pendingReservations = Reservation::where('tenant_id', $tenant->id)->where('status', 'pending')->count();
+        $openOccurrences = Occurrence::where('tenant_id', $tenant->id)
+            ->when($condominium, fn ($q, $c) => $q->where('condominium_id', $c->id))
+            ->whereIn('status', ['open', 'in_progress'])
+            ->count();
+        $pendingReservations = Reservation::where('tenant_id', $tenant->id)
+            ->when($condominium, fn ($q, $c) => $q->where('condominium_id', $c->id))
+            ->where('status', 'pending')
+            ->count();
 
         $recentComms = Announcement::where('tenant_id', $tenant->id)
+            ->when($condominium, fn ($q, $c) => $q->where('condominium_id', $c->id))
             ->where('status', 'published')
             ->latest('published_at')
             ->limit(5)
@@ -176,6 +232,7 @@ class AssistantService
             ->all();
 
         $lines = [
+            $condominium ? "Condominio selecionado: {$condominium->name}." : 'Condominio selecionado: tenant inteiro.',
             "Inadimplência: {$overdueCount} cobrança(s) vencida(s), total em aberto R$ ".number_format((float) $overdueTotal, 2, ',', '.').'.',
             "Ocorrências abertas/em andamento: {$openOccurrences}.",
             "Reservas pendentes de aprovação: {$pendingReservations}.",
@@ -187,9 +244,10 @@ class AssistantService
         return implode("\n", $lines);
     }
 
-    private function delinquencyContext(Tenant $tenant): string
+    private function delinquencyContext(Tenant $tenant, ?Condominium $condominium = null): string
     {
         $charges = Charge::where('tenant_id', $tenant->id)
+            ->when($condominium, fn ($q, $c) => $q->where('condominium_id', $c->id))
             ->overdue()
             ->with(['unit:id,number', 'person:id,name'])
             ->orderBy('due_date')
@@ -197,11 +255,14 @@ class AssistantService
             ->get();
 
         if ($charges->isEmpty()) {
-            return 'Não há cobranças vencidas no momento.';
+            return ($condominium ? "Condominio selecionado: {$condominium->name}.\n" : '').'Nao ha cobrancas vencidas no momento.';
         }
 
         $total = 0.0;
-        $lines = ['Cobranças vencidas (até 50):'];
+        $lines = [
+            $condominium ? "Condominio selecionado: {$condominium->name}." : 'Condominio selecionado: tenant inteiro.',
+            'Cobranças vencidas (até 50):',
+        ];
         foreach ($charges as $c) {
             $amount = $c->currentAmount();
             $total += $amount;
@@ -210,7 +271,7 @@ class AssistantService
             $due = $c->due_date?->format('d/m/Y');
             $lines[] = "- Unid. {$unit} ({$person}): {$c->description}, venceu {$due}, atualizado R$ ".number_format($amount, 2, ',', '.');
         }
-        array_splice($lines, 1, 0, 'Total atualizado em aberto: R$ '.number_format($total, 2, ',', '.').'.');
+        array_splice($lines, 2, 0, 'Total atualizado em aberto: R$ '.number_format($total, 2, ',', '.').'.');
 
         return implode("\n", $lines);
     }

@@ -38,8 +38,8 @@ admin nao exige alteracao nos fluxos consumidores.
 - O indexador e a busca consideram apenas documentos com `is_current = true` e
   `is_ai_searchable = true`.
 - Backfill: `php artisan documents:index` (`--tenant=`, `--force`).
-- `App\Services\AI\DocumentSearch::search(tenantId, query, limit)`: `plainto_tsquery` + `ts_rank`,
-  com fallback ILIKE fora do Postgres.
+- `App\Services\AI\DocumentSearch::search(tenantId, query, limit, condominiumId)`: `plainto_tsquery`
+  + `ts_rank`, com fallback ILIKE fora do Postgres e filtro opcional pelo condominio selecionado.
 
 ## Base legal global
 
@@ -55,17 +55,33 @@ admin nao exige alteracao nos fluxos consumidores.
 - `App\Services\AI\LegalDocumentSearch` consulta somente documentos ativos e combina os trechos com
   os documentos atuais/liberados do tenant no contexto do assistente.
 
+## Fluxo por condominio e fontes
+
+- Conversas em `ai_conversations` agora podem guardar `condominium_id`.
+- Se o usuario tem apenas um condominio acessivel, a tela seleciona automaticamente.
+- Se o usuario tem mais de um, o dropdown de condominio e obrigatorio antes de enviar mensagens ou
+  acoes rapidas.
+- Usuarios com papel escopado por `user_roles.condominium_id` so listam/abrem conversas desse escopo;
+  conversas antigas sem escopo so ficam acessiveis ao proprio usuario ou a perfis tenant-wide.
+- A busca documental do RAG consulta apenas documentos atuais/liberados do condominio selecionado.
+- A base legal global continua disponivel como apoio comum da plataforma.
+- Respostas que usam RAG salvam `ai_messages.sources` com marcadores como `[D1]` (documento do
+  condominio) e `[L1]` (base legal global), exibidos na tela do assistente.
+
 ## Servico do assistente
 
 `App\Services\AI\AssistantService`:
 
-- `chat(conversation, tenant, texto)`: historico + contexto estruturado do tenant + trechos RAG na
-  ultima mensagem; persiste apenas usuario/assistente, sem o contexto injetado.
-- `analyzeDelinquency(tenant)`: diagnostico com plano de acao a partir de cobrancas vencidas reais.
-- `draftAnnouncement(tenant, prompt)`: redige titulo e corpo em JSON, pronto para revisar/publicar.
+- `chat(conversation, tenant, texto, condominium)`: historico + contexto estruturado escopado +
+  trechos RAG na ultima mensagem; persiste apenas usuario/assistente, sem o contexto injetado, e
+  grava fontes na mensagem do assistente.
+- `analyzeDelinquency(tenant, condominium)`: diagnostico com plano de acao a partir de cobrancas
+  vencidas reais do condominio selecionado.
+- `draftAnnouncement(tenant, prompt, condominium)`: redige titulo e corpo em JSON, pronto para
+  revisar/publicar, mantendo o condominio selecionado no prompt.
 - `draftOccurrenceReply(tenant, occurrence)`: sugere resposta cordial a ocorrencia.
 
-Persistencia: `ai_conversations` + `ai_messages`.
+Persistencia: `ai_conversations` + `ai_messages` (`sources` JSON para citacoes consultadas).
 
 ## Painel
 
@@ -74,8 +90,8 @@ Persistencia: `ai_conversations` + `ai_messages`.
   reindexacao e remocao de documentos legais.
 - Superadmin: no perfil do tenant (`Admin > Tenants > detalhe`), define override de
   `ai_interactions_monthly` por tenant ou volta a herdar o limite do plano.
-- Tenant: `/assistente`, lista de conversas, chat, acoes rapidas de inadimplencia e rascunho de
-  comunicado. Tudo escopado ao tenant.
+- Tenant: `/assistente`, lista de conversas, dropdown de condominio, chat, fontes consultadas,
+  acoes rapidas de inadimplencia e rascunho de comunicado. Tudo escopado ao condominio selecionado.
 
 ## Limites mensais
 
@@ -92,10 +108,12 @@ O recurso limitavel e `ai_interactions_monthly`.
 
 ## Deploy
 
-Rodar migrations (`ai_settings`, `document_chunks`, `ai_conversations`, `ai_legal_documents`,
-`ai_legal_document_chunks`) e manter worker de fila ativo para indexacao. A configuracao normal da IA
-deve ser feita em `Admin > IA`; variaveis `.env` sao fallback operacional.
+Rodar migrations (`ai_settings`, `document_chunks`, `ai_conversations`, `ai_messages.sources`,
+`ai_legal_documents`, `ai_legal_document_chunks`) e manter worker de fila ativo para indexacao. A
+configuracao normal da IA deve ser feita em `Admin > IA`; variaveis `.env` sao fallback operacional.
 
-## Fora de escopo desta etapa
+## Guardrails
 
-Dropdown de condominio, citacoes de fontes e guardrails finais de parecer juridico.
+O prompt do assistente exige uso apenas do contexto fornecido, citacao dos marcadores `[D#]`/`[L#]`
+quando houver documentos/base legal e aviso claro quando a informacao nao estiver disponivel. A base
+legal global e apoio informativo e nao substitui analise juridica profissional.

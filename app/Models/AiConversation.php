@@ -12,7 +12,7 @@ class AiConversation extends Model
 {
     use BelongsToTenant, HasUuidKey;
 
-    protected $fillable = ['tenant_id', 'user_id', 'title'];
+    protected $fillable = ['tenant_id', 'user_id', 'condominium_id', 'title'];
 
     public function messages(): HasMany
     {
@@ -22,5 +22,10 @@ class AiConversation extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function condominium(): BelongsTo
+    {
+        return $this->belongsTo(Condominium::class);
     }
 }

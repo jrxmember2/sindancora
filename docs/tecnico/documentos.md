@@ -81,10 +81,11 @@ O cadastro/edicao no painel exibe os controles **Atual** e **Consultar pela IA**
 tem filtros por atualidade e uso pela IA.
 
 `DocumentIndexer::index()` apaga os chunks quando o documento nao estiver atual ou liberado para IA.
-`DocumentSearch` filtra por `documents.is_current = true` e `documents.is_ai_searchable = true`, entao
-chunks antigos de documentos desativados nao entram no RAG. Ao editar `condominium_id`, `is_current`
-ou `is_ai_searchable`, o controller atualiza o `StorageObject`, sincroniza `document_chunks.condominium_id`
-quando necessario e reindexa ou remove os chunks.
+`DocumentSearch` filtra por `documents.is_current = true`, `documents.is_ai_searchable = true` e, no
+assistente, pelo `condominium_id` selecionado. Assim, chunks antigos de documentos desativados ou de
+outro condominio nao entram no RAG. Ao editar `condominium_id`, `is_current` ou `is_ai_searchable`, o
+controller atualiza o `StorageObject`, sincroniza `document_chunks.condominium_id` quando necessario e
+reindexa ou remove os chunks.
 
 ## Deploy
 

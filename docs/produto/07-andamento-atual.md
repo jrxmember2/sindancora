@@ -23,7 +23,7 @@
 
 ## Última entrega implementada
 
-### Assistente IA condominial - blocos 1 a 5
+### Assistente IA condominial - blocos 1 a 6
 
 Implementado em 08/06/2026. O roadmap detalhado esta em
 `docs/produto/08-roadmap-assistente-ia.md`.
@@ -72,12 +72,27 @@ O que foi entregue:
     `ai-legal-documents:index` foram adicionados.
   - `AssistantService` combina documentos atuais/liberados do tenant com a base legal global ativa.
 
+- **Bloco 6 - Fluxo final do assistente para o sindico**
+  - Conversas de IA ganharam `condominium_id` e mensagens ganharam `sources` JSON.
+  - Tela `/assistente` seleciona automaticamente quando ha um unico condominio acessivel e exige
+    dropdown quando ha mais de um.
+  - Usuarios com papeis escopados por condominio so listam/abrem conversas do seu escopo.
+  - Busca documental do RAG passou a filtrar documentos atuais/liberados pelo condominio selecionado.
+  - O contexto estruturado tambem filtra inadimplencia, ocorrencias, reservas e comunicados pelo
+    condominio selecionado.
+  - Respostas do chat salvam e exibem fontes consultadas com marcadores `[D#]` e `[L#]`.
+  - Guardrails foram reforcados para nao inventar informacao, citar fontes e tratar base legal como
+    apoio informativo, nao parecer juridico definitivo.
+
 Arquivos-chave:
 
 - `database/migrations/2026_06_24_000001_create_ai_settings_table.php`
 - `database/migrations/2026_06_24_000002_add_ai_interactions_monthly_limits.php`
 - `database/migrations/2026_06_25_000001_add_ai_controls_to_documents_table.php`
 - `database/migrations/2026_06_25_000002_create_ai_legal_documents_tables.php`
+- `database/migrations/2026_06_25_000003_scope_ai_conversations_by_condominium.php`
+- `app/Models/AiConversation.php`
+- `app/Models/AiMessage.php`
 - `app/Models/AiSetting.php`
 - `app/Models/AiLegalDocument.php`
 - `app/Models/AiLegalDocumentChunk.php`
@@ -111,8 +126,10 @@ Arquivos-chave:
 Validacoes feitas:
 
 - `php -l` nos PHP alterados/criados.
+- `php artisan route:list --name=assistant --except-vendor` passou.
 - `npm run build` passou.
 - `git diff --check` passou.
+- `php artisan test` nao roda porque `phpunit.xml.dist` nao existe no repo.
 
 Observacoes para retomada:
 
@@ -124,12 +141,14 @@ Observacoes para retomada:
 
 Proximo bloco recomendado:
 
-- **Bloco 6 - Fluxo final do assistente para o sindico**:
-  - selecionar automaticamente o condominio quando o usuario tiver apenas um;
-  - exibir dropdown obrigatorio quando o usuario tiver mais de um condominio;
-  - escopar conversa, busca documental e resposta ao condominio selecionado;
-  - responder com fontes consultadas quando houver documentos/base legal relevantes;
-  - reforcar bloqueio para assuntos fora do dominio condominial e parecer juridico sensivel.
+- **C12. Obras**:
+  - cadastro de obra/reforma por condominio;
+  - vinculo opcional com orcamento/proposta aprovada;
+  - orcamento previsto vs custo final;
+  - cronograma/status;
+  - fornecedores envolvidos;
+  - anexos e historico;
+  - vinculo com contas a pagar.
 
 ### Correções de plano + identidade do tenant/condomínio
 
