@@ -11,10 +11,18 @@ URL base, status ativo e chave global em `ai_settings`; a chave usa cast `encryp
 exposta ao tenant.
 
 O campo de modelo usa `App\Services\AI\AiModelCatalog` para exibir um dropdown por provedor com
-modelos de texto/chat compativeis com os clientes atuais do Assistente. Modelos de imagem, audio,
-video, embeddings ou realtime ficam fora desse catalogo porque exigem clientes e endpoints proprios.
-O admin ainda pode selecionar "modelo customizado" para proxy compativel, alias privado ou modelo
-novo ainda nao catalogado.
+modelos de texto/chat compativeis com os clientes atuais do Assistente. A lista e filtrada pelo
+provedor selecionado e validada no backend: OpenAI mostra apenas modelos OpenAI, Claude/Anthropic
+apenas modelos Claude e Gemini apenas modelos Gemini. Modelos de imagem, audio, video, embeddings,
+moderacao, robotics, deep research, live/realtime ou outros endpoints especializados ficam fora
+desse dropdown porque nao funcionam no cliente de conversa usado pelo Assistente e exigem
+clientes/endpoints proprios.
+
+Fontes revisadas para o catalogo em 2026-06-08:
+
+- OpenAI: `developers.openai.com/api/docs/models` e `developers.openai.com/api/docs/models/all`.
+- Anthropic/Claude: `platform.claude.com/docs/en/about-claude/models/overview` e Models API.
+- Gemini: `ai.google.dev/gemini-api/docs/models`.
 
 Fallbacks tecnicos por ambiente continuam disponiveis:
 
@@ -30,7 +38,8 @@ Sem configuracao ativa, o assistente aparece desabilitado sem quebrar. Permissao
 - `App\Services\AI\AiProviderManager`: escolhe o cliente a partir de `AiSettingsManager`.
 - `ClaudeClient`: usa Anthropic Messages API.
 - `OpenAiClient`: usa OpenAI Responses API (`/responses`) e adiciona `reasoning.effort` baixo para
-  modelos GPT-5/o-series quando aplicavel; modelos GPT-5 Pro usam `medium`, pois nao aceitam `low`.
+  modelos GPT-5/o-series quando aplicavel; modelos GPT-5 Pro usam o esforco permitido por cada
+  modelo (`high` em `gpt-5-pro`, `medium` nos Pro mais novos).
 - `GeminiClient`: usa Gemini `generateContent`.
 
 `AssistantService` e `AssemblyService` dependem de `AiProviderManager`, entao a troca de provedor no
@@ -93,7 +102,7 @@ Persistencia: `ai_conversations` + `ai_messages` (`sources` JSON para citacoes c
 ## Painel
 
 - Superadmin: `/admin/ia`, configuracao global de provedor/modelo/chave/teste.
-- Superadmin: `/admin/ia`, dropdown de modelos por provedor e opcao de modelo customizado.
+- Superadmin: `/admin/ia`, dropdown de modelos filtrado e validado por provedor.
 - Superadmin: `/admin/ia`, base legal global com upload, ativacao/desativacao, download,
   reindexacao e remocao de documentos legais.
 - Superadmin: no perfil do tenant (`Admin > Tenants > detalhe`), define override de

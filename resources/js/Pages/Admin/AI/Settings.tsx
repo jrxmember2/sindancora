@@ -1,7 +1,7 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { CheckCircle2, Download, FileText, Plug, RefreshCw, Sparkles, Trash2, UploadCloud, XCircle } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { PageProps } from '@/types';
 
 type Provider = 'anthropic' | 'openai' | 'gemini';
@@ -59,11 +59,25 @@ function formatBytes(bytes: number | null): string {
 
 export default function AiSettings({ setting, configured, providerOptions, modelOptions, defaults, legalDocuments, legalCategories }: Props) {
     const { flash } = usePage<PageProps>().props;
-    const initialProviderModels = modelOptions[setting.provider] ?? [];
+
+    const availableModelForProvider = (provider: Provider, preferred?: string | null) => {
+        const options = modelOptions[provider] ?? [];
+        const defaultModel = defaults[provider]?.model;
+
+        if (preferred && options.some((option) => option.value === preferred)) {
+            return preferred;
+        }
+
+        if (defaultModel && options.some((option) => option.value === defaultModel)) {
+            return defaultModel;
+        }
+
+        return options.find((option) => option.recommended)?.value ?? options[0]?.value ?? '';
+    };
 
     const form = useForm({
         provider: setting.provider,
-        model: setting.model ?? '',
+        model: availableModelForProvider(setting.provider, setting.model),
         base_url: setting.base_url ?? '',
         api_key: '',
         enabled: setting.enabled,
@@ -78,24 +92,16 @@ export default function AiSettings({ setting, configured, providerOptions, model
     });
 
     const field = 'w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500';
-    const [customModel, setCustomModel] = useState(
-        Boolean(setting.model) && !initialProviderModels.some((option) => option.value === setting.model),
-    );
     const selectedProviderModels = modelOptions[form.data.provider] ?? [];
     const selectedModel = useMemo(
         () => selectedProviderModels.find((option) => option.value === form.data.model),
         [form.data.model, selectedProviderModels],
     );
-    const modelSelectValue = customModel ? '__custom__' : selectedModel?.value ?? '__custom__';
+    const modelSelectValue = selectedModel?.value ?? '';
 
     const changeProvider = (provider: Provider) => {
-        const options = modelOptions[provider] ?? [];
-        const preferredModel = defaults[provider]?.model
-            ?? options.find((option) => option.recommended)?.value
-            ?? options[0]?.value
-            ?? '';
+        const preferredModel = availableModelForProvider(provider, defaults[provider]?.model);
 
-        setCustomModel(false);
         form.setData({
             ...form.data,
             provider,
@@ -105,13 +111,6 @@ export default function AiSettings({ setting, configured, providerOptions, model
     };
 
     const changeModel = (value: string) => {
-        if (value === '__custom__') {
-            setCustomModel(true);
-            form.setData('model', selectedModel?.value ? '' : form.data.model);
-            return;
-        }
-
-        setCustomModel(false);
         form.setData('model', value);
     };
 
@@ -182,27 +181,23 @@ export default function AiSettings({ setting, configured, providerOptions, model
 
                         <div>
                             <label className="mb-1 block text-sm font-medium text-gray-700">Modelo</label>
-                            <select value={modelSelectValue} onChange={(e) => changeModel(e.target.value)} className={field}>
+                            <select
+                                value={modelSelectValue}
+                                onChange={(e) => changeModel(e.target.value)}
+                                className={field}
+                                disabled={selectedProviderModels.length === 0}
+                            >
+                                <option value="" disabled>
+                                    {selectedProviderModels.length === 0 ? 'Nenhum modelo disponivel' : 'Selecione um modelo'}
+                                </option>
                                 {selectedProviderModels.map((option) => (
                                     <option key={option.value} value={option.value}>
                                         {option.label}{option.recommended ? ' (recomendado)' : ''}
                                     </option>
                                 ))}
-                                <option value="__custom__">Modelo customizado...</option>
                             </select>
-                            {customModel && (
-                                <input
-                                    type="text"
-                                    value={form.data.model}
-                                    onChange={(e) => form.setData('model', e.target.value)}
-                                    placeholder="Digite o ID exato do modelo"
-                                    className={`${field} mt-2`}
-                                />
-                            )}
                             <p className="mt-1 text-xs text-gray-400">
-                                {customModel
-                                    ? 'Use esta opcao para proxy, alias privado ou modelo novo ainda fora do catalogo.'
-                                    : selectedModel?.description ?? 'Modelos de texto/chat compativeis com o Assistente.'}
+                                {selectedModel?.description ?? 'Modelos filtrados pelo provedor selecionado e compativeis com o Assistente.'}
                             </p>
                             {form.errors.model && <p className="mt-1 text-xs text-red-600">{form.errors.model}</p>}
                         </div>

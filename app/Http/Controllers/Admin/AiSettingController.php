@@ -57,13 +57,18 @@ class AiSettingController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $providers = array_keys(AiSetting::providerOptions());
+        $provider = (string) $request->input('provider');
+        $modelIds = array_column($this->models->options()[$provider] ?? [], 'value');
 
         $data = $request->validate([
             'provider' => ['required', 'string', Rule::in($providers)],
-            'model' => 'nullable|string|max:120',
+            'model' => ['required', 'string', 'max:120', Rule::in($modelIds)],
             'base_url' => 'nullable|url|max:255',
             'api_key' => 'nullable|string|max:4000',
             'enabled' => 'boolean',
+        ], [
+            'model.required' => 'Selecione um modelo disponivel para o provedor escolhido.',
+            'model.in' => 'Selecione um modelo disponivel para o provedor escolhido.',
         ]);
 
         $setting = AiSetting::current();
