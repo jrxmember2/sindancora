@@ -1,7 +1,7 @@
 import AppLayout from '@/Layouts/AppLayout';
 import CondominiumLogo from '@/Components/CondominiumLogo';
 import { Head, Link, router } from '@inertiajs/react';
-import { Building2, Plus, Search, MapPin, Users, Grid3X3 } from 'lucide-react';
+import { Building2, Plus, Search, MapPin, Users, Grid3X3, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 interface Manager { person: { name: string }; role: string }
@@ -25,6 +25,11 @@ export default function CondominiumsIndex({ condominiums, filters, usage }: Prop
     const canCreate = usage.unlimited || usage.current < usage.limit;
 
     const applySearch = () => router.get(route('condominiums.index'), { search }, { preserveState: true });
+    const destroy = (condo: Condominium) => {
+        if (confirm(`Excluir o condomínio "${condo.name}"?`)) {
+            router.delete(route('condominiums.destroy', condo.id));
+        }
+    };
 
     return (
         <AppLayout>
@@ -81,8 +86,8 @@ export default function CondominiumsIndex({ condominiums, filters, usage }: Prop
                 ) : (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {condominiums.data.map(condo => (
-                            <Link key={condo.id} href={route('condominiums.show', condo.id)} className="block rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
-                                <div className="p-5">
+                            <div key={condo.id} className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:border-blue-200 hover:shadow-md">
+                                <Link href={route('condominiums.show', condo.id)} className="block p-5">
                                     <div className="flex items-start justify-between gap-2">
                                         <CondominiumLogo src={condo.logo_url} alt={condo.name} />
                                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${condo.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
@@ -108,8 +113,17 @@ export default function CondominiumsIndex({ condominiums, filters, usage }: Prop
                                             </p>
                                         </div>
                                     )}
+                                </Link>
+                                <div className="border-t border-gray-100 px-5 py-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => destroy(condo)}
+                                        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
+                                    >
+                                        <Trash2 className="h-3.5 w-3.5" /> Excluir
+                                    </button>
                                 </div>
-                            </Link>
+                            </div>
                         ))}
                     </div>
                 )}

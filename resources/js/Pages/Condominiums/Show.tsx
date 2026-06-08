@@ -106,6 +106,9 @@ export default function CondominiumShow({ condominium, unitStats, persons, manag
     const destroyBlock = (blockId: string) => {
         if (confirm('Excluir este bloco?')) router.delete(route('condominiums.blocks.destroy', [condominium.id, blockId]));
     };
+    const destroyCondominium = () => {
+        if (confirm(`Excluir o condomínio "${condominium.name}"?`)) router.delete(route('condominiums.destroy', condominium.id));
+    };
     const destroyManager = (managerId: string) => {
         if (confirm('Encerrar mandato deste gestor?')) router.delete(route('condominiums.managers.destroy', [condominium.id, managerId]));
     };
@@ -119,7 +122,7 @@ export default function CondominiumShow({ condominium, unitStats, persons, manag
 
             <div className="space-y-6">
                 {/* Header */}
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <Link href={route('condominiums.index')} className="text-sm text-gray-500 hover:text-gray-700">← Condomínios</Link>
                         <div className="mt-2 flex items-center gap-4">
@@ -140,9 +143,14 @@ export default function CondominiumShow({ condominium, unitStats, persons, manag
                             </div>
                         </div>
                     </div>
-                    <Link href={route('condominiums.edit', condominium.id)} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                        <Pencil className="h-4 w-4" /> Editar
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        <Link href={route('condominiums.edit', condominium.id)} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                            <Pencil className="h-4 w-4" /> Editar
+                        </Link>
+                        <button onClick={destroyCondominium} className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+                            <Trash2 className="h-4 w-4" /> Excluir
+                        </button>
+                    </div>
                 </div>
 
                 {/* Info + stats */}
@@ -194,8 +202,8 @@ export default function CondominiumShow({ condominium, unitStats, persons, manag
                                                 {block.units_count} unidades{block.floors ? ` · ${block.floors} andares` : ''}
                                             </p>
                                         </div>
-                                        <button onClick={() => destroyBlock(block.id)} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors">
-                                            <Trash2 className="h-4 w-4" />
+                                        <button onClick={() => destroyBlock(block.id)} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">
+                                            <Trash2 className="h-3.5 w-3.5" /> Excluir
                                         </button>
                                     </div>
                                 ))}

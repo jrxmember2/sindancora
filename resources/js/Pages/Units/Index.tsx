@@ -112,8 +112,8 @@ export default function UnitsIndex({ condominium, units, blocks, typeLabels, sta
                                                 <Link href={route('condominiums.units.edit', [condominium.id, unit.id])} className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
                                                     <Pencil className="h-4 w-4" />
                                                 </Link>
-                                                <button onClick={() => destroy(unit.id, unit.number)} className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors">
-                                                    <Trash2 className="h-4 w-4" />
+                                                <button onClick={() => destroy(unit.id, unit.number)} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">
+                                                    <Trash2 className="h-3.5 w-3.5" /> Excluir
                                                 </button>
                                             </div>
                                         </td>

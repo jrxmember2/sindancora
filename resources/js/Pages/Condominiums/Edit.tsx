@@ -1,7 +1,8 @@
 import AppLayout from '@/Layouts/AppLayout';
 import CondominiumLogo from '@/Components/CondominiumLogo';
 import { isValidCnpj, maskCnpj, maskPhone } from '@/lib/masks';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Condominium {
@@ -75,13 +76,24 @@ export default function CondominiumEdit({ condominium }: Props) {
         if (address) setData(d => ({ ...d, street: address.logradouro, neighborhood: address.bairro, city: address.localidade, state: address.uf }));
     };
 
+    const destroy = () => {
+        if (confirm(`Excluir o condomínio "${condominium.name}"?`)) {
+            router.delete(route('condominiums.destroy', condominium.id));
+        }
+    };
+
     return (
         <AppLayout>
             <Head title={`Editar — ${condominium.name}`} />
             <div className="mx-auto max-w-2xl space-y-6">
-                <div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
                     <Link href={route('condominiums.show', condominium.id)} className="text-sm text-gray-500 hover:text-gray-700">← {condominium.name}</Link>
                     <h1 className="mt-2 text-2xl font-bold text-gray-900">Editar Condomínio</h1>
+                    </div>
+                    <button onClick={destroy} className="inline-flex w-fit items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+                        <Trash2 className="h-4 w-4" /> Excluir
+                    </button>
                 </div>
 
                 <div className="rounded-xl bg-white border border-gray-100 shadow-sm p-6 space-y-5">
