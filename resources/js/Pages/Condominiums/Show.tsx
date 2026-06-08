@@ -1,4 +1,5 @@
 import AppLayout from '@/Layouts/AppLayout';
+import CondominiumLogo from '@/Components/CondominiumLogo';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Building2, Grid3X3, Users, Plus, Pencil, Trash2, X, MapPin, Phone, Mail } from 'lucide-react';
 import { useState } from 'react';
@@ -10,7 +11,7 @@ interface Condominium {
     id: string; name: string; cnpj: string | null; email: string | null; phone: string | null;
     street: string | null; number: string | null; complement: string | null;
     neighborhood: string | null; city: string | null; state: string | null; zip_code: string | null;
-    status: string; blocks: Block[]; active_managers: Manager[];
+    status: string; logo_url: string | null; blocks: Block[]; active_managers: Manager[];
 }
 interface Props {
     condominium: Condominium;
@@ -121,13 +122,23 @@ export default function CondominiumShow({ condominium, unitStats, persons, manag
                 <div className="flex items-start justify-between">
                     <div>
                         <Link href={route('condominiums.index')} className="text-sm text-gray-500 hover:text-gray-700">← Condomínios</Link>
-                        <h1 className="mt-1 text-2xl font-bold text-gray-900">{condominium.name}</h1>
-                        {condominium.city && (
-                            <p className="mt-1 flex items-center gap-1 text-sm text-gray-500">
-                                <MapPin className="h-3.5 w-3.5" />
-                                {[condominium.city, condominium.state].filter(Boolean).join(' – ')}
-                            </p>
-                        )}
+                        <div className="mt-2 flex items-center gap-4">
+                            <CondominiumLogo
+                                src={condominium.logo_url}
+                                alt={condominium.name}
+                                className="h-16 w-16 shrink-0 rounded-xl"
+                                iconClassName="h-7 w-7"
+                            />
+                            <div className="min-w-0">
+                                <h1 className="text-2xl font-bold text-gray-900">{condominium.name}</h1>
+                                {condominium.city && (
+                                    <p className="mt-1 flex items-center gap-1 text-sm text-gray-500">
+                                        <MapPin className="h-3.5 w-3.5" />
+                                        {[condominium.city, condominium.state].filter(Boolean).join(' – ')}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
                     </div>
                     <Link href={route('condominiums.edit', condominium.id)} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                         <Pencil className="h-4 w-4" /> Editar
