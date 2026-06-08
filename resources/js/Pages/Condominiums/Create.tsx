@@ -1,8 +1,9 @@
 import AppLayout from '@/Layouts/AppLayout';
+import CondominiumLogo from '@/Components/CondominiumLogo';
 import { isValidCnpj, maskCnpj, maskPhone } from '@/lib/masks';
 import { Head, useForm, Link } from '@inertiajs/react';
-import { Building2, ChevronRight, ChevronLeft, Check } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 const STEPS = ['Dados Básicos', 'Endereço', 'Confirmar'];
 
@@ -46,6 +47,20 @@ export default function CondominiumCreate() {
         logo: null as File | null,
         zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '',
     });
+
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!data.logo) {
+            setLogoPreview(null);
+            return;
+        }
+
+        const url = URL.createObjectURL(data.logo);
+        setLogoPreview(url);
+
+        return () => URL.revokeObjectURL(url);
+    }, [data.logo]);
 
     const handleCepBlur = async () => {
         setLoadingCep(true);
@@ -103,12 +118,21 @@ export default function CondominiumCreate() {
                                 <Input type="email" value={data.email} onChange={e => setData('email', e.target.value)} placeholder="contato@condominio.com.br" />
                             </Field>
                             <Field label="Logo do condomínio" error={errors.logo}>
-                                <input
-                                    type="file"
-                                    accept="image/png,image/jpeg,image/webp"
-                                    onChange={e => setData('logo', e.target.files?.[0] ?? null)}
-                                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200"
-                                />
+                                <div className="flex items-center gap-4">
+                                    <CondominiumLogo
+                                        src={logoPreview}
+                                        alt={data.name || 'Logo do condominio'}
+                                        className="h-16 w-16 shrink-0 rounded-lg"
+                                        fallbackClassName="border border-dashed border-gray-200 bg-gray-50 text-gray-300"
+                                        iconClassName="h-6 w-6"
+                                    />
+                                    <input
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/webp"
+                                        onChange={e => setData('logo', e.target.files?.[0] ?? null)}
+                                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200"
+                                    />
+                                </div>
                                 <p className="mt-1 text-xs text-gray-500">PNG, JPG ou WEBP até 2 MB.</p>
                             </Field>
                         </>
@@ -157,7 +181,11 @@ export default function CondominiumCreate() {
                         <div className="space-y-4">
                             <div className="rounded-lg bg-gray-50 p-4 space-y-3">
                                 <div className="flex items-center gap-3">
-                                    <Building2 className="h-8 w-8 text-blue-600" />
+                                    <CondominiumLogo
+                                        src={logoPreview}
+                                        alt={data.name || 'Logo do condominio'}
+                                        className="h-12 w-12 shrink-0 rounded-lg"
+                                    />
                                     <div>
                                         <p className="font-semibold text-gray-900">{data.name}</p>
                                         {data.cnpj && <p className="text-sm text-gray-500">CNPJ: {data.cnpj}</p>}

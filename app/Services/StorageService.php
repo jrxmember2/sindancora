@@ -164,7 +164,9 @@ class StorageService
         $disk = $object->storage_provider;
 
         try {
-            return Storage::disk($disk)->temporaryUrl($object->storage_path, now()->addMinutes($expiresInMinutes));
+            $url = Storage::disk($disk)->temporaryUrl($object->storage_path, now()->addMinutes($expiresInMinutes));
+
+            return $this->usesLocalSignedRoute($disk) ? $this->toRelativeUrl($url) : $url;
         } catch (\Exception) {
             return Storage::disk($disk)->url($object->storage_path);
         }
@@ -227,5 +229,28 @@ class StorageService
         if (! in_array($file->getMimeType(), self::ALLOWED_MIMES)) {
             abort(422, 'Tipo de arquivo não permitido.');
         }
+    }
+
+    private function usesLocalSignedRoute(string $disk): bool
+    {
+        $config = config("filesystems.disks.{$disk}", []);
+
+        return ($config['driver'] ?? null) === 'local' && (bool) ($config['serve'] ?? false);
+    }
+
+    private function toRelativeUrl(string $url): string
+    {
+        $path = parse_url($url, PHP_URL_PATH);
+
+        if (! is_string($path) || $path === '') {
+            return $url;
+        }
+
+        $query = parse_url($url, PHP_URL_QUERY);
+        $fragment = parse_url($url, PHP_URL_FRAGMENT);
+
+        return $path
+            .(is_string($query) && $query !== '' ? "?{$query}" : '')
+            .(is_string($fragment) && $fragment !== '' ? "#{$fragment}" : '');
     }
 }

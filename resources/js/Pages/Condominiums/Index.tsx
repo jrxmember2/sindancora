@@ -1,4 +1,5 @@
 import AppLayout from '@/Layouts/AppLayout';
+import CondominiumLogo from '@/Components/CondominiumLogo';
 import { Head, Link, router } from '@inertiajs/react';
 import { Building2, Plus, Search, MapPin, Users, Grid3X3 } from 'lucide-react';
 import { useState } from 'react';
@@ -83,13 +84,7 @@ export default function CondominiumsIndex({ condominiums, filters, usage }: Prop
                             <Link key={condo.id} href={route('condominiums.show', condo.id)} className="block rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
                                 <div className="p-5">
                                     <div className="flex items-start justify-between gap-2">
-                                        {condo.logo_url ? (
-                                            <img src={condo.logo_url} alt={condo.name} className="h-12 w-12 shrink-0 rounded-lg border border-gray-100 object-contain bg-white" />
-                                        ) : (
-                                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-100">
-                                                <Building2 className="h-5 w-5 text-blue-600" />
-                                            </div>
-                                        )}
+                                        <CondominiumLogo src={condo.logo_url} alt={condo.name} />
                                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${condo.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
                                             {condo.status === 'active' ? 'Ativo' : 'Inativo'}
                                         </span>

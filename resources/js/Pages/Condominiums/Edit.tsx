@@ -1,6 +1,8 @@
 import AppLayout from '@/Layouts/AppLayout';
+import CondominiumLogo from '@/Components/CondominiumLogo';
 import { isValidCnpj, maskCnpj, maskPhone } from '@/lib/masks';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 
 interface Condominium {
     id: string; name: string; cnpj: string | null; email: string | null; phone: string | null;
@@ -52,6 +54,22 @@ export default function CondominiumEdit({ condominium }: Props) {
         status: condominium.status,
     });
 
+    const [selectedLogoPreview, setSelectedLogoPreview] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!data.logo) {
+            setSelectedLogoPreview(null);
+            return;
+        }
+
+        const url = URL.createObjectURL(data.logo);
+        setSelectedLogoPreview(url);
+
+        return () => URL.revokeObjectURL(url);
+    }, [data.logo]);
+
+    const logoPreview = data.logo ? selectedLogoPreview : (data.remove_logo ? null : condominium.logo_url);
+
     const handleCepBlur = async () => {
         const address = await fetchCep(data.zip_code);
         if (address) setData(d => ({ ...d, street: address.logradouro, neighborhood: address.bairro, city: address.localidade, state: address.uf }));
@@ -84,11 +102,13 @@ export default function CondominiumEdit({ condominium }: Props) {
                     </Field>
                     <Field label="Logo do condomínio" error={errors.logo}>
                         <div className="flex items-center gap-4">
-                            {condominium.logo_url && !data.remove_logo ? (
-                                <img src={condominium.logo_url} alt={condominium.name} className="h-16 w-16 rounded-lg border border-gray-100 object-contain bg-white" />
-                            ) : (
-                                <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 text-xs text-gray-400">Logo</div>
-                            )}
+                            <CondominiumLogo
+                                src={logoPreview}
+                                alt={data.name || condominium.name}
+                                className="h-16 w-16 shrink-0 rounded-lg"
+                                fallbackClassName="border border-dashed border-gray-200 bg-gray-50 text-gray-300"
+                                iconClassName="h-6 w-6"
+                            />
                             <div className="flex-1 space-y-2">
                                 <input
                                     type="file"
@@ -101,7 +121,16 @@ export default function CondominiumEdit({ condominium }: Props) {
                                 />
                                 {condominium.logo_url && (
                                     <label className="flex items-center gap-2 text-xs text-gray-600">
-                                        <input type="checkbox" checked={data.remove_logo} onChange={e => setData('remove_logo', e.target.checked)} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                        <input
+                                            type="checkbox"
+                                            checked={data.remove_logo}
+                                            onChange={e => setData(current => ({
+                                                ...current,
+                                                remove_logo: e.target.checked,
+                                                logo: e.target.checked ? null : current.logo,
+                                            }))}
+                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        />
                                         Remover logo atual
                                     </label>
                                 )}
