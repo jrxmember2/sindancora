@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import {
-    LayoutDashboard, Building2, LogOut, Menu, X, Shield, Package, MessageCircle,
+    LayoutDashboard, Building2, LogOut, Menu, X, Shield, Package, MessageCircle, Sparkles,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -10,6 +10,7 @@ const navigation = [
     { name: 'Tenants', href: '/admin/tenants', icon: Building2 },
     { name: 'Planos', href: '/admin/planos', icon: Package },
     { name: 'WhatsApp', href: '/admin/whatsapp', icon: MessageCircle },
+    { name: 'IA', href: '/admin/ia', icon: Sparkles },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

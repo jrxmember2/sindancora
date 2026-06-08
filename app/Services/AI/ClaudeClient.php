@@ -5,14 +5,15 @@ namespace App\Services\AI;
 use Illuminate\Support\Facades\Http;
 
 /**
- * Cliente HTTP fino para a Messages API da Anthropic (sem SDK oficial PHP).
- * O prompt de sistema (estável) é marcado para cache; o contexto volátil do RAG vai nas mensagens.
+ * Cliente HTTP fino para a Messages API da Anthropic.
  */
 class ClaudeClient
 {
+    public function __construct(private readonly AiSettingsManager $settings) {}
+
     public function configured(): bool
     {
-        return filled(config('services.anthropic.key'));
+        return $this->settings->isConfigured();
     }
 
     /**
@@ -23,20 +24,23 @@ class ClaudeClient
     public function complete(string $system, array $messages, int $maxTokens = 4096): string
     {
         if (! $this->configured()) {
-            throw new AiException('A integração de IA não está configurada (defina ANTHROPIC_API_KEY).');
+            if (! $this->settings->runtimeSupported()) {
+                throw new AiException("O provedor {$this->settings->providerLabel()} ainda nao esta ativo para execucao. Selecione Claude / Anthropic em Admin > IA por enquanto.");
+            }
+
+            throw new AiException('A integracao global de IA nao esta configurada. Configure provedor, modelo e chave em Admin > IA.');
         }
 
-        $response = Http::baseUrl(config('services.anthropic.base_url'))
+        $response = Http::baseUrl($this->settings->baseUrl())
             ->withHeaders([
-                'x-api-key' => config('services.anthropic.key'),
+                'x-api-key' => $this->settings->apiKey(),
                 'anthropic-version' => config('services.anthropic.version'),
                 'content-type' => 'application/json',
             ])
             ->timeout(60)
             ->post('/messages', [
-                'model' => config('services.anthropic.model'),
+                'model' => $this->settings->model(),
                 'max_tokens' => $maxTokens,
-                // Prompt de sistema estável → cacheado (reduz custo/latência em chamadas repetidas).
                 'system' => [[
                     'type' => 'text',
                     'text' => $system,
@@ -49,11 +53,10 @@ class ClaudeClient
             ]);
 
         if ($response->failed()) {
-            $message = data_get($response->json(), 'error.message', 'Falha na chamada à IA.');
+            $message = data_get($response->json(), 'error.message', 'Falha na chamada a IA.');
             throw new AiException($message);
         }
 
-        // content é um array de blocos; concatena os de texto.
         $text = collect($response->json('content', []))
             ->where('type', 'text')
             ->pluck('text')

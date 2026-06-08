@@ -8,10 +8,11 @@
 
 ## Configuração
 
-`config/services.php` → bloco `anthropic`: `key` (env **`ANTHROPIC_API_KEY`** — chave da plataforma,
-custo da IA é da plataforma), `model` (env `ANTHROPIC_MODEL`, default `claude-opus-4-8`), `base_url`,
-`version`. Sem chave, o assistente aparece desabilitado (degrada sem quebrar). Permissão **`ai:use`**
-(admin e síndico no seed).
+Configuracao principal: `Admin > IA` no painel de superadmin. A plataforma salva provedor, modelo,
+URL base, status ativo e chave global em `ai_settings`; a chave usa cast `encrypted` e nunca e
+exposta ao tenant. `ANTHROPIC_API_KEY` continua como fallback tecnico de compatibilidade para Claude,
+mas a operacao normal deve ser feita pela tela administrativa. Sem configuracao ativa, o assistente
+aparece desabilitado sem quebrar. Permissao **`ai:use`** (admin e sindico no seed).
 
 ## RAG por full-text
 
