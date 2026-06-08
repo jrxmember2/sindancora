@@ -82,8 +82,16 @@ class OpenAiClient implements AiProviderClient
 
     private function reasoningEffort(string $model): ?string
     {
+        if ($model === 'gpt-5-pro') {
+            return 'high';
+        }
+
         if (str_starts_with($model, 'gpt-5') && str_ends_with($model, '-pro')) {
             return 'medium';
+        }
+
+        if ($model === 'o3-pro') {
+            return null;
         }
 
         if (str_starts_with($model, 'gpt-5') || preg_match('/^o[1-9]/', $model) === 1) {
