@@ -11,6 +11,7 @@ use App\Services\PlanLimitService;
 use App\Services\StorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -33,23 +34,25 @@ class CondominiumController extends Controller
             ->latest()
             ->paginate(12)
             ->withQueryString()
-            ->through(fn (Condominium $condominium) => [
-                'id' => $condominium->id,
-                'name' => $condominium->name,
-                'cnpj' => $condominium->cnpj,
-                'city' => $condominium->city,
-                'state' => $condominium->state,
-                'status' => $condominium->status,
-                'logo_url' => $condominium->logo_url,
-                'blocks_count' => $condominium->blocks_count,
-                'units_count' => $condominium->units_count,
-                'active_managers' => $condominium->activeManagers->map(fn (CondominiumManager $manager) => [
-                    'role' => $manager->role,
-                    'person' => [
-                        'name' => $manager->person?->name,
-                    ],
-                ])->values(),
-            ]);
+            ->through(function (Condominium $condominium) {
+                return [
+                    'id' => $condominium->id,
+                    'name' => $condominium->name,
+                    'cnpj' => $condominium->cnpj,
+                    'city' => $condominium->city,
+                    'state' => $condominium->state,
+                    'status' => $condominium->status,
+                    'logo_url' => $this->panelLogoUrl($condominium),
+                    'blocks_count' => $condominium->blocks_count,
+                    'units_count' => $condominium->units_count,
+                    'active_managers' => $condominium->activeManagers->map(fn (CondominiumManager $manager) => [
+                        'role' => $manager->role,
+                        'person' => [
+                            'name' => $manager->person?->name,
+                        ],
+                    ])->values(),
+                ];
+            });
 
         return Inertia::render('Condominiums/Index', [
             'condominiums' => $condominiums,
@@ -114,7 +117,7 @@ class CondominiumController extends Controller
             ->pluck('total', 'status');
 
         return Inertia::render('Condominiums/Show', [
-            'condominium' => $condominium,
+            'condominium' => $this->panelCondominiumPayload($condominium),
             'unitStats' => $unitStats,
             'persons' => Person::where('tenant_id', $tenant->id)
                 ->orderBy('name')
@@ -123,13 +126,35 @@ class CondominiumController extends Controller
         ]);
     }
 
+    public function logo(Condominium $condominium)
+    {
+        $tenant = app('tenant');
+        abort_unless($condominium->tenant_id === $tenant->id, 403);
+
+        $object = $condominium->logoObject();
+        abort_unless($object, 404);
+
+        $disk = Storage::disk($object->storage_provider);
+        abort_unless($disk->exists($object->storage_path), 404);
+
+        $headers = [
+            'Cache-Control' => 'private, max-age=300',
+        ];
+
+        if ($object->mime_type) {
+            $headers['Content-Type'] = $object->mime_type;
+        }
+
+        return $disk->response($object->storage_path, $object->original_filename, $headers);
+    }
+
     public function edit(Condominium $condominium): Response
     {
         $tenant = app('tenant');
         abort_unless($condominium->tenant_id === $tenant->id, 403);
 
         return Inertia::render('Condominiums/Edit', [
-            'condominium' => $condominium,
+            'condominium' => $this->panelCondominiumPayload($condominium),
         ]);
     }
 
@@ -285,5 +310,22 @@ class CondominiumController extends Controller
         }
 
         $condominium->update(['settings' => $settings]);
+    }
+
+    private function panelLogoUrl(Condominium $condominium): ?string
+    {
+        if ($condominium->logoObject()) {
+            return route('condominiums.logo', $condominium, false);
+        }
+
+        return data_get($condominium->settings, 'brand.logo_url');
+    }
+
+    private function panelCondominiumPayload(Condominium $condominium): array
+    {
+        $payload = $condominium->toArray();
+        $payload['logo_url'] = $this->panelLogoUrl($condominium);
+
+        return $payload;
     }
 }
