@@ -182,6 +182,7 @@ export default function AiSettings({ setting, configured, providerOptions, model
                         <div>
                             <label className="mb-1 block text-sm font-medium text-gray-700">Modelo</label>
                             <select
+                                key={form.data.provider}
                                 value={modelSelectValue}
                                 onChange={(e) => changeModel(e.target.value)}
                                 className={field}
@@ -192,7 +193,7 @@ export default function AiSettings({ setting, configured, providerOptions, model
                                 </option>
                                 {selectedProviderModels.map((option) => (
                                     <option key={option.value} value={option.value}>
-                                        {option.label}{option.recommended ? ' (recomendado)' : ''}
+                                        {option.label} ({option.value}){option.recommended ? ' - recomendado' : ''}
                                     </option>
                                 ))}
                             </select>
