@@ -1,6 +1,6 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { AlertTriangle, CheckCircle2, Plug, Sparkles, XCircle } from 'lucide-react';
+import { CheckCircle2, Plug, Sparkles, XCircle } from 'lucide-react';
 import type { PageProps } from '@/types';
 
 type Provider = 'anthropic' | 'openai' | 'gemini';
@@ -22,12 +22,11 @@ interface ProviderDefaults {
 interface Props {
     setting: AiSetting;
     configured: boolean;
-    runtimeSupported: boolean;
     providerOptions: Record<Provider, string>;
     defaults: Record<Provider, ProviderDefaults>;
 }
 
-export default function AiSettings({ setting, configured, runtimeSupported, providerOptions, defaults }: Props) {
+export default function AiSettings({ setting, configured, providerOptions, defaults }: Props) {
     const { flash } = usePage<PageProps>().props;
 
     const form = useForm({
@@ -39,8 +38,6 @@ export default function AiSettings({ setting, configured, runtimeSupported, prov
     });
 
     const field = 'w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500';
-    const selectedRuntimeSupported = form.data.provider === 'anthropic';
-
     const changeProvider = (provider: Provider) => {
         form.setData({
             ...form.data,
@@ -83,16 +80,6 @@ export default function AiSettings({ setting, configured, runtimeSupported, prov
                 {(flash?.success || flash?.error) && (
                     <div className={`rounded-lg border px-4 py-3 text-sm ${flash.success ? 'border-green-200 bg-green-50 text-green-800' : 'border-red-200 bg-red-50 text-red-800'}`}>
                         {flash.success || flash.error}
-                    </div>
-                )}
-
-                {(!runtimeSupported || !selectedRuntimeSupported) && (
-                    <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                        <p>
-                            OpenAI e Gemini já podem ser salvos aqui para preparar a configuração, mas a execução do
-                            Assistente nesta etapa ainda usa Claude / Anthropic.
-                        </p>
                     </div>
                 )}
 

@@ -1,66 +1,69 @@
 # Assistente de IA (Fase 6.4)
 
-> Status: implementado. Assistente de IA para o síndico via **Claude API** (Messages API por HTTP,
-> sem SDK PHP), com **RAG sobre documentos** por **full-text do PostgreSQL** (a Claude API não tem
-> embeddings; usamos tsvector nativo, sem provedor externo nem pgvector) + injeção de dados
-> estruturados do tenant. Três capacidades: chat livre, análise de inadimplência e rascunho de
-> comunicado.
+> Status: implementado e em evolucao. O assistente do sindico usa configuracao global em
+> `Admin > IA`, com provedores Claude/Anthropic, OpenAI e Gemini por clientes HTTP finos, sem SDKs
+> externos. O RAG continua baseado em documentos indexados por full-text do PostgreSQL.
 
-## Configuração
+## Configuracao
 
 Configuracao principal: `Admin > IA` no painel de superadmin. A plataforma salva provedor, modelo,
 URL base, status ativo e chave global em `ai_settings`; a chave usa cast `encrypted` e nunca e
-exposta ao tenant. `ANTHROPIC_API_KEY` continua como fallback tecnico de compatibilidade para Claude,
-mas a operacao normal deve ser feita pela tela administrativa. Sem configuracao ativa, o assistente
-aparece desabilitado sem quebrar. Permissao **`ai:use`** (admin e sindico no seed).
+exposta ao tenant.
+
+Fallbacks tecnicos por ambiente continuam disponiveis:
+
+- `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `ANTHROPIC_BASE_URL`
+- `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_BASE_URL`
+- `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_BASE_URL`
+
+Sem configuracao ativa, o assistente aparece desabilitado sem quebrar. Permissao: **`ai:use`**.
+
+## Provedores
+
+- `App\Services\AI\AiProviderClient`: contrato comum dos provedores.
+- `App\Services\AI\AiProviderManager`: escolhe o cliente a partir de `AiSettingsManager`.
+- `ClaudeClient`: usa Anthropic Messages API.
+- `OpenAiClient`: usa OpenAI Responses API (`/responses`).
+- `GeminiClient`: usa Gemini `generateContent`.
+
+`AssistantService` e `AssemblyService` dependem de `AiProviderManager`, entao a troca de provedor no
+admin nao exige alteracao nos fluxos consumidores.
 
 ## RAG por full-text
 
-- Tabela `document_chunks` (texto extraído dos documentos, índice **GIN `to_tsvector('portuguese')`**).
-- `App\Services\AI\DocumentIndexer`: baixa o arquivo (StorageService/disk), extrai texto
-  (**PDF** via `smalot/pdfparser`; **texto** txt/md/csv), divide em trechos (~1200 chars, overlap
-  150) e grava. Reindexação idempotente (apaga trechos antigos).
-- Disparo: `App\Jobs\IndexDocument` (fila) no upload (`DocumentController@store`); remoção dos
-  trechos no `destroy` (soft delete não dispara o cascade). Backfill: `php artisan documents:index`
-  (`--tenant=`, `--force`).
-- `App\Services\AI\DocumentSearch::search(tenantId, query, limit)`: `plainto_tsquery` +
-  `ts_rank` (fallback ILIKE fora do Postgres). Docx/xlsx ficam fora desta fatia.
+- Tabela `document_chunks` com texto extraido dos documentos e indice GIN `to_tsvector('portuguese')`.
+- `App\Services\AI\DocumentIndexer`: baixa o arquivo, extrai texto de PDF/txt/md/csv, divide em
+  trechos e grava chunks.
+- Disparo: `App\Jobs\IndexDocument` no upload de documentos.
+- Backfill: `php artisan documents:index` (`--tenant=`, `--force`).
+- `App\Services\AI\DocumentSearch::search(tenantId, query, limit)`: `plainto_tsquery` + `ts_rank`,
+  com fallback ILIKE fora do Postgres.
 
-## Serviço do assistente
+## Servico do assistente
 
-`App\Services\AI\ClaudeClient` (Messages API; **prompt de sistema estável marcado com
-`cache_control: ephemeral`** → cacheado; contexto volátil vai na mensagem do usuário). Sem thinking
-exposto (responde direto). `App\Services\AI\AssistantService`:
-- `chat(conversation, tenant, texto)`: histórico + **contexto** (resumo estruturado: inadimplência,
-  ocorrências abertas, reservas pendentes, comunicados recentes + trechos RAG da pergunta) na última
-  mensagem; persiste o par usuário/assistente (texto puro, sem o contexto).
-- `analyzeDelinquency(tenant)`: diagnóstico com plano de ação a partir das cobranças vencidas reais.
-- `draftAnnouncement(tenant, prompt)`: redige título+corpo (JSON), pronto para revisar/publicar.
+`App\Services\AI\AssistantService`:
 
-Persistência: `ai_conversations` + `ai_messages`.
+- `chat(conversation, tenant, texto)`: historico + contexto estruturado do tenant + trechos RAG na
+  ultima mensagem; persiste apenas usuario/assistente, sem o contexto injetado.
+- `analyzeDelinquency(tenant)`: diagnostico com plano de acao a partir de cobrancas vencidas reais.
+- `draftAnnouncement(tenant, prompt)`: redige titulo e corpo em JSON, pronto para revisar/publicar.
+- `draftOccurrenceReply(tenant, occurrence)`: sugere resposta cordial a ocorrencia.
+
+Persistencia: `ai_conversations` + `ai_messages`.
 
 ## Painel
 
-`/assistente` (`Panel\AssistantController`, permissão `ai:use`): lista de conversas, chat, ações
-rápidas (inadimplência, rascunho de comunicado) e botão "Criar comunicado" a partir do rascunho.
-Tela `IA/Assistant.tsx`. Menu: item "Assistente IA". Tudo escopado ao tenant.
+- Superadmin: `/admin/ia`, configuracao global de provedor/modelo/chave/teste.
+- Tenant: `/assistente`, lista de conversas, chat, acoes rapidas de inadimplencia e rascunho de
+  comunicado. Tudo escopado ao tenant.
 
-## Dependências / deploy
+## Deploy
 
-`composer require smalot/pdfparser` (puro PHP). Migrations novas:
-`2026_06_06_000001_create_document_chunks_table` (+ índice GIN), `..._000002_create_ai_conversations_table`.
-Deploy: `migrate --force` + `db:seed --force` (permissão `ai:use`) + `optimize:clear`. Definir
-`ANTHROPIC_API_KEY` (e opcional `ANTHROPIC_MODEL`). Rodar `php artisan documents:index` uma vez para
-indexar documentos já existentes. Worker de fila ativo (indexação roda em fila).
+Rodar migrations (`ai_settings`, `document_chunks`, `ai_conversations`) e manter worker de fila ativo
+para indexacao. A configuracao normal da IA deve ser feita em `Admin > IA`; variaveis `.env` sao
+fallback operacional.
 
-## Custo / modelo
+## Fora de escopo desta etapa
 
-A plataforma paga a IA (chave global). Modelo configurável por `ANTHROPIC_MODEL` (default
-`claude-opus-4-8`; trocar para `claude-sonnet-4-6`/`claude-haiku-4-5` reduz custo). Prompt caching no
-sistema reduz custo em chamadas repetidas.
-
-## Fora de escopo (adiado)
-
-Embeddings/busca vetorial; extração de docx/xlsx; streaming de resposta; pré-preenchimento dos
-campos do Comunicado a partir do rascunho (hoje o botão abre o formulário em branco — copiar/colar);
-assistente no portal do morador.
+Limites mensais por tenant, documentos atuais por condominio, base legal global, dropdown de
+condominio, citacoes de fontes e guardrails finais de parecer juridico.

@@ -7,14 +7,14 @@ use App\Models\AssemblyAgendaItem;
 use App\Models\AssemblyAttendance;
 use App\Models\AssemblyVote;
 use App\Models\Unit;
+use App\Services\AI\AiProviderManager;
 use App\Services\AI\AiException;
-use App\Services\AI\ClaudeClient;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AssemblyService
 {
-    public function __construct(private readonly ClaudeClient $claude) {}
+    public function __construct(private readonly AiProviderManager $ai) {}
 
     /** Registra a presença das unidades do morador (idempotente). */
     public function registerAttendance(Assembly $assembly, array $unitIds, ?string $personId): void
@@ -106,7 +106,7 @@ class AssemblyService
         $results = $this->results($assembly);
         $summary = $this->resultsToText($assembly, $results);
 
-        $minutes = $this->claude->configured()
+        $minutes = $this->ai->configured()
             ? $this->aiMinutes($assembly, $summary)
             : $this->templateMinutes($assembly, $summary);
 
@@ -125,7 +125,7 @@ class AssemblyService
             .'usando SOMENTE os dados fornecidos. Não invente participantes nem números.';
 
         try {
-            return $this->claude->complete($system, [[
+            return $this->ai->complete($system, [[
                 'role' => 'user',
                 'content' => "Redija a ata desta assembleia:\n\n".$summary,
             ]], 4096);

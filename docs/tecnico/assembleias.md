@@ -23,8 +23,8 @@ Permissões `assemblies:create|read|update|delete` (admin + síndico no seed).
 - `registerAttendance(assembly, unitIds, personId)`: idempotente.
 - `results(assembly)`: por item, contagem/percentual por opção + vencedor; presença vs total de
   unidades do condomínio.
-- `generateMinutes(assembly)`: monta o resumo dos resultados e, se a IA estiver configurada
-  (`ClaudeClient` da 6.4), pede a ata em prosa; senão usa modelo determinístico. Persiste em
+- `generateMinutes(assembly)`: monta o resumo dos resultados e, se a IA global estiver configurada
+  (`AiProviderManager` da 6.4), pede a ata em prosa; senão usa modelo determinístico. Persiste em
   `assemblies.minutes`.
 
 ## Painel (admin/síndico)
@@ -45,8 +45,8 @@ unidades ativas do morador — 1 por unidade). Vê o próprio voto e, quando enc
 ## Deploy
 
 Migration `2026_06_07_000001_create_assemblies_table` → `migrate --force` + `db:seed --force`
-(permissões `assemblies:*`) + `optimize:clear`. A geração de ata por IA usa a `ANTHROPIC_API_KEY`
-(6.4); sem ela, a ata sai pelo modelo determinístico.
+(permissões `assemblies:*`) + `optimize:clear`. A geração de ata por IA usa a configuração global em
+`Admin > IA`; sem ela, a ata sai pelo modelo determinístico.
 
 ## Fora de escopo (adiado)
 

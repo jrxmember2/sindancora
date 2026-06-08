@@ -49,13 +49,13 @@ return [
 
     'openai' => [
         'key' => env('OPENAI_API_KEY'),
-        'model' => env('OPENAI_MODEL'),
+        'model' => env('OPENAI_MODEL', 'gpt-5.5'),
         'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
     ],
 
     'gemini' => [
         'key' => env('GEMINI_API_KEY'),
-        'model' => env('GEMINI_MODEL'),
+        'model' => env('GEMINI_MODEL', 'gemini-3.5-flash'),
         'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
     ],
 

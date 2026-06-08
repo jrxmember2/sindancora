@@ -81,7 +81,7 @@ class AiSettingsManager
 
     public function runtimeSupported(): bool
     {
-        return $this->provider() === AiSetting::PROVIDER_ANTHROPIC;
+        return in_array($this->provider(), array_keys(AiSetting::providerOptions()), true);
     }
 
     public function isConfigured(): bool
