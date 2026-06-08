@@ -20,6 +20,12 @@ class DocumentIndexer
 
     public function index(Document $document): int
     {
+        if (! $document->isSearchableByAi()) {
+            DocumentChunk::where('document_id', $document->id)->delete();
+
+            return 0;
+        }
+
         $object = $document->storageObject;
         if (! $object) {
             return 0;

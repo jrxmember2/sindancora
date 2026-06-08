@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Panel;
 
 use App\Exceptions\StorageQuotaException;
 use App\Http\Controllers\Controller;
+use App\Jobs\IndexDocument;
 use App\Models\Condominium;
 use App\Models\Document;
+use App\Models\DocumentChunk;
 use App\Services\StorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,6 +32,8 @@ class DocumentController extends Controller
             ->when($request->search, fn ($q, $s) => $q->where('title', 'ilike', "%{$s}%"))
             ->when($request->category, fn ($q, $c) => $q->where('category', $c))
             ->when($request->condominium_id, fn ($q, $id) => $q->where('condominium_id', $id))
+            ->when($request->filled('is_current'), fn ($q) => $q->where('is_current', $request->boolean('is_current')))
+            ->when($request->filled('is_ai_searchable'), fn ($q) => $q->where('is_ai_searchable', $request->boolean('is_ai_searchable')))
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -40,7 +44,7 @@ class DocumentController extends Controller
             'categories' => $this->categoryOptions($tenant->id),
             'visibilities' => Document::VISIBILITIES,
             'usage' => $this->storage->getUsageStats($tenant),
-            'filters' => $request->only(['search', 'category', 'condominium_id']),
+            'filters' => $request->only(['search', 'category', 'condominium_id', 'is_current', 'is_ai_searchable']),
         ]);
     }
 
@@ -71,6 +75,8 @@ class DocumentController extends Controller
             'valid_from' => $data['valid_from'] ?? null,
             'valid_until' => $data['valid_until'] ?? null,
             'renewal_alert_days' => $data['renewal_alert_days'] ?? null,
+            'is_current' => $data['is_current'],
+            'is_ai_searchable' => $data['is_ai_searchable'],
         ]);
 
         try {
@@ -91,8 +97,9 @@ class DocumentController extends Controller
 
         $document->update(['storage_object_id' => $object->id]);
 
-        // Indexa o texto para o RAG do assistente de IA (em fila).
-        \App\Jobs\IndexDocument::dispatch($document->id);
+        if ($document->isSearchableByAi()) {
+            IndexDocument::dispatch($document->id);
+        }
 
         return redirect()->route('documents.index')->with('success', "Documento \"{$document->title}\" enviado.");
     }
@@ -113,20 +120,37 @@ class DocumentController extends Controller
     public function update(Request $request, Document $document): RedirectResponse
     {
         $document = $this->authorizeTenant($document);
-        $data = $this->validated($request, $document->tenant_id, withFile: false);
+        $data = $this->validated($request, $document->tenant_id, withFile: false, document: $document);
 
         // Se a validade mudou, libera novo alerta de vencimento.
         if (($data['valid_until'] ?? null) != optional($document->valid_until)->toDateString()) {
             $data['expiry_notified_at'] = null;
         }
 
-        $document->update($data);
+        $document->fill($data);
+        $shouldRefreshAiIndex = $document->isDirty(['condominium_id', 'is_current', 'is_ai_searchable']);
+        $condominiumChanged = $document->isDirty('condominium_id');
+        $document->save();
 
         // Mantém a visibilidade do arquivo em storage coerente com a do documento.
         if ($document->storageObject) {
             $document->storageObject->update([
                 'visibility' => Document::STORAGE_VISIBILITY[$data['visibility']] ?? 'tenant',
+                'condominium_id' => $document->condominium_id,
             ]);
+        }
+
+        if ($condominiumChanged) {
+            DocumentChunk::where('document_id', $document->id)
+                ->update(['condominium_id' => $document->condominium_id]);
+        }
+
+        if ($shouldRefreshAiIndex) {
+            if ($document->isSearchableByAi()) {
+                IndexDocument::dispatch($document->id);
+            } else {
+                DocumentChunk::where('document_id', $document->id)->delete();
+            }
         }
 
         return redirect()->route('documents.index')->with('success', 'Documento atualizado.');
@@ -141,7 +165,7 @@ class DocumentController extends Controller
             $this->storage->delete($document->storageObject);
         }
         // Remove os trechos indexados para o RAG (soft delete não dispara o cascade do FK).
-        \App\Models\DocumentChunk::where('document_id', $document->id)->delete();
+        DocumentChunk::where('document_id', $document->id)->delete();
         $document->delete();
 
         return redirect()->route('documents.index')->with('success', 'Documento removido.');
@@ -165,8 +189,14 @@ class DocumentController extends Controller
         }
     }
 
-    private function validated(Request $request, string $tenantId, bool $withFile): array
+    private function validated(Request $request, string $tenantId, bool $withFile, ?Document $document = null): array
     {
+        foreach (['is_current', 'is_ai_searchable'] as $field) {
+            if ($request->has($field)) {
+                $request->merge([$field => $request->boolean($field)]);
+            }
+        }
+
         $rules = [
             'condominium_id' => "required|uuid|exists:condominiums,id,tenant_id,{$tenantId}",
             'title' => 'required|string|max:200',
@@ -176,13 +206,23 @@ class DocumentController extends Controller
             'valid_from' => 'nullable|date',
             'valid_until' => 'nullable|date|after_or_equal:valid_from',
             'renewal_alert_days' => 'nullable|integer|min:0|max:365',
+            'is_current' => 'sometimes|boolean',
+            'is_ai_searchable' => 'sometimes|boolean',
         ];
 
         if ($withFile) {
             $rules['file'] = 'required|file|max:51200|mimes:pdf,doc,docx,xls,xlsx,odt,ods,jpg,jpeg,png,webp,gif,zip';
         }
 
-        return $request->validate($rules);
+        $data = $request->validate($rules);
+        $data['is_current'] = $request->has('is_current')
+            ? $request->boolean('is_current')
+            : (bool) ($document?->is_current ?? true);
+        $data['is_ai_searchable'] = $request->has('is_ai_searchable')
+            ? $request->boolean('is_ai_searchable')
+            : (bool) ($document?->is_ai_searchable ?? true);
+
+        return $data;
     }
 
     private function authorizeTenant(Document $document): Document

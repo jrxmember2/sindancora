@@ -235,7 +235,7 @@ Fase 1 considera-se **concluída** quando:
 
 #### 3.4 Documentos
 - [x] Upload de documentos (PDF, imagens, Word, Excel) — via `StorageService`
-- [x] Categorias: Ata, Regulamento, Contrato, Comprovante, Outro
+- [x] Categorias: Convenção, Regimento interno, Ata, Contrato, Circular, Comprovante, Outro
 - [x] Visibilidade: público (moradores) ou restrito (admin/síndico) — armazenada; enforcement do morador na Fase 4
 - [x] Busca por nome, categoria, condomínio (filtro por data adiado)
 - [x] Controle de storage por arquivo (tamanho, path, hash sha256) — `StorageObject` + cota por plano

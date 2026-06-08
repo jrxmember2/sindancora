@@ -35,6 +35,8 @@ admin nao exige alteracao nos fluxos consumidores.
 - `App\Services\AI\DocumentIndexer`: baixa o arquivo, extrai texto de PDF/txt/md/csv, divide em
   trechos e grava chunks.
 - Disparo: `App\Jobs\IndexDocument` no upload de documentos.
+- O indexador e a busca consideram apenas documentos com `is_current = true` e
+  `is_ai_searchable = true`.
 - Backfill: `php artisan documents:index` (`--tenant=`, `--force`).
 - `App\Services\AI\DocumentSearch::search(tenantId, query, limit)`: `plainto_tsquery` + `ts_rank`,
   com fallback ILIKE fora do Postgres.
@@ -80,5 +82,4 @@ fallback operacional.
 
 ## Fora de escopo desta etapa
 
-Documentos atuais por condominio, base legal global, dropdown de condominio, citacoes de fontes e
-guardrails finais de parecer juridico.
+Base legal global, dropdown de condominio, citacoes de fontes e guardrails finais de parecer juridico.

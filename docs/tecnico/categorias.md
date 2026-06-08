@@ -23,6 +23,8 @@ Na edição, o slug **não muda** (evita órfãos); remover uma categoria preser
   (admin + síndico). Tela `Settings/Categories.tsx`, menu "Categorias".
 - `OccurrenceController` e `DocumentController` agora montam o payload `categories` via
   `Category::optionsFor(...)` (index/create/edit/show) e validam `category` contra as chaves mescladas.
+- Categorias padrao de documentos: `convention`, `regulation`, `minutes`, `contract`, `circular`,
+  `receipt`, `other`.
 
 ## Deploy
 `migrate --force` (cria `categories`) + `db:seed --force` (permissão `categories:manage`) + `optimize:clear`.

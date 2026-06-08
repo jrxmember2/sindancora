@@ -1,6 +1,6 @@
 # 07 — Andamento atual / handoff
 
-> Atualizado em 07/06/2026.
+> Atualizado em 08/06/2026.
 > Objetivo: dar contexto rápido para Codex/Claude ou outro agente continuar o Sindâncora sem
 > redescobrir o estado do projeto.
 
@@ -22,6 +22,95 @@
   - portal, portaria, API keys e menus respeitam módulos ativos.
 
 ## Última entrega implementada
+
+### Assistente IA condominial - blocos 1 a 4
+
+Implementado em 08/06/2026. O roadmap detalhado esta em
+`docs/produto/08-roadmap-assistente-ia.md`.
+
+O que foi entregue:
+
+- **Bloco 1 - Admin > IA**
+  - Nova configuracao global em `Admin > IA` (`/admin/ia`).
+  - Nova tabela/model `ai_settings`, com chave criptografada.
+  - Superadmin define provedor, modelo, URL base, chave, status ativo e testa conexao.
+  - O Assistente deixou de orientar uso direto de `ANTHROPIC_API_KEY` na tela do tenant.
+
+- **Bloco 2 - Provedores**
+  - Nova interface `AiProviderClient`.
+  - Novo `AiProviderManager`, que escolhe o cliente conforme `ai_settings`.
+  - Clientes HTTP para Claude/Anthropic, OpenAI Responses API e Gemini `generateContent`.
+  - `AssistantService` e `AssemblyService` passaram a usar o manager, nao `ClaudeClient` diretamente.
+
+- **Bloco 3 - Limites mensais por tenant**
+  - Novo recurso de plano `ai_interactions_monthly`.
+  - Nova migration `2026_06_24_000002_add_ai_interactions_monthly_limits.php`.
+  - `PlanLimitService` passou a resetar counters mensais pelo ciclo da assinatura
+    (`tenant_plan_subscriptions.starts_at`).
+  - Perfil do tenant em `Admin > Tenants > detalhe` mostra uso de IA, limite, saldo, data de renovacao,
+    origem do limite e permite override ou voltar ao plano.
+  - Assistente mostra saldo mensal, bloqueia quando a cota acaba e incrementa consumo apos resposta
+    bem-sucedida.
+
+- **Bloco 4 - Documentos atuais do condominio**
+  - Categorias padrao de documentos foram expandidas para convencao, regimento interno, ata,
+    contrato, circular, comprovante e outros.
+  - Nova migration `2026_06_25_000001_add_ai_controls_to_documents_table.php`.
+  - Documentos ganharam os controles `Atual` e `Consultar pela IA`.
+  - Listagem de documentos ganhou filtros por atualidade e consulta pela IA.
+  - `DocumentIndexer`, `DocumentSearch` e `documents:index` passaram a considerar por padrao apenas
+    documentos atuais e liberados para IA.
+  - Ao editar atualidade, liberacao para IA ou condominio, o controller reindexa ou remove chunks.
+
+Arquivos-chave:
+
+- `database/migrations/2026_06_24_000001_create_ai_settings_table.php`
+- `database/migrations/2026_06_24_000002_add_ai_interactions_monthly_limits.php`
+- `database/migrations/2026_06_25_000001_add_ai_controls_to_documents_table.php`
+- `app/Models/AiSetting.php`
+- `app/Models/Document.php`
+- `app/Services/AI/AiProviderClient.php`
+- `app/Services/AI/AiProviderManager.php`
+- `app/Services/AI/AiSettingsManager.php`
+- `app/Services/AI/ClaudeClient.php`
+- `app/Services/AI/OpenAiClient.php`
+- `app/Services/AI/GeminiClient.php`
+- `app/Services/AI/DocumentIndexer.php`
+- `app/Services/AI/DocumentSearch.php`
+- `app/Services/AI/AssistantService.php`
+- `app/Services/PlanLimitService.php`
+- `app/Http/Controllers/Admin/AiSettingController.php`
+- `app/Http/Controllers/Panel/DocumentController.php`
+- `app/Http/Controllers/Admin/TenantController.php`
+- `app/Http/Controllers/Panel/AssistantController.php`
+- `resources/js/Pages/Documents/`
+- `resources/js/Pages/Admin/AI/Settings.tsx`
+- `resources/js/Pages/Admin/Tenants/Show.tsx`
+- `resources/js/Pages/IA/Assistant.tsx`
+- `routes/admin.php`
+- `docs/tecnico/ia-assistente.md`
+
+Validacoes feitas:
+
+- `php -l` nos PHP alterados/criados.
+- `npm run build` passou.
+- `git diff --check` passou.
+
+Observacoes para retomada:
+
+- Nao houve teste real contra APIs externas porque depende de chaves validas em `Admin > IA`.
+- Rodar `php artisan migrate --force` no ambiente antes de testar.
+- Se seeders forem usados para atualizar planos existentes, rodar tambem `php artisan db:seed --force`.
+- `public/build` pode mudar quando `npm run build` for executado; isso e esperado porque assets buildados
+  estao versionados neste repo.
+
+Proximo bloco recomendado:
+
+- **Bloco 5 - Base legal global**:
+  - criar area em `Admin > IA` para documentos legais globais;
+  - permitir upload/indexacao de Codigo Civil, leis condominiais e materiais de referencia;
+  - separar indice global da base de documentos do tenant;
+  - combinar base legal global com documentos atuais/liberados do condominio.
 
 ### Correções de plano + identidade do tenant/condomínio
 
