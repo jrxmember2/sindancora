@@ -54,8 +54,23 @@ Persistencia: `ai_conversations` + `ai_messages`.
 ## Painel
 
 - Superadmin: `/admin/ia`, configuracao global de provedor/modelo/chave/teste.
+- Superadmin: no perfil do tenant (`Admin > Tenants > detalhe`), define override de
+  `ai_interactions_monthly` por tenant ou volta a herdar o limite do plano.
 - Tenant: `/assistente`, lista de conversas, chat, acoes rapidas de inadimplencia e rascunho de
   comunicado. Tudo escopado ao tenant.
+
+## Limites mensais
+
+O recurso limitavel e `ai_interactions_monthly`.
+
+- Planos exibem o recurso em `Admin > Planos`.
+- Overrides por tenant ficam em `tenant_limits`.
+- Consumo mensal fica em `tenant_usage_counters`.
+- `PlanLimitService` renova counters mensais quando `reset_at` passa.
+- O proximo `reset_at` e calculado a partir de `tenant_plan_subscriptions.starts_at`; se a assinatura
+  comecou no dia 31, meses menores usam o ultimo dia do mes.
+- O Assistente verifica saldo antes de chamar o provedor e incrementa o contador apos uma resposta
+  bem-sucedida.
 
 ## Deploy
 
@@ -65,5 +80,5 @@ fallback operacional.
 
 ## Fora de escopo desta etapa
 
-Limites mensais por tenant, documentos atuais por condominio, base legal global, dropdown de
-condominio, citacoes de fontes e guardrails finais de parecer juridico.
+Documentos atuais por condominio, base legal global, dropdown de condominio, citacoes de fontes e
+guardrails finais de parecer juridico.

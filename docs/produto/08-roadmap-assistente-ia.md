@@ -44,6 +44,8 @@ Status: implementado.
 
 ### 3. Limites mensais por tenant
 
+Status: implementado.
+
 - Adicionar recurso `ai_interactions_monthly` aos planos.
 - Permitir override no perfil do tenant pelo superadmin.
 - Contabilizar cada interacao enviada ao modelo.

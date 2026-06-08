@@ -30,6 +30,7 @@ class PlanSeeder extends Seeder
                     'announcements_monthly' => 50,
                     'emails_monthly' => 500,
                     'api_calls_monthly' => 0,    // API não disponível
+                    'ai_interactions_monthly' => 0,
                     'whatsapp_connections' => 1,
                 ],
                 'modules' => [
@@ -55,6 +56,7 @@ class PlanSeeder extends Seeder
                     'announcements_monthly' => 200,
                     'emails_monthly' => 2000,
                     'api_calls_monthly' => 0,
+                    'ai_interactions_monthly' => 0,
                     'whatsapp_connections' => 3,
                 ],
                 'modules' => [
@@ -81,6 +83,7 @@ class PlanSeeder extends Seeder
                     'announcements_monthly' => -1, // ilimitado
                     'emails_monthly' => -1,
                     'api_calls_monthly' => 100000,
+                    'ai_interactions_monthly' => 0,
                     'whatsapp_connections' => 10,
                 ],
                 'modules' => [
@@ -108,6 +111,7 @@ class PlanSeeder extends Seeder
                     'announcements_monthly' => -1,
                     'emails_monthly' => -1,
                     'api_calls_monthly' => -1,
+                    'ai_interactions_monthly' => -1,
                     'whatsapp_connections' => -1,
                 ],
                 'modules' => [
