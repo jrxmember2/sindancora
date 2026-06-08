@@ -47,13 +47,25 @@ return [
         'version' => env('ANTHROPIC_VERSION', '2023-06-01'),
     ],
 
-    // Servidor Evolution API (auto-hospedado). Chave GLOBAL do servidor — nunca exposta ao tenant.
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+        'model' => env('OPENAI_MODEL'),
+        'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+    ],
+
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL'),
+        'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
+    ],
+
+    // Servidor Evolution API (auto-hospedado). Chave global nunca exposta ao tenant.
     'evolution' => [
         'base_url' => env('EVOLUTION_BASE_URL'),
         'key' => env('EVOLUTION_API_KEY'),
-        // URL pública do webhook de recebimento (Fase 2). Se vazio, instâncias são criadas sem webhook.
+        // URL publica do webhook de recebimento (Fase 2). Se vazio, instancias sao criadas sem webhook.
         'webhook_url' => env('EVOLUTION_WEBHOOK_URL'),
-        // Tamanho máximo (MB) de mídia de WhatsApp a armazenar/enviar (Fase 4).
+        // Tamanho maximo (MB) de midia de WhatsApp a armazenar/enviar (Fase 4).
         'media_max_mb' => (int) env('WHATSAPP_MEDIA_MAX_MB', 16),
     ],
 

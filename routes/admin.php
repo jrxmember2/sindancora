@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AiSettingController;
 use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EvolutionSettingController;
@@ -34,5 +35,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'super_admin'])->gro
         Route::get('/', [EvolutionSettingController::class, 'edit'])->name('edit');
         Route::match(['put', 'patch'], '/', [EvolutionSettingController::class, 'update'])->name('update');
         Route::post('/testar', [EvolutionSettingController::class, 'test'])->name('test');
+    });
+
+    Route::prefix('ia')->name('ai.')->group(function () {
+        Route::get('/', [AiSettingController::class, 'edit'])->name('edit');
+        Route::match(['put', 'patch'], '/', [AiSettingController::class, 'update'])->name('update');
+        Route::post('/testar', [AiSettingController::class, 'test'])->name('test');
     });
 });

@@ -78,7 +78,7 @@ export default function Assistant({ configured, conversations, conversation, mes
 
                     {!configured && (
                         <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                            A integração de IA ainda não está configurada. Defina <code className="text-xs">ANTHROPIC_API_KEY</code> no ambiente.
+                            A integração global de IA ainda não está ativa. Configure provedor, modelo e chave no Painel de Administração em Admin &gt; IA.
                         </div>
                     )}
 
