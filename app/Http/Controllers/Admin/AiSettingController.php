@@ -3,15 +3,22 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\IndexAiLegalDocument;
+use App\Models\AiLegalDocument;
+use App\Models\AiLegalDocumentChunk;
 use App\Models\AiSetting;
 use App\Services\AI\AiException;
 use App\Services\AI\AiProviderManager;
 use App\Services\AI\AiSettingsManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AiSettingController extends Controller
 {
@@ -39,6 +46,8 @@ class AiSettingController extends Controller
             'runtimeSupported' => $this->settings->runtimeSupported(),
             'providerOptions' => AiSetting::providerOptions(),
             'defaults' => $defaults,
+            'legalDocuments' => $this->legalDocumentsPayload(),
+            'legalCategories' => AiLegalDocument::CATEGORIES,
         ]);
     }
 
@@ -97,5 +106,126 @@ class AiSettingController extends Controller
         $setting->update(['last_checked_at' => now()]);
 
         return back()->with('success', 'Conexao com a IA OK.');
+    }
+
+    public function storeLegalDocument(Request $request): RedirectResponse
+    {
+        if ($request->has('is_active')) {
+            $request->merge(['is_active' => $request->boolean('is_active')]);
+        }
+
+        $data = $request->validate([
+            'title' => 'required|string|max:200',
+            'description' => 'nullable|string|max:2000',
+            'category' => ['required', 'string', Rule::in(array_keys(AiLegalDocument::CATEGORIES))],
+            'file' => 'required|file|max:51200|mimes:pdf,txt,md,csv,doc,docx,odt',
+            'is_active' => 'sometimes|boolean',
+        ]);
+
+        $document = AiLegalDocument::create([
+            'title' => $data['title'],
+            'description' => $data['description'] ?? null,
+            'category' => $data['category'],
+            'is_active' => $request->has('is_active') ? $request->boolean('is_active') : true,
+            'uploaded_by' => Auth::id(),
+        ]);
+
+        $file = $request->file('file');
+        $disk = config('filesystems.default');
+        $extension = $file->getClientOriginalExtension() ?: 'bin';
+        $path = 'global/ai/legal/'.now()->format('Y/m').'/'.Str::uuid().'.'.$extension;
+
+        try {
+            Storage::disk($disk)->putFileAs(dirname($path), $file, basename($path));
+        } catch (\Throwable $e) {
+            $document->forceDelete();
+
+            return back()->withErrors(['file' => 'Nao foi possivel armazenar o arquivo: '.$e->getMessage()])->withInput();
+        }
+
+        $document->update([
+            'storage_provider' => $disk,
+            'storage_bucket' => config("filesystems.disks.{$disk}.bucket"),
+            'storage_path' => $path,
+            'original_filename' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType(),
+            'file_size_bytes' => $file->getSize(),
+            'checksum_sha256' => hash_file('sha256', $file->getRealPath()),
+        ]);
+
+        if ($document->is_active) {
+            IndexAiLegalDocument::dispatch($document->id);
+        }
+
+        return back()->with('success', "Documento legal \"{$document->title}\" enviado.");
+    }
+
+    public function toggleLegalDocument(AiLegalDocument $document): RedirectResponse
+    {
+        $document->update(['is_active' => ! $document->is_active]);
+
+        if ($document->is_active) {
+            IndexAiLegalDocument::dispatch($document->id);
+        } else {
+            AiLegalDocumentChunk::where('ai_legal_document_id', $document->id)->delete();
+        }
+
+        return back()->with('success', 'Status do documento legal atualizado.');
+    }
+
+    public function reindexLegalDocument(AiLegalDocument $document): RedirectResponse
+    {
+        IndexAiLegalDocument::dispatch($document->id);
+
+        return back()->with('success', 'Reindexacao do documento legal enviada para a fila.');
+    }
+
+    public function downloadLegalDocument(AiLegalDocument $document): RedirectResponse|StreamedResponse
+    {
+        abort_unless($document->storage_path, 404);
+
+        $disk = Storage::disk($document->storage_provider);
+
+        try {
+            return redirect()->away($disk->temporaryUrl($document->storage_path, now()->addMinutes(10)));
+        } catch (\Throwable) {
+            return $disk->download($document->storage_path, $document->original_filename);
+        }
+    }
+
+    public function destroyLegalDocument(AiLegalDocument $document): RedirectResponse
+    {
+        if ($document->storage_path) {
+            Storage::disk($document->storage_provider)->delete($document->storage_path);
+        }
+
+        AiLegalDocumentChunk::where('ai_legal_document_id', $document->id)->delete();
+        $document->delete();
+
+        return back()->with('success', 'Documento legal removido.');
+    }
+
+    private function legalDocumentsPayload(): array
+    {
+        return AiLegalDocument::query()
+            ->with('uploader:id,name')
+            ->withCount('chunks')
+            ->latest()
+            ->limit(50)
+            ->get()
+            ->map(fn (AiLegalDocument $document) => [
+                'id' => $document->id,
+                'title' => $document->title,
+                'description' => $document->description,
+                'category' => $document->category,
+                'category_label' => $document->categoryLabel(),
+                'is_active' => $document->is_active,
+                'original_filename' => $document->original_filename,
+                'file_size_bytes' => $document->file_size_bytes,
+                'chunks_count' => $document->chunks_count,
+                'uploaded_by' => $document->uploader?->name,
+                'created_at' => $document->created_at?->toIso8601String(),
+            ])
+            ->all();
     }
 }

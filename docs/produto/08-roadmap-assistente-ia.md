@@ -64,6 +64,8 @@ Status: implementado.
 
 ### 5. Base legal global
 
+Status: implementado.
+
 - Criar area em `Admin > IA` para documentos legais da plataforma.
 - Permitir upload de Codigo Civil, Codigo Penal, leis condominiais e materiais de
   referencia.

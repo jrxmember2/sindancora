@@ -43,5 +43,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'super_admin'])->gro
         Route::get('/', [AiSettingController::class, 'edit'])->name('edit');
         Route::match(['put', 'patch'], '/', [AiSettingController::class, 'update'])->name('update');
         Route::post('/testar', [AiSettingController::class, 'test'])->name('test');
+        Route::post('/documentos-legais', [AiSettingController::class, 'storeLegalDocument'])->name('legal-documents.store');
+        Route::patch('/documentos-legais/{document}/toggle', [AiSettingController::class, 'toggleLegalDocument'])->name('legal-documents.toggle');
+        Route::post('/documentos-legais/{document}/reindexar', [AiSettingController::class, 'reindexLegalDocument'])->name('legal-documents.reindex');
+        Route::get('/documentos-legais/{document}/download', [AiSettingController::class, 'downloadLegalDocument'])->name('legal-documents.download');
+        Route::delete('/documentos-legais/{document}', [AiSettingController::class, 'destroyLegalDocument'])->name('legal-documents.destroy');
     });
 });

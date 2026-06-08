@@ -41,6 +41,20 @@ admin nao exige alteracao nos fluxos consumidores.
 - `App\Services\AI\DocumentSearch::search(tenantId, query, limit)`: `plainto_tsquery` + `ts_rank`,
   com fallback ILIKE fora do Postgres.
 
+## Base legal global
+
+- Tabelas `ai_legal_documents` e `ai_legal_document_chunks`.
+- Categorias: Codigo Civil, Codigo Penal, Lei condominial, Jurisprudencia, Orientacao da plataforma,
+  Material de referencia e Outro.
+- Upload e gestao em `Admin > IA`, sem cota de tenant e sem expor a base para administradores de tenant.
+- Arquivos sao armazenados no disco padrao em `global/ai/legal/...`.
+- `App\Services\AI\LegalDocumentIndexer` reutiliza `DocumentTextExtractor` para extrair PDF/txt/md/csv e
+  gravar chunks globais.
+- Disparo: `App\Jobs\IndexAiLegalDocument` no upload, ativacao e reindexacao manual.
+- Backfill: `php artisan ai-legal-documents:index` (`--force`).
+- `App\Services\AI\LegalDocumentSearch` consulta somente documentos ativos e combina os trechos com
+  os documentos atuais/liberados do tenant no contexto do assistente.
+
 ## Servico do assistente
 
 `App\Services\AI\AssistantService`:
@@ -56,6 +70,8 @@ Persistencia: `ai_conversations` + `ai_messages`.
 ## Painel
 
 - Superadmin: `/admin/ia`, configuracao global de provedor/modelo/chave/teste.
+- Superadmin: `/admin/ia`, base legal global com upload, ativacao/desativacao, download,
+  reindexacao e remocao de documentos legais.
 - Superadmin: no perfil do tenant (`Admin > Tenants > detalhe`), define override de
   `ai_interactions_monthly` por tenant ou volta a herdar o limite do plano.
 - Tenant: `/assistente`, lista de conversas, chat, acoes rapidas de inadimplencia e rascunho de
@@ -76,10 +92,10 @@ O recurso limitavel e `ai_interactions_monthly`.
 
 ## Deploy
 
-Rodar migrations (`ai_settings`, `document_chunks`, `ai_conversations`) e manter worker de fila ativo
-para indexacao. A configuracao normal da IA deve ser feita em `Admin > IA`; variaveis `.env` sao
-fallback operacional.
+Rodar migrations (`ai_settings`, `document_chunks`, `ai_conversations`, `ai_legal_documents`,
+`ai_legal_document_chunks`) e manter worker de fila ativo para indexacao. A configuracao normal da IA
+deve ser feita em `Admin > IA`; variaveis `.env` sao fallback operacional.
 
 ## Fora de escopo desta etapa
 
-Base legal global, dropdown de condominio, citacoes de fontes e guardrails finais de parecer juridico.
+Dropdown de condominio, citacoes de fontes e guardrails finais de parecer juridico.

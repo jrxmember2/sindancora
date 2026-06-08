@@ -1,6 +1,6 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { CheckCircle2, Plug, Sparkles, XCircle } from 'lucide-react';
+import { CheckCircle2, Download, FileText, Plug, RefreshCw, Sparkles, Trash2, UploadCloud, XCircle } from 'lucide-react';
 import type { PageProps } from '@/types';
 
 type Provider = 'anthropic' | 'openai' | 'gemini';
@@ -19,14 +19,36 @@ interface ProviderDefaults {
     base_url: string | null;
 }
 
+interface LegalDocument {
+    id: string;
+    title: string;
+    description: string | null;
+    category: string;
+    category_label: string;
+    is_active: boolean;
+    original_filename: string | null;
+    file_size_bytes: number | null;
+    chunks_count: number;
+    uploaded_by: string | null;
+    created_at: string | null;
+}
+
 interface Props {
     setting: AiSetting;
     configured: boolean;
     providerOptions: Record<Provider, string>;
     defaults: Record<Provider, ProviderDefaults>;
+    legalDocuments: LegalDocument[];
+    legalCategories: Record<string, string>;
 }
 
-export default function AiSettings({ setting, configured, providerOptions, defaults }: Props) {
+function formatBytes(bytes: number | null): string {
+    if (!bytes) return '-';
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+export default function AiSettings({ setting, configured, providerOptions, defaults, legalDocuments, legalCategories }: Props) {
     const { flash } = usePage<PageProps>().props;
 
     const form = useForm({
@@ -35,6 +57,14 @@ export default function AiSettings({ setting, configured, providerOptions, defau
         base_url: setting.base_url ?? '',
         api_key: '',
         enabled: setting.enabled,
+    });
+
+    const legalForm = useForm<{ title: string; description: string; category: string; file: File | null; is_active: boolean }>({
+        title: '',
+        description: '',
+        category: 'civil_code',
+        file: null,
+        is_active: true,
     });
 
     const field = 'w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500';
@@ -56,12 +86,29 @@ export default function AiSettings({ setting, configured, providerOptions, defau
     };
 
     const test = () => router.post(route('admin.ai.test'), {}, { preserveScroll: true });
+    const uploadLegalDocument = (e: React.FormEvent) => {
+        e.preventDefault();
+        legalForm.post(route('admin.ai.legal-documents.store'), {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => legalForm.reset('title', 'description', 'file'),
+        });
+    };
+    const toggleLegalDocument = (document: LegalDocument) =>
+        router.patch(route('admin.ai.legal-documents.toggle', document.id), {}, { preserveScroll: true });
+    const reindexLegalDocument = (document: LegalDocument) =>
+        router.post(route('admin.ai.legal-documents.reindex', document.id), {}, { preserveScroll: true });
+    const destroyLegalDocument = (document: LegalDocument) => {
+        if (confirm(`Remover o documento legal "${document.title}"?`)) {
+            router.delete(route('admin.ai.legal-documents.destroy', document.id), { preserveScroll: true });
+        }
+    };
 
     return (
         <AdminLayout>
             <Head title="IA da Plataforma" />
 
-            <div className="mx-auto max-w-3xl space-y-6">
+            <div className="mx-auto max-w-5xl space-y-6">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
                         <Sparkles className="h-6 w-6 text-blue-600" /> IA da Plataforma
@@ -146,6 +193,117 @@ export default function AiSettings({ setting, configured, providerOptions, defau
                         )}
                     </div>
                 </form>
+
+                <section className="space-y-4 rounded-xl border border-gray-200 bg-white p-6">
+                    <div className="flex items-center justify-between">
+                        <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                            <FileText className="h-5 w-5 text-blue-600" /> Base legal global
+                        </h2>
+                        <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                            {legalDocuments.length} documento(s)
+                        </span>
+                    </div>
+
+                    <form onSubmit={uploadLegalDocument} className="grid gap-4 border-b border-gray-100 pb-5 lg:grid-cols-[1fr_180px_180px_auto]">
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Titulo</label>
+                            <input value={legalForm.data.title} onChange={(e) => legalForm.setData('title', e.target.value)} className={field} maxLength={200} />
+                            {legalForm.errors.title && <p className="mt-1 text-xs text-red-600">{legalForm.errors.title}</p>}
+                        </div>
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Categoria</label>
+                            <select value={legalForm.data.category} onChange={(e) => legalForm.setData('category', e.target.value)} className={field}>
+                                {Object.entries(legalCategories).map(([value, label]) => (
+                                    <option key={value} value={value}>{label}</option>
+                                ))}
+                            </select>
+                            {legalForm.errors.category && <p className="mt-1 text-xs text-red-600">{legalForm.errors.category}</p>}
+                        </div>
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Arquivo</label>
+                            <label className="flex h-[38px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 text-sm text-gray-700 hover:bg-gray-50">
+                                <UploadCloud className="h-4 w-4 text-gray-400" />
+                                <span className="truncate">{legalForm.data.file?.name ?? 'Selecionar'}</span>
+                                <input type="file" className="hidden" onChange={(e) => legalForm.setData('file', e.target.files?.[0] ?? null)} />
+                            </label>
+                            {legalForm.errors.file && <p className="mt-1 text-xs text-red-600">{legalForm.errors.file}</p>}
+                        </div>
+                        <div className="flex items-end">
+                            <button type="submit" disabled={legalForm.processing || !legalForm.data.file} className="h-[38px] rounded-lg bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                                Enviar
+                            </button>
+                        </div>
+                        <div className="lg:col-span-4">
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Descricao</label>
+                            <textarea value={legalForm.data.description} onChange={(e) => legalForm.setData('description', e.target.value)} rows={2} className={`${field} resize-none`} maxLength={2000} />
+                            {legalForm.errors.description && <p className="mt-1 text-xs text-red-600">{legalForm.errors.description}</p>}
+                            <label className="mt-2 flex items-center gap-2 text-sm text-gray-700">
+                                <input type="checkbox" checked={legalForm.data.is_active} onChange={(e) => legalForm.setData('is_active', e.target.checked)} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                Ativo para consulta da IA
+                            </label>
+                        </div>
+                    </form>
+
+                    <div className="overflow-hidden rounded-lg border border-gray-100">
+                        <table className="w-full text-sm">
+                            <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                <tr>
+                                    <th className="px-4 py-3">Documento</th>
+                                    <th className="px-4 py-3">Categoria</th>
+                                    <th className="px-4 py-3">Indexacao</th>
+                                    <th className="px-4 py-3">Arquivo</th>
+                                    <th className="px-4 py-3" />
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {legalDocuments.length === 0 && (
+                                    <tr>
+                                        <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500">Nenhum documento legal cadastrado.</td>
+                                    </tr>
+                                )}
+                                {legalDocuments.map((document) => (
+                                    <tr key={document.id} className="hover:bg-gray-50">
+                                        <td className="px-4 py-3">
+                                            <p className="font-medium text-gray-900">{document.title}</p>
+                                            {document.description && <p className="line-clamp-1 text-xs text-gray-400">{document.description}</p>}
+                                        </td>
+                                        <td className="px-4 py-3 text-gray-600">{document.category_label}</td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex flex-wrap items-center gap-1">
+                                                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${document.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                                    {document.is_active ? 'Ativo' : 'Inativo'}
+                                                </span>
+                                                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                                                    {document.chunks_count} trecho(s)
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 text-xs text-gray-500">
+                                            <p className="max-w-[180px] truncate">{document.original_filename ?? '-'}</p>
+                                            <p>{formatBytes(document.file_size_bytes)}</p>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex justify-end gap-1">
+                                                <button type="button" onClick={() => toggleLegalDocument(document)} title={document.is_active ? 'Desativar' : 'Ativar'} className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+                                                    <CheckCircle2 className="h-4 w-4" />
+                                                </button>
+                                                <button type="button" onClick={() => reindexLegalDocument(document)} title="Reindexar" className="rounded p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600">
+                                                    <RefreshCw className="h-4 w-4" />
+                                                </button>
+                                                <a href={route('admin.ai.legal-documents.download', document.id)} title="Baixar" className="rounded p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600">
+                                                    <Download className="h-4 w-4" />
+                                                </a>
+                                                <button type="button" onClick={() => destroyLegalDocument(document)} title="Remover" className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600">
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
             </div>
         </AdminLayout>
     );
