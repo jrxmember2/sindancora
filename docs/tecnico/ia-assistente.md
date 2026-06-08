@@ -10,6 +10,12 @@ Configuracao principal: `Admin > IA` no painel de superadmin. A plataforma salva
 URL base, status ativo e chave global em `ai_settings`; a chave usa cast `encrypted` e nunca e
 exposta ao tenant.
 
+O campo de modelo usa `App\Services\AI\AiModelCatalog` para exibir um dropdown por provedor com
+modelos de texto/chat compativeis com os clientes atuais do Assistente. Modelos de imagem, audio,
+video, embeddings ou realtime ficam fora desse catalogo porque exigem clientes e endpoints proprios.
+O admin ainda pode selecionar "modelo customizado" para proxy compativel, alias privado ou modelo
+novo ainda nao catalogado.
+
 Fallbacks tecnicos por ambiente continuam disponiveis:
 
 - `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `ANTHROPIC_BASE_URL`
@@ -23,7 +29,8 @@ Sem configuracao ativa, o assistente aparece desabilitado sem quebrar. Permissao
 - `App\Services\AI\AiProviderClient`: contrato comum dos provedores.
 - `App\Services\AI\AiProviderManager`: escolhe o cliente a partir de `AiSettingsManager`.
 - `ClaudeClient`: usa Anthropic Messages API.
-- `OpenAiClient`: usa OpenAI Responses API (`/responses`).
+- `OpenAiClient`: usa OpenAI Responses API (`/responses`) e adiciona `reasoning.effort` baixo para
+  modelos GPT-5/o-series quando aplicavel; modelos GPT-5 Pro usam `medium`, pois nao aceitam `low`.
 - `GeminiClient`: usa Gemini `generateContent`.
 
 `AssistantService` e `AssemblyService` dependem de `AiProviderManager`, entao a troca de provedor no
@@ -86,6 +93,7 @@ Persistencia: `ai_conversations` + `ai_messages` (`sources` JSON para citacoes c
 ## Painel
 
 - Superadmin: `/admin/ia`, configuracao global de provedor/modelo/chave/teste.
+- Superadmin: `/admin/ia`, dropdown de modelos por provedor e opcao de modelo customizado.
 - Superadmin: `/admin/ia`, base legal global com upload, ativacao/desativacao, download,
   reindexacao e remocao de documentos legais.
 - Superadmin: no perfil do tenant (`Admin > Tenants > detalhe`), define override de
