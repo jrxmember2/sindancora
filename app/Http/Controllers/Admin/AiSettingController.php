@@ -8,6 +8,7 @@ use App\Models\AiLegalDocument;
 use App\Models\AiLegalDocumentChunk;
 use App\Models\AiSetting;
 use App\Services\AI\AiException;
+use App\Services\AI\AiModelCatalog;
 use App\Services\AI\AiProviderManager;
 use App\Services\AI\AiSettingsManager;
 use Illuminate\Http\RedirectResponse;
@@ -25,6 +26,7 @@ class AiSettingController extends Controller
     public function __construct(
         private readonly AiSettingsManager $settings,
         private readonly AiProviderManager $provider,
+        private readonly AiModelCatalog $models,
     ) {}
 
     public function edit(): Response
@@ -45,6 +47,7 @@ class AiSettingController extends Controller
             'configured' => $this->settings->isConfigured(),
             'runtimeSupported' => $this->settings->runtimeSupported(),
             'providerOptions' => AiSetting::providerOptions(),
+            'modelOptions' => $this->models->options(),
             'defaults' => $defaults,
             'legalDocuments' => $this->legalDocumentsPayload(),
             'legalCategories' => AiLegalDocument::CATEGORIES,
@@ -95,9 +98,9 @@ class AiSettingController extends Controller
 
         try {
             $this->provider->complete(
-                'Voce esta testando a conexao de IA da plataforma. Responda apenas OK.',
+                'Voce esta testando a conexao de IA da plataforma. Responda exatamente OK.',
                 [['role' => 'user', 'content' => 'Teste de conexao.']],
-                16,
+                128,
             );
         } catch (AiException $e) {
             return back()->with('error', 'Nao foi possivel conectar a IA: '.$e->getMessage());

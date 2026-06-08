@@ -2,6 +2,8 @@
 
 namespace App\Services\AI;
 
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
 class OpenAiClient implements AiProviderClient
@@ -10,28 +12,39 @@ class OpenAiClient implements AiProviderClient
 
     public function complete(string $system, array $messages, int $maxTokens = 4096): string
     {
-        $response = Http::baseUrl($this->settings->baseUrl())
-            ->withToken($this->settings->apiKey())
-            ->acceptJson()
-            ->asJson()
-            ->timeout(60)
-            ->post('/responses', [
-                'model' => $this->settings->model(),
-                'instructions' => $system,
-                'input' => $this->mapMessages($messages),
-                'max_output_tokens' => $maxTokens,
-                'store' => false,
-            ]);
+        $model = (string) $this->settings->model();
+        $payload = [
+            'model' => $model,
+            'instructions' => $system,
+            'input' => $this->mapMessages($messages),
+            'max_output_tokens' => $maxTokens,
+            'store' => false,
+        ];
+
+        $reasoningEffort = $this->reasoningEffort($model);
+        if ($reasoningEffort) {
+            $payload['reasoning'] = ['effort' => $reasoningEffort];
+        }
+
+        try {
+            $response = Http::baseUrl($this->settings->baseUrl())
+                ->withToken($this->settings->apiKey())
+                ->acceptJson()
+                ->asJson()
+                ->timeout(60)
+                ->post('/responses', $payload);
+        } catch (ConnectionException $e) {
+            throw new AiException("Nao foi possivel conectar a OpenAI para o modelo {$model}: {$e->getMessage()}");
+        }
 
         if ($response->failed()) {
-            $message = data_get($response->json(), 'error.message', 'Falha na chamada a OpenAI.');
-            throw new AiException($message);
+            throw new AiException($this->errorMessage($response, $model));
         }
 
         $text = $this->extractText($response->json() ?? []);
 
         if ($text === '') {
-            throw new AiException('A OpenAI nao retornou texto na resposta.');
+            throw new AiException("A OpenAI respondeu, mas nao retornou texto para o modelo {$model}.");
         }
 
         return $text;
@@ -65,5 +78,40 @@ class OpenAiClient implements AiProviderClient
         }
 
         return trim(implode("\n", $parts));
+    }
+
+    private function reasoningEffort(string $model): ?string
+    {
+        if (str_starts_with($model, 'gpt-5') && str_ends_with($model, '-pro')) {
+            return 'medium';
+        }
+
+        if (str_starts_with($model, 'gpt-5') || preg_match('/^o[1-9]/', $model) === 1) {
+            return 'low';
+        }
+
+        return null;
+    }
+
+    private function errorMessage(Response $response, string $model): string
+    {
+        $status = $response->status();
+        $message = (string) data_get($response->json(), 'error.message', 'Falha na chamada a OpenAI.');
+        $requestId = $response->header('x-request-id')
+            ?: $response->header('request-id')
+            ?: data_get($response->json(), 'request_id');
+
+        $prefix = "OpenAI retornou HTTP {$status} para o modelo {$model}.";
+
+        $detail = match (true) {
+            $status === 401 => 'Chave invalida ou sem permissao. Gere uma nova chave no projeto correto em platform.openai.com/api-keys.',
+            $status === 403 => 'A chave nao tem acesso ao modelo, ao projeto ou a organizacao selecionada.',
+            $status === 404 => 'Modelo nao encontrado ou indisponivel para esta conta. Escolha um modelo do dropdown ou confirme acesso ao modelo.',
+            $status === 429 => 'Limite de uso, cota ou rate limit atingido. Confira billing e limites do projeto na OpenAI.',
+            $status >= 500 => "Erro temporario da OpenAI: {$message}",
+            default => $message,
+        };
+
+        return trim($prefix.' '.$detail.($requestId ? " Request ID: {$requestId}." : ''));
     }
 }
