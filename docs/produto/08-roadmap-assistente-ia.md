@@ -54,6 +54,8 @@ Status: implementado.
 
 ### 4. Documentos atuais do condominio
 
+Status: implementado.
+
 - Expandir cadastro/gestao de documentos do condominio.
 - Tipos principais: convencao, regimento interno, ata, contrato, circular e outros.
 - Adicionar checkbox `Atual` e controle `Consultar pela IA`.

@@ -17,7 +17,8 @@ class Document extends Model
     protected $fillable = [
         'tenant_id', 'condominium_id', 'storage_object_id', 'uploaded_by',
         'title', 'description', 'category', 'visibility',
-        'valid_from', 'valid_until', 'renewal_alert_days', 'expiry_notified_at',
+        'valid_from', 'valid_until', 'renewal_alert_days', 'is_current',
+        'is_ai_searchable', 'expiry_notified_at',
     ];
 
     protected $appends = ['expiry_status', 'days_until_expiry'];
@@ -27,14 +28,18 @@ class Document extends Model
         return [
             'valid_from' => 'date',
             'valid_until' => 'date',
+            'is_current' => 'boolean',
+            'is_ai_searchable' => 'boolean',
             'expiry_notified_at' => 'datetime',
         ];
     }
 
     public const CATEGORIES = [
+        'convention' => 'Convenção',
+        'regulation' => 'Regimento interno',
         'minutes' => 'Ata',
-        'regulation' => 'Regulamento',
         'contract' => 'Contrato',
+        'circular' => 'Circular',
         'receipt' => 'Comprovante',
         'other' => 'Outro',
     ];
@@ -80,6 +85,18 @@ class Document extends Model
         return $query->whereNotNull('valid_until')
             ->whereNull('expiry_notified_at')
             ->whereRaw('valid_until <= (CURRENT_DATE + COALESCE(renewal_alert_days, 30) * INTERVAL \'1 day\')');
+    }
+
+    /** Documentos que podem ser usados como fonte pelo assistente de IA. */
+    public function scopeSearchableByAi($query)
+    {
+        return $query->where('is_current', true)
+            ->where('is_ai_searchable', true);
+    }
+
+    public function isSearchableByAi(): bool
+    {
+        return (bool) $this->is_current && (bool) $this->is_ai_searchable;
     }
 
     public function condominium(): BelongsTo

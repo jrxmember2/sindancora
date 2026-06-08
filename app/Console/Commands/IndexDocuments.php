@@ -15,7 +15,10 @@ class IndexDocuments extends Command
     public function handle(DocumentIndexer $indexer): int
     {
         // Sem contexto de tenant: o global scope não filtra (varre todos).
-        $query = Document::query()->whereNotNull('storage_object_id')->with('storageObject');
+        $query = Document::query()
+            ->whereNotNull('storage_object_id')
+            ->searchableByAi()
+            ->with('storageObject');
 
         if ($tenant = $this->option('tenant')) {
             $query->where('tenant_id', $tenant);

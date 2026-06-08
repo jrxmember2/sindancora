@@ -9,6 +9,7 @@ interface StorageObj { file_size_bytes: number; original_filename: string | null
 interface Document {
     id: string; title: string; category: string; visibility: string; created_at: string;
     valid_until: string | null; expiry_status: 'valid' | 'expiring' | 'expired' | null; days_until_expiry: number | null;
+    is_current: boolean; is_ai_searchable: boolean;
     condominium: { id: string; name: string } | null;
     storage_object: StorageObj | null;
     uploader: { id: string; name: string } | null;
@@ -20,7 +21,7 @@ interface Props {
     categories: Record<string, string>;
     visibilities: Record<string, string>;
     usage: Usage;
-    filters: { search?: string; category?: string; condominium_id?: string };
+    filters: { search?: string; category?: string; condominium_id?: string; is_current?: string; is_ai_searchable?: string };
 }
 
 const visibilityStyle: Record<string, string> = {
@@ -40,6 +41,19 @@ function ValidityBadge({ d }: { d: Document }) {
     return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${style}`}>{label}</span>;
 }
 
+function AiStatusBadges({ d }: { d: Document }) {
+    return (
+        <div className="mt-1 flex flex-wrap gap-1">
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${d.is_current ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>
+                {d.is_current ? 'Atual' : 'Desatualizado'}
+            </span>
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${d.is_ai_searchable ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-100 text-gray-500'}`}>
+                {d.is_ai_searchable ? 'IA' : 'Fora da IA'}
+            </span>
+        </div>
+    );
+}
+
 function formatBytes(bytes: number): string {
     if (!bytes) return '—';
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -54,7 +68,12 @@ export default function DocumentsIndex({ documents, condominiums, categories, vi
     const [search, setSearch] = useState(filters.search ?? '');
     const apply = (extra: Record<string, string> = {}) =>
         router.get(route('documents.index'), {
-            search, category: filters.category ?? '', condominium_id: filters.condominium_id ?? '', ...extra,
+            search,
+            category: filters.category ?? '',
+            condominium_id: filters.condominium_id ?? '',
+            is_current: filters.is_current ?? '',
+            is_ai_searchable: filters.is_ai_searchable ?? '',
+            ...extra,
         }, { preserveState: true, replace: true });
 
     const destroy = (id: string, title: string) => {
@@ -105,6 +124,16 @@ export default function DocumentsIndex({ documents, condominiums, categories, vi
                             {condominiums.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                         </select>
                     )}
+                    <select value={filters.is_current ?? ''} onChange={e => apply({ is_current: e.target.value })} className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
+                        <option value="">Todos os status</option>
+                        <option value="1">Atuais</option>
+                        <option value="0">Desatualizados</option>
+                    </select>
+                    <select value={filters.is_ai_searchable ?? ''} onChange={e => apply({ is_ai_searchable: e.target.value })} className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
+                        <option value="">Todos IA</option>
+                        <option value="1">Consultar pela IA</option>
+                        <option value="0">Fora da IA</option>
+                    </select>
                 </div>
 
                 <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
@@ -128,6 +157,7 @@ export default function DocumentsIndex({ documents, condominiums, categories, vi
                                 <tr key={d.id} className="transition-colors hover:bg-gray-50">
                                     <td className="px-4 py-3">
                                         <p className="font-medium text-gray-900">{d.title}</p>
+                                        <AiStatusBadges d={d} />
                                         {d.storage_object?.original_filename && <p className="text-xs text-gray-400">{d.storage_object.original_filename}</p>}
                                     </td>
                                     <td className="px-4 py-3 text-gray-600">{categories[d.category] ?? d.category}</td>

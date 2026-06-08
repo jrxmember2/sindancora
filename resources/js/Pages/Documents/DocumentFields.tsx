@@ -9,11 +9,13 @@ export interface DocumentMeta {
     valid_from: string;
     valid_until: string;
     renewal_alert_days: string;
+    is_current: boolean;
+    is_ai_searchable: boolean;
 }
 
 interface Props {
     data: DocumentMeta;
-    setData: (key: keyof DocumentMeta, value: string) => void;
+    setData: (key: keyof DocumentMeta, value: string | boolean) => void;
     errors: Partial<Record<string, string>>;
     condominiums: Option[];
     categories: Record<string, string>;
@@ -62,6 +64,17 @@ export default function DocumentFields({ data, setData, errors, condominiums, ca
             <Field label="Descrição" error={errors.description}>
                 <textarea value={data.description} onChange={e => setData('description', e.target.value)} rows={3} className={`${inputClass} resize-none`} maxLength={2000} />
             </Field>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700">
+                    <input type="checkbox" checked={data.is_current} onChange={e => setData('is_current', e.target.checked)} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                    <span className="font-medium">Atual</span>
+                </label>
+                <label className="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700">
+                    <input type="checkbox" checked={data.is_ai_searchable} onChange={e => setData('is_ai_searchable', e.target.checked)} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                    <span className="font-medium">Consultar pela IA</span>
+                </label>
+            </div>
 
             <div className="rounded-lg border border-gray-100 bg-gray-50/60 p-4">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Vigência (opcional)</p>
