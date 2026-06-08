@@ -1,7 +1,8 @@
 import AppLayout from '@/Layouts/AppLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import UnitForm, { UnitFormData, PersonItem, PetItem, VehicleItem } from './Form';
 import { maskCnpj, maskCpf, maskPhone, isoToBrDate, onlyDigits } from '@/lib/masks';
+import { Trash2 } from 'lucide-react';
 
 interface ServerPerson { id: string; person_type?: 'individual' | 'company' | null; name: string; document?: string | null; cpf: string | null; birth_date: string | null; phones: string[]; emails: string[] }
 interface ServerPet { id: string; name: string; species: string; breed: string | null; notes: string | null }
@@ -56,13 +57,24 @@ export default function UnitEdit({ condominium, unit, blocks, typeLabels, status
         vehicles: (unit.vehicles ?? []).map(toVehicle),
     });
 
+    const destroy = () => {
+        if (confirm(`Excluir unidade ${unit.number}?`)) {
+            router.delete(route('condominiums.units.destroy', [condominium.id, unit.id]));
+        }
+    };
+
     return (
         <AppLayout>
             <Head title={`Editar Unidade ${unit.number}`} />
             <div className="space-y-4">
-                <div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
                     <Link href={route('condominiums.units.index', condominium.id)} className="text-sm text-gray-500 hover:text-gray-700">← {condominium.name} · Unidades</Link>
                     <h1 className="mt-1 text-2xl font-bold text-gray-900">Editar Unidade {unit.number}</h1>
+                    </div>
+                    <button onClick={destroy} className="inline-flex w-fit items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+                        <Trash2 className="h-4 w-4" /> Excluir
+                    </button>
                 </div>
                 <UnitForm
                     data={data} setData={setData} errors={errors} processing={processing}
