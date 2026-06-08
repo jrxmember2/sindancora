@@ -23,7 +23,7 @@
 
 ## Última entrega implementada
 
-### Assistente IA condominial - blocos 1 a 4
+### Assistente IA condominial - blocos 1 a 5
 
 Implementado em 08/06/2026. O roadmap detalhado esta em
 `docs/produto/08-roadmap-assistente-ia.md`.
@@ -62,22 +62,40 @@ O que foi entregue:
     documentos atuais e liberados para IA.
   - Ao editar atualidade, liberacao para IA ou condominio, o controller reindexa ou remove chunks.
 
+- **Bloco 5 - Base legal global**
+  - Nova base global em `Admin > IA` para documentos legais da plataforma.
+  - Novas tabelas `ai_legal_documents` e `ai_legal_document_chunks`.
+  - Upload de Codigo Civil, Codigo Penal, leis condominiais, jurisprudencia, orientacoes da plataforma,
+    materiais de referencia e outros.
+  - Base legal usa storage global em `global/ai/legal/...`, sem cota de tenant.
+  - `LegalDocumentIndexer`, `LegalDocumentSearch`, `IndexAiLegalDocument` e
+    `ai-legal-documents:index` foram adicionados.
+  - `AssistantService` combina documentos atuais/liberados do tenant com a base legal global ativa.
+
 Arquivos-chave:
 
 - `database/migrations/2026_06_24_000001_create_ai_settings_table.php`
 - `database/migrations/2026_06_24_000002_add_ai_interactions_monthly_limits.php`
 - `database/migrations/2026_06_25_000001_add_ai_controls_to_documents_table.php`
+- `database/migrations/2026_06_25_000002_create_ai_legal_documents_tables.php`
 - `app/Models/AiSetting.php`
+- `app/Models/AiLegalDocument.php`
+- `app/Models/AiLegalDocumentChunk.php`
 - `app/Models/Document.php`
+- `app/Jobs/IndexAiLegalDocument.php`
 - `app/Services/AI/AiProviderClient.php`
 - `app/Services/AI/AiProviderManager.php`
 - `app/Services/AI/AiSettingsManager.php`
 - `app/Services/AI/ClaudeClient.php`
 - `app/Services/AI/OpenAiClient.php`
 - `app/Services/AI/GeminiClient.php`
+- `app/Services/AI/DocumentTextExtractor.php`
 - `app/Services/AI/DocumentIndexer.php`
 - `app/Services/AI/DocumentSearch.php`
+- `app/Services/AI/LegalDocumentIndexer.php`
+- `app/Services/AI/LegalDocumentSearch.php`
 - `app/Services/AI/AssistantService.php`
+- `app/Console/Commands/IndexAiLegalDocuments.php`
 - `app/Services/PlanLimitService.php`
 - `app/Http/Controllers/Admin/AiSettingController.php`
 - `app/Http/Controllers/Panel/DocumentController.php`
@@ -106,11 +124,12 @@ Observacoes para retomada:
 
 Proximo bloco recomendado:
 
-- **Bloco 5 - Base legal global**:
-  - criar area em `Admin > IA` para documentos legais globais;
-  - permitir upload/indexacao de Codigo Civil, leis condominiais e materiais de referencia;
-  - separar indice global da base de documentos do tenant;
-  - combinar base legal global com documentos atuais/liberados do condominio.
+- **Bloco 6 - Fluxo final do assistente para o sindico**:
+  - selecionar automaticamente o condominio quando o usuario tiver apenas um;
+  - exibir dropdown obrigatorio quando o usuario tiver mais de um condominio;
+  - escopar conversa, busca documental e resposta ao condominio selecionado;
+  - responder com fontes consultadas quando houver documentos/base legal relevantes;
+  - reforcar bloqueio para assuntos fora do dominio condominial e parecer juridico sensivel.
 
 ### Correções de plano + identidade do tenant/condomínio
 

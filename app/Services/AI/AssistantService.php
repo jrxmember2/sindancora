@@ -20,6 +20,7 @@ class AssistantService
     public function __construct(
         private readonly AiProviderManager $ai,
         private readonly DocumentSearch $search,
+        private readonly LegalDocumentSearch $legalSearch,
     ) {}
 
     public function configured(): bool
@@ -142,6 +143,15 @@ class AssistantService
                 $parts[] = "[{$d['title']}] ".trim($d['content']);
             }
             $parts[] = "</trechos_de_documentos>";
+        }
+
+        $legalDocs = $this->legalSearch->search($query, 5);
+        if ($legalDocs !== []) {
+            $parts[] = "\n<base_legal_global>";
+            foreach ($legalDocs as $d) {
+                $parts[] = "[{$d['title']} / {$d['category']}] ".trim($d['content']);
+            }
+            $parts[] = "</base_legal_global>";
         }
 
         $parts[] = "</contexto_do_condominio>";
