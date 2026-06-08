@@ -32,7 +32,24 @@ class CondominiumController extends Controller
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
             ->latest()
             ->paginate(12)
-            ->withQueryString();
+            ->withQueryString()
+            ->through(fn (Condominium $condominium) => [
+                'id' => $condominium->id,
+                'name' => $condominium->name,
+                'cnpj' => $condominium->cnpj,
+                'city' => $condominium->city,
+                'state' => $condominium->state,
+                'status' => $condominium->status,
+                'logo_url' => $condominium->logo_url,
+                'blocks_count' => $condominium->blocks_count,
+                'units_count' => $condominium->units_count,
+                'active_managers' => $condominium->activeManagers->map(fn (CondominiumManager $manager) => [
+                    'role' => $manager->role,
+                    'person' => [
+                        'name' => $manager->person?->name,
+                    ],
+                ])->values(),
+            ]);
 
         return Inertia::render('Condominiums/Index', [
             'condominiums' => $condominiums,
