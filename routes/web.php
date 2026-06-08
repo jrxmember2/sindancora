@@ -144,6 +144,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Condomínio — detalhe (dinâmica, registrada após as estáticas acima)
     Route::middleware('permission:condominiums:read')->group(function () {
+        Route::get('condominios/{condominium}/logo', [CondominiumController::class, 'logo'])->name('condominiums.logo');
         Route::get('condominios/{condominium}', [CondominiumController::class, 'show'])->name('condominiums.show');
     });
 

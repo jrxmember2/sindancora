@@ -99,23 +99,32 @@ class Condominium extends Model
     {
         $objectId = $this->getLogoStorageObjectId();
 
-        if (! $objectId) {
-            return null;
+        if ($objectId) {
+            $object = StorageObject::where('tenant_id', $this->tenant_id)
+                ->where('entity_type', self::LOGO_ENTITY)
+                ->where('entity_id', $this->id)
+                ->whereNull('deleted_at')
+                ->find($objectId);
+
+            if ($object) {
+                return $object;
+            }
         }
 
         return StorageObject::where('tenant_id', $this->tenant_id)
+            ->where('entity_type', self::LOGO_ENTITY)
+            ->where('entity_id', $this->id)
             ->whereNull('deleted_at')
-            ->find($objectId);
+            ->latest('created_at')
+            ->first();
     }
 
     public function getLogoUrlAttribute(): ?string
     {
-        if ($legacyUrl = data_get($this->settings, 'brand.logo_url')) {
-            return $legacyUrl;
+        if ($object = $this->logoObject()) {
+            return app(StorageService::class)->getSignedUrl($object);
         }
 
-        $object = $this->logoObject();
-
-        return $object ? app(StorageService::class)->getSignedUrl($object) : null;
+        return data_get($this->settings, 'brand.logo_url');
     }
 }
