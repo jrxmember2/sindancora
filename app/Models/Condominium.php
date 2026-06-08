@@ -104,8 +104,6 @@ class Condominium extends Model
         }
 
         return StorageObject::where('tenant_id', $this->tenant_id)
-            ->where('entity_type', self::LOGO_ENTITY)
-            ->where('entity_id', $this->id)
             ->whereNull('deleted_at')
             ->find($objectId);
     }

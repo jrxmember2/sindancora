@@ -243,7 +243,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </aside>
 
             {/* Main Content */}
-            <div className="lg:pl-64">
+            <div className="flex min-h-screen flex-col lg:pl-64">
                 {/* Topbar */}
                 <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-white px-4 shadow-sm">
                     <button
@@ -332,7 +332,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 )}
 
                 {/* Page Content */}
-                <main className="p-6">{children}</main>
+                <main className="flex-1 p-6">{children}</main>
+
+                <footer className="border-t border-gray-100 bg-white px-6 py-4 text-center text-xs text-gray-400">
+                    powered by{' '}
+                    <a
+                        href="https://serratech.tec.br"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-medium text-gray-500 hover:text-blue-600"
+                    >
+                        serratech
+                    </a>
+                </footer>
             </div>
         </div>
     );
