@@ -1,6 +1,6 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { CheckCircle, AlertCircle, ArrowLeft, Sparkles } from 'lucide-react';
 
 interface User {
     id: string;
@@ -27,12 +27,25 @@ interface Tenant {
 interface Props {
     tenant: Tenant;
     plans: { id: string; name: string; display_name: string }[];
+    aiUsage: {
+        current: number;
+        limit: number;
+        unlimited: boolean;
+        remaining: number | null;
+        percentage: number;
+        exhausted: boolean;
+        reset_at: string | null;
+        has_override: boolean;
+    };
 }
 
-export default function TenantShow({ tenant, plans }: Props) {
+export default function TenantShow({ tenant, plans, aiUsage }: Props) {
     const isActive = tenant.status === 'active';
 
     const planForm = useForm({ plan_id: tenant.plan?.id ?? '' });
+    const aiLimitForm = useForm({ limit_value: aiUsage.limit });
+    const aiUnlimited = aiLimitForm.data.limit_value === -1;
+    const aiResetAt = aiUsage.reset_at ? new Date(aiUsage.reset_at).toLocaleDateString('pt-BR') : '—';
 
     function toggleStatus() {
         router.patch(isActive ? `/admin/tenants/${tenant.id}/suspend` : `/admin/tenants/${tenant.id}/activate`);
@@ -41,6 +54,15 @@ export default function TenantShow({ tenant, plans }: Props) {
     function changePlan(e: React.FormEvent) {
         e.preventDefault();
         planForm.patch(`/admin/tenants/${tenant.id}/plan`);
+    }
+
+    function updateAiLimit(e: React.FormEvent) {
+        e.preventDefault();
+        aiLimitForm.patch(`/admin/tenants/${tenant.id}/ai-limit`, { preserveScroll: true });
+    }
+
+    function removeAiLimit() {
+        router.delete(`/admin/tenants/${tenant.id}/ai-limit`, { preserveScroll: true });
     }
 
     return (
@@ -104,6 +126,74 @@ export default function TenantShow({ tenant, plans }: Props) {
                             >
                                 Alterar
                             </button>
+                        </form>
+                    </div>
+
+                    <div className="rounded-xl bg-white p-6 shadow-sm border border-gray-100 lg:col-span-2">
+                        <div className="mb-4 flex items-center justify-between gap-4">
+                            <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900 uppercase tracking-wide">
+                                <Sparkles className="h-4 w-4 text-blue-600" /> Limite mensal de IA
+                            </h2>
+                            <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${aiUsage.exhausted ? 'bg-red-100 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
+                                {aiUsage.unlimited ? 'Ilimitado' : `${aiUsage.remaining} restantes`}
+                            </span>
+                        </div>
+
+                        <div className="mb-4 grid gap-3 text-sm sm:grid-cols-4">
+                            <div>
+                                <p className="text-xs text-gray-500">Usado</p>
+                                <p className="font-semibold text-gray-900">{aiUsage.current}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500">Limite</p>
+                                <p className="font-semibold text-gray-900">{aiUsage.unlimited ? 'Ilimitado' : aiUsage.limit}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500">Renova em</p>
+                                <p className="font-semibold text-gray-900">{aiResetAt}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500">Origem</p>
+                                <p className="font-semibold text-gray-900">{aiUsage.has_override ? 'Override do tenant' : 'Plano'}</p>
+                            </div>
+                        </div>
+
+                        {!aiUsage.unlimited && (
+                            <div className="mb-4 h-2 overflow-hidden rounded-full bg-gray-100">
+                                <div className={`h-full ${aiUsage.exhausted ? 'bg-red-500' : 'bg-blue-600'}`} style={{ width: `${aiUsage.percentage}%` }} />
+                            </div>
+                        )}
+
+                        <form onSubmit={updateAiLimit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                            <div className="flex-1">
+                                <label className="mb-1 block text-sm font-medium text-gray-700">Interações por mês</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    disabled={aiUnlimited}
+                                    value={aiUnlimited ? '' : aiLimitForm.data.limit_value}
+                                    onChange={(e) => aiLimitForm.setData('limit_value', parseInt(e.target.value) || 0)}
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
+                                    placeholder={aiUnlimited ? 'Ilimitado' : '0'}
+                                />
+                            </div>
+                            <label className="flex items-center gap-2 pb-2 text-sm text-gray-700">
+                                <input
+                                    type="checkbox"
+                                    checked={aiUnlimited}
+                                    onChange={(e) => aiLimitForm.setData('limit_value', e.target.checked ? -1 : 0)}
+                                    className="rounded border-gray-300"
+                                />
+                                Ilimitado
+                            </label>
+                            <button type="submit" disabled={aiLimitForm.processing} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                                Salvar limite
+                            </button>
+                            {aiUsage.has_override && (
+                                <button type="button" onClick={removeAiLimit} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    Usar plano
+                                </button>
+                            )}
                         </form>
                     </div>
 

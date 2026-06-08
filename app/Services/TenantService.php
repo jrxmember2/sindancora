@@ -94,6 +94,7 @@ class TenantService
         $resources = [
             'condominiums', 'units', 'users', 'residents',
             'storage_mb', 'announcements_monthly', 'emails_monthly', 'api_calls_monthly',
+            'ai_interactions_monthly',
         ];
 
         foreach ($resources as $resource) {

@@ -19,6 +19,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'super_admin'])->gro
         Route::patch('/{tenant}/suspend', [TenantController::class, 'suspend'])->name('suspend');
         Route::patch('/{tenant}/activate', [TenantController::class, 'activate'])->name('activate');
         Route::patch('/{tenant}/plan', [TenantController::class, 'changePlan'])->name('change-plan');
+        Route::patch('/{tenant}/ai-limit', [TenantController::class, 'updateAiLimit'])->name('ai-limit.update');
+        Route::delete('/{tenant}/ai-limit', [TenantController::class, 'destroyAiLimit'])->name('ai-limit.destroy');
     });
 
     Route::prefix('planos')->name('plans.')->group(function () {

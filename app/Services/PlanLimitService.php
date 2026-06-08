@@ -10,10 +10,12 @@ use App\Models\TenantLimit;
 use App\Models\TenantUsageCounter;
 use App\Models\Unit;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 
 class PlanLimitService
 {
     private const LIVE_RESOURCES = ['condominiums', 'units', 'users', 'residents', 'storage_mb'];
+    private const MONTHLY_RESOURCES = ['announcements_monthly', 'emails_monthly', 'api_calls_monthly', 'ai_interactions_monthly'];
 
     public function check(Tenant $tenant, string $resource, int $increment = 1): void
     {
@@ -44,10 +46,12 @@ class PlanLimitService
             return;
         }
 
-        TenantUsageCounter::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'resource' => $resource],
-            ['current_value' => 0],
-        )->increment('current_value', $by);
+        $counter = $this->counter($tenant, $resource);
+        if ($this->usesMonthlyReset($resource)) {
+            $counter = $this->refreshMonthlyCounter($tenant, $resource, $counter);
+        }
+
+        $counter->increment('current_value', $by);
     }
 
     public function incrementBy(Tenant $tenant, string $resource, int $by): void
@@ -63,10 +67,20 @@ class PlanLimitService
             return;
         }
 
-        TenantUsageCounter::firstOrCreate(
+        $counter = $this->counter($tenant, $resource);
+        if ($this->usesMonthlyReset($resource)) {
+            $counter = $this->refreshMonthlyCounter($tenant, $resource, $counter);
+        }
+
+        $counter->decrement('current_value', max(0, $by));
+    }
+
+    private function counter(Tenant $tenant, string $resource): TenantUsageCounter
+    {
+        return TenantUsageCounter::firstOrCreate(
             ['tenant_id' => $tenant->id, 'resource' => $resource],
             ['current_value' => 0],
-        )->decrement('current_value', max(0, $by));
+        );
     }
 
     public function getLimit(Tenant $tenant, string $resource): int
@@ -98,6 +112,10 @@ class PlanLimitService
             return $current;
         }
 
+        if ($this->usesMonthlyReset($resource)) {
+            return $this->refreshMonthlyCounter($tenant, $resource)->current_value;
+        }
+
         return TenantUsageCounter::where('tenant_id', $tenant->id)
             ->where('resource', $resource)
             ->value('current_value') ?? 0;
@@ -113,23 +131,40 @@ class PlanLimitService
 
     public function getUsageSummary(Tenant $tenant): array
     {
-        $resources = ['condominiums', 'units', 'users', 'residents', 'storage_mb'];
+        $resources = ['condominiums', 'units', 'users', 'residents', 'storage_mb', 'ai_interactions_monthly'];
         $summary = [];
 
         foreach ($resources as $resource) {
-            $current = $this->getCurrent($tenant, $resource);
-            $limit = $this->getLimit($tenant, $resource);
-
-            $summary[$resource] = [
-                'current' => $current,
-                'limit' => $limit,
-                'unlimited' => $limit === -1,
-                'percentage' => ($limit > 0) ? round(($current / $limit) * 100, 1) : 0,
-                'near_limit' => ($limit > 0) && ($current / $limit) > 0.85,
-            ];
+            $summary[$resource] = $this->getResourceUsage($tenant, $resource);
         }
 
         return $summary;
+    }
+
+    public function getResourceUsage(Tenant $tenant, string $resource): array
+    {
+        $current = $this->getCurrent($tenant, $resource);
+        $limit = $this->getLimit($tenant, $resource);
+        $override = TenantLimit::where('tenant_id', $tenant->id)
+            ->where('resource', $resource)
+            ->first();
+        $counter = TenantUsageCounter::where('tenant_id', $tenant->id)
+            ->where('resource', $resource)
+            ->first();
+
+        return [
+            'resource' => $resource,
+            'current' => $current,
+            'limit' => $limit,
+            'unlimited' => $limit === -1,
+            'remaining' => $limit === -1 ? null : max(0, $limit - $current),
+            'percentage' => ($limit > 0) ? min(100, round(($current / $limit) * 100, 1)) : 0,
+            'near_limit' => ($limit > 0) && ($current / $limit) > 0.85,
+            'exhausted' => $limit !== -1 && $current >= $limit,
+            'reset_at' => $counter?->reset_at?->toIso8601String(),
+            'has_override' => (bool) $override,
+            'override_limit' => $override?->limit_value,
+        ];
     }
 
     public function syncPermanentCounters(Tenant $tenant): void
@@ -142,6 +177,62 @@ class PlanLimitService
     private function usesLiveSource(string $resource): bool
     {
         return in_array($resource, self::LIVE_RESOURCES, true);
+    }
+
+    private function usesMonthlyReset(string $resource): bool
+    {
+        return in_array($resource, self::MONTHLY_RESOURCES, true);
+    }
+
+    private function refreshMonthlyCounter(Tenant $tenant, string $resource, ?TenantUsageCounter $counter = null): TenantUsageCounter
+    {
+        $counter ??= $this->counter($tenant, $resource);
+
+        if (! $counter->reset_at) {
+            $counter->forceFill(['reset_at' => $this->nextMonthlyResetAt($tenant)])->save();
+
+            return $counter->refresh();
+        }
+
+        if ($counter->reset_at->isPast()) {
+            $counter->forceFill([
+                'current_value' => 0,
+                'reset_at' => $this->nextMonthlyResetAt($tenant),
+            ])->save();
+
+            return $counter->refresh();
+        }
+
+        return $counter;
+    }
+
+    private function nextMonthlyResetAt(Tenant $tenant): Carbon
+    {
+        $now = now();
+        $anchor = $tenant->activeSubscription()->first()?->starts_at
+            ?? $tenant->created_at
+            ?? $now;
+
+        $cursor = $now->copy()->startOfMonth();
+
+        do {
+            $day = min($anchor->day, $cursor->copy()->endOfMonth()->day);
+            $candidate = Carbon::create(
+                $cursor->year,
+                $cursor->month,
+                $day,
+                $anchor->hour,
+                $anchor->minute,
+                $anchor->second,
+                $now->timezone,
+            );
+
+            if ($candidate->greaterThan($now)) {
+                return $candidate;
+            }
+
+            $cursor->addMonthNoOverflow();
+        } while (true);
     }
 
     private function currentFromLiveSource(Tenant $tenant, string $resource): int

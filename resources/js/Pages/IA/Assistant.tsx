@@ -6,18 +6,29 @@ import { useState } from 'react';
 interface ConversationRow { id: string; title: string | null; updated_at: string }
 interface Message { role: string; content: string; created_at: string | null }
 interface Draft { title: string; body: string }
+interface AiUsage {
+    current: number;
+    limit: number;
+    unlimited: boolean;
+    remaining: number | null;
+    exhausted: boolean;
+    reset_at: string | null;
+}
 interface Props {
     configured: boolean;
     conversations: ConversationRow[];
     conversation: { id: string; title: string | null } | null;
     messages: Message[];
     draft: Draft | null;
+    aiUsage: AiUsage;
 }
 
-export default function Assistant({ configured, conversations, conversation, messages, draft }: Props) {
+export default function Assistant({ configured, conversations, conversation, messages, draft, aiUsage }: Props) {
     const convId = conversation?.id ?? null;
     const { data, setData, post, processing, reset } = useForm({ conversation_id: convId, message: '' });
     const [copied, setCopied] = useState(false);
+    const blocked = !configured || aiUsage.exhausted;
+    const resetAt = aiUsage.reset_at ? new Date(aiUsage.reset_at).toLocaleDateString('pt-BR') : null;
 
     const send = (e: React.FormEvent) => {
         e.preventDefault();
@@ -74,11 +85,20 @@ export default function Assistant({ configured, conversations, conversation, mes
                     <div className="mb-3 flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-blue-600" />
                         <h1 className="text-lg font-bold text-gray-900">Assistente IA</h1>
+                        <span className={`ml-auto rounded-full px-2.5 py-1 text-xs font-medium ${aiUsage.exhausted ? 'bg-red-100 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
+                            {aiUsage.unlimited ? `${aiUsage.current} usadas` : `${aiUsage.remaining} restantes`}
+                        </span>
                     </div>
 
                     {!configured && (
                         <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                             A integração global de IA ainda não está ativa. Configure provedor, modelo e chave no Painel de Administração em Admin &gt; IA.
+                        </div>
+                    )}
+
+                    {configured && aiUsage.exhausted && (
+                        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                            O limite mensal de IA foi atingido. {resetAt ? `A renovação está prevista para ${resetAt}.` : 'Ajuste o limite no plano ou no perfil do tenant.'}
                         </div>
                     )}
 
@@ -116,10 +136,10 @@ export default function Assistant({ configured, conversations, conversation, mes
 
                     {/* Ações rápidas */}
                     <div className="mb-3 flex flex-wrap gap-2">
-                        <button onClick={() => quick('assistant.delinquency')} disabled={!configured} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                        <button onClick={() => quick('assistant.delinquency')} disabled={blocked} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
                             <TrendingDown className="h-4 w-4" /> Análise de inadimplência
                         </button>
-                        <button onClick={draftAnnouncement} disabled={!configured} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                        <button onClick={draftAnnouncement} disabled={blocked} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
                             <Megaphone className="h-4 w-4" /> Rascunho de comunicado
                         </button>
                     </div>
@@ -129,11 +149,11 @@ export default function Assistant({ configured, conversations, conversation, mes
                         <input
                             value={data.message}
                             onChange={(e) => setData('message', e.target.value)}
-                            disabled={!configured || processing}
+                            disabled={blocked || processing}
                             placeholder="Escreva sua pergunta…"
                             className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50"
                         />
-                        <button type="submit" disabled={!configured || processing || !data.message.trim()} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                        <button type="submit" disabled={blocked || processing || !data.message.trim()} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
                             <Send className="h-4 w-4" /> {processing ? 'Enviando…' : 'Enviar'}
                         </button>
                     </form>

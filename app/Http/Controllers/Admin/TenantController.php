@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\Tenant;
+use App\Models\TenantLimit;
 use App\Rules\CpfCnpj;
 use App\Services\PlanLimitService;
 use App\Services\TenantService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -79,6 +81,7 @@ class TenantController extends Controller
         return Inertia::render('Admin/Tenants/Show', [
             'tenant' => $tenant,
             'plans' => Plan::active()->orderBy('sort_order')->get(['id', 'name', 'display_name']),
+            'aiUsage' => $this->planLimitService->getResourceUsage($tenant, 'ai_interactions_monthly'),
         ]);
     }
 
@@ -120,6 +123,33 @@ class TenantController extends Controller
         $this->planLimitService->syncPermanentCounters($tenant);
 
         return back()->with('success', "Plano alterado para \"{$plan->display_name}\".");
+    }
+
+    public function updateAiLimit(Request $request, Tenant $tenant): RedirectResponse
+    {
+        $data = $request->validate([
+            'limit_value' => 'required|integer|min:-1',
+        ]);
+
+        TenantLimit::updateOrCreate(
+            ['tenant_id' => $tenant->id, 'resource' => 'ai_interactions_monthly'],
+            [
+                'limit_value' => (int) $data['limit_value'],
+                'reason' => 'Limite mensal de IA definido pelo superadmin.',
+                'set_by' => Auth::id(),
+            ],
+        );
+
+        return back()->with('success', 'Limite mensal de IA atualizado.');
+    }
+
+    public function destroyAiLimit(Tenant $tenant): RedirectResponse
+    {
+        TenantLimit::where('tenant_id', $tenant->id)
+            ->where('resource', 'ai_interactions_monthly')
+            ->delete();
+
+        return back()->with('success', 'Override de limite de IA removido. O tenant voltou a usar o limite do plano.');
     }
 
     private function forgetTenantCache(Tenant $tenant): void
