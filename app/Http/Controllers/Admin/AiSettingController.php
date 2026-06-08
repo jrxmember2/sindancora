@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AiSetting;
 use App\Services\AI\AiException;
+use App\Services\AI\AiProviderManager;
 use App\Services\AI\AiSettingsManager;
-use App\Services\AI\ClaudeClient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -17,7 +17,7 @@ class AiSettingController extends Controller
 {
     public function __construct(
         private readonly AiSettingsManager $settings,
-        private readonly ClaudeClient $claude,
+        private readonly AiProviderManager $provider,
     ) {}
 
     public function edit(): Response
@@ -84,12 +84,8 @@ class AiSettingController extends Controller
     {
         $setting = AiSetting::current();
 
-        if (! $this->settings->runtimeSupported()) {
-            return back()->with('error', 'Este provedor ja pode ser salvo, mas a execucao ainda sera ligada na etapa de clientes OpenAI/Gemini.');
-        }
-
         try {
-            $this->claude->complete(
+            $this->provider->complete(
                 'Voce esta testando a conexao de IA da plataforma. Responda apenas OK.',
                 [['role' => 'user', 'content' => 'Teste de conexao.']],
                 16,

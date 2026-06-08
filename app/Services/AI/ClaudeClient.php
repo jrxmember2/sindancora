@@ -2,18 +2,20 @@
 
 namespace App\Services\AI;
 
+use App\Models\AiSetting;
 use Illuminate\Support\Facades\Http;
 
 /**
  * Cliente HTTP fino para a Messages API da Anthropic.
  */
-class ClaudeClient
+class ClaudeClient implements AiProviderClient
 {
     public function __construct(private readonly AiSettingsManager $settings) {}
 
     public function configured(): bool
     {
-        return $this->settings->isConfigured();
+        return $this->settings->provider() === AiSetting::PROVIDER_ANTHROPIC
+            && $this->settings->isConfigured();
     }
 
     /**
@@ -24,10 +26,6 @@ class ClaudeClient
     public function complete(string $system, array $messages, int $maxTokens = 4096): string
     {
         if (! $this->configured()) {
-            if (! $this->settings->runtimeSupported()) {
-                throw new AiException("O provedor {$this->settings->providerLabel()} ainda nao esta ativo para execucao. Selecione Claude / Anthropic em Admin > IA por enquanto.");
-            }
-
             throw new AiException('A integracao global de IA nao esta configurada. Configure provedor, modelo e chave em Admin > IA.');
         }
 

@@ -12,8 +12,7 @@ evitar parecer juridico.
 
 - A chave de IA e global da plataforma e fica no Painel de Administracao, nunca no
   painel do tenant.
-- O superadmin pode configurar Claude/Anthropic agora e deixar OpenAI/Gemini
-  preparados para uso futuro.
+- O superadmin pode configurar Claude/Anthropic, OpenAI ou Gemini.
 - Cada tenant so usa IA se o modulo `ai_assistant` estiver contratado e se houver
   limite mensal disponivel.
 - O assistente sempre trata o usuario pelo nome da sessao.
@@ -27,6 +26,8 @@ evitar parecer juridico.
 
 ### 1. Admin > IA: configuracao global
 
+Status: implementado.
+
 - Criar tela `Admin > IA` para o superadmin.
 - Salvar provedor, modelo, URL base opcional, chave criptografada e status ativo.
 - Remover dependencia operacional exclusiva de `ANTHROPIC_API_KEY` no painel.
@@ -35,9 +36,10 @@ evitar parecer juridico.
 
 ### 2. Provedores de IA
 
+Status: implementado.
+
 - Criar abstracao comum para clientes de IA.
-- Implementar Claude/Anthropic como primeiro provedor funcional.
-- Adicionar OpenAI e Gemini mantendo a mesma interface interna.
+- Implementar Claude/Anthropic, OpenAI e Gemini mantendo a mesma interface interna.
 - Permitir troca do provedor global sem alterar o fluxo do assistente.
 
 ### 3. Limites mensais por tenant
@@ -75,7 +77,7 @@ evitar parecer juridico.
 ## Ordem de implementacao
 
 1. Configuracao global em `Admin > IA`.
-2. Abstracao de provedores e Claude usando configuracao do banco.
+2. Abstracao de provedores e clientes Claude/OpenAI/Gemini.
 3. Limites mensais por plano/tenant.
 4. Documentos atuais por condominio.
 5. Base legal global.

@@ -18,13 +18,13 @@ use Illuminate\Support\Carbon;
 class AssistantService
 {
     public function __construct(
-        private readonly ClaudeClient $claude,
+        private readonly AiProviderManager $ai,
         private readonly DocumentSearch $search,
     ) {}
 
     public function configured(): bool
     {
-        return $this->claude->configured();
+        return $this->ai->configured();
     }
 
     /** Responde a uma mensagem na conversa, com histórico + contexto do tenant + RAG. */
@@ -40,7 +40,7 @@ class AssistantService
         $context = $this->buildContext($tenant, $userText);
         $messages[] = ['role' => 'user', 'content' => $userText."\n\n".$context];
 
-        $answer = $this->claude->complete($this->systemPrompt($tenant), $messages, 2048);
+        $answer = $this->ai->complete($this->systemPrompt($tenant), $messages, 2048);
 
         // Persiste a mensagem do usuário (sem o contexto) e a resposta.
         $conversation->messages()->create(['role' => 'user', 'content' => $userText]);
@@ -58,7 +58,7 @@ class AssistantService
             ."Seja prático e direto: resuma a situação, aponte prioridades e sugira ações concretas (régua de cobrança, "
             ."contato, acordo). Não invente números além dos fornecidos.";
 
-        return $this->claude->complete($system, [[
+        return $this->ai->complete($system, [[
             'role' => 'user',
             'content' => "Analise a inadimplência do condomínio e proponha um plano de ação.\n\n".$data,
         ]], 3072);
@@ -71,7 +71,7 @@ class AssistantService
             ."Responda ESTRITAMENTE em JSON válido no formato {\"title\": \"...\", \"body\": \"...\"}, sem texto fora do JSON. "
             ."O corpo pode usar quebras de linha (\\n) e deve ser pronto para publicar.";
 
-        $raw = $this->claude->complete($system, [[
+        $raw = $this->ai->complete($system, [[
             'role' => 'user',
             'content' => "Escreva um comunicado sobre: {$prompt}",
         ]], 2048);
@@ -113,7 +113,7 @@ class AssistantService
 
         $context = $this->buildContext($tenant, $occurrence->title.' '.$occurrence->description);
 
-        return $this->claude->complete($system, [[
+        return $this->ai->complete($system, [[
             'role' => 'user',
             'content' => "Escreva uma resposta para esta ocorrência.\n\n{$details}\n\n{$context}",
         ]], 1024);
