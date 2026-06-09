@@ -72,6 +72,12 @@ class NotificationPreferenceRegistry
             'description' => 'Ferias proximas do prazo limite ou atrasadas.',
             'channels' => ['database', 'broadcast', 'mail'],
         ],
+        'public_submission_received' => [
+            'group' => 'Operacao',
+            'label' => 'Envios de links publicos',
+            'description' => 'Novo auto-cadastro de morador ou ocorrencia recebida por link/QR, aguardando moderacao.',
+            'channels' => ['database', 'broadcast', 'mail'],
+        ],
     ];
 
     public static function events(): array

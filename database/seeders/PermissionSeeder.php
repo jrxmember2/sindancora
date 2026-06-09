@@ -154,6 +154,10 @@ class PermissionSeeder extends Seeder
             ['module' => 'employees', 'action' => 'delete', 'description' => 'Remover funcionarios e periodos de ferias'],
 
             ['module' => 'schedule', 'action' => 'read', 'description' => 'Visualizar cronograma consolidado'],
+
+            // Links publicos + QR por condominio (auto-cadastro e ocorrencia com moderacao)
+            ['module' => 'public_links', 'action' => 'read',   'description' => 'Ver links publicos e fila de moderacao'],
+            ['module' => 'public_links', 'action' => 'manage', 'description' => 'Configurar links publicos e aprovar/reprovar envios'],
         ];
 
         foreach ($permissions as $perm) {

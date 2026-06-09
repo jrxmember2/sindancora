@@ -39,6 +39,7 @@ import {
     Timer,
     ClipboardCheck,
     Hammer,
+    QrCode,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -62,6 +63,7 @@ const navigation = [
     { name: 'Relatórios', href: '/relatorios', icon: BarChart3, permission: 'reports:read', module: 'reports' },
     { name: 'Assembleias', href: '/assembleias', icon: Vote, permission: 'assemblies:read', module: 'assemblies' },
     { name: 'Portaria', href: '/visitantes', icon: DoorOpen, permission: 'gatehouse:read', module: 'gatehouse' },
+    { name: 'Links públicos', href: '/links-publicos', icon: QrCode, permission: 'public_links:read', module: 'public_links' },
     { name: 'Atendimento', href: '/inbox', icon: MessagesSquare, permission: 'inbox:use', module: 'whatsapp' },
     { name: 'Setores', href: '/setores', icon: Headset, permission: 'sectors:manage', module: 'whatsapp' },
     { name: 'Disparos', href: '/disparos', icon: Send, permission: 'campaigns:manage', module: 'whatsapp' },

@@ -76,8 +76,12 @@ Legenda esforço: 🟢 baixo · 🟡 médio · 🔴 alto. Valor: ⭐ alto difere
     Ver `docs/tecnico/cronograma-consolidado.md`.
 
 ### Booster de aquisição (encaixa em qualquer fase)
-- [ ] **X3. Links públicos + QR por condomínio** para auto-cadastro de morador / abrir ocorrência,
-  com moderação (aprovar/reprovar). ⭐ 🟡 — reusa portaria (QR) + portal.
+- [x] **X3. Links públicos + QR por condomínio** para auto-cadastro de morador / abrir ocorrência,
+  com moderação (aprovar/reprovar). ⭐ 🟡 — concluída (09/06/2026).
+  - `condominium_public_links` (token/QR por condomínio) + `public_submissions` (fila de moderação).
+  - Páginas públicas `/p/{token}` (sem login), gestão `/links-publicos` e moderação no painel.
+  - Módulo `public_links` em todos os planos; aprovação gera Pessoa+vínculo (convite opcional) ou
+    Ocorrência. Ver `docs/tecnico/links-publicos.md`. **Roadmap da Nova Onda concluído.**
 
 ## Princípios de execução
 - Cada item entra por fôlego (1 fatia funcional por vez), com migration/model/controller/serviço/

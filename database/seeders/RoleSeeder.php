@@ -41,6 +41,7 @@ class RoleSeeder extends Seeder
                 'quotations:create', 'quotations:read', 'quotations:update', 'quotations:approve', 'quotations:delete',
                 'works:create', 'works:read', 'works:update', 'works:delete',
                 'schedule:read',
+                'public_links:read', 'public_links:manage',
                 'audit:read',
             ],
         ],
@@ -68,6 +69,7 @@ class RoleSeeder extends Seeder
                 'quotations:create', 'quotations:read', 'quotations:update', 'quotations:approve',
                 'works:create', 'works:read', 'works:update', 'works:delete',
                 'schedule:read',
+                'public_links:read', 'public_links:manage',
                 'ai:use',
             ],
         ],
@@ -79,6 +81,7 @@ class RoleSeeder extends Seeder
                 'announcements:read', 'occurrences:read', 'occurrences:update',
                 'reservations:read', 'documents:read', 'documents:download',
                 'gatehouse:read', 'suppliers:read', 'employees:read', 'maintenance:read', 'quotations:read', 'works:read', 'schedule:read',
+                'public_links:read', 'public_links:manage',
             ],
         ],
         'conselheiro' => [
@@ -89,6 +92,7 @@ class RoleSeeder extends Seeder
                 'announcements:read', 'occurrences:read',
                 'reservations:read', 'documents:read', 'documents:download',
                 'reports:read', 'gatehouse:read', 'suppliers:read', 'employees:read', 'maintenance:read', 'quotations:read', 'works:read', 'schedule:read',
+                'public_links:read',
             ],
         ],
         'morador' => [

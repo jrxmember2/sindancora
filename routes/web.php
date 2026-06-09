@@ -3,6 +3,7 @@
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicIntakeController;
 use App\Http\Controllers\Panel\AnnouncementController;
 use App\Http\Controllers\Panel\ApiKeyController;
 use App\Http\Controllers\Panel\AssemblyController;
@@ -28,6 +29,8 @@ use App\Http\Controllers\Panel\QuotationController;
 use App\Http\Controllers\Panel\SupplierController;
 use App\Http\Controllers\Panel\PaymentSettingController;
 use App\Http\Controllers\Panel\PersonController;
+use App\Http\Controllers\Panel\PublicLinkController;
+use App\Http\Controllers\Panel\PublicSubmissionController;
 use App\Http\Controllers\Panel\QuickReplyController;
 use App\Http\Controllers\Panel\ReportController;
 use App\Http\Controllers\Panel\ReservationController;
@@ -53,6 +56,22 @@ Route::get('/', function () {
 Route::middleware('guest')->group(function () {
     Route::get('/cadastro', [OnboardingController::class, 'create'])->name('onboarding.create');
     Route::post('/cadastro', [OnboardingController::class, 'store'])->name('onboarding.store');
+});
+
+// Intake público por link/QR do condomínio (sem login). Tenant resolvido pelo domínio;
+// o token é escopado ao tenant. Tudo entra como envio pendente de moderação.
+Route::prefix('p/{token}')->name('public.intake.')->group(function () {
+    Route::get('/', [PublicIntakeController::class, 'landing'])->name('landing');
+    Route::get('enviado', [PublicIntakeController::class, 'sent'])->name('sent');
+
+    Route::get('morador', [PublicIntakeController::class, 'residentForm'])->name('resident');
+    Route::get('ocorrencia', [PublicIntakeController::class, 'occurrenceForm'])->name('occurrence');
+
+    // Envios públicos: throttle anti-abuso (10/min por IP).
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::post('morador', [PublicIntakeController::class, 'residentStore'])->name('resident.store');
+        Route::post('ocorrencia', [PublicIntakeController::class, 'occurrenceStore'])->name('occurrence.store');
+    });
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -82,6 +101,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Cronograma consolidado
     Route::middleware('permission:schedule:read')->group(function () {
         Route::get('cronograma', [ScheduleController::class, 'index'])->name('schedule.index');
+    });
+
+    // Links públicos + QR por condomínio (auto-cadastro / ocorrência com moderação)
+    Route::middleware('module:public_links')->prefix('links-publicos')->name('public-links.')->group(function () {
+        Route::middleware('permission:public_links:read')->group(function () {
+            Route::get('/', [PublicLinkController::class, 'index'])->name('index');
+
+            // Moderação (rotas estáticas antes do parâmetro {condominium}).
+            Route::get('moderacao', [PublicSubmissionController::class, 'index'])->name('moderation.index');
+            Route::get('moderacao/{submission}', [PublicSubmissionController::class, 'show'])->name('moderation.show');
+        });
+
+        Route::middleware('permission:public_links:manage')->group(function () {
+            Route::post('moderacao/{submission}/aprovar', [PublicSubmissionController::class, 'approve'])->name('moderation.approve');
+            Route::post('moderacao/{submission}/reprovar', [PublicSubmissionController::class, 'reject'])->name('moderation.reject');
+
+            Route::post('{condominium}/gerar', [PublicLinkController::class, 'generate'])->name('generate');
+            Route::match(['put', 'patch'], '{condominium}', [PublicLinkController::class, 'update'])->name('update');
+        });
     });
 
     // Usuários

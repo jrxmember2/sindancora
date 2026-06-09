@@ -26,6 +26,49 @@
 
 ## Última entrega implementada
 
+### X3. Links públicos + QR por condomínio
+
+Implementado em 09/06/2026. Doc técnica: `docs/tecnico/links-publicos.md`. **Fecha o roadmap da
+Nova Onda** (`06-roadmap-nova-onda.md`).
+
+O que foi entregue:
+
+- Novo módulo `public_links` habilitado em **todos os planos** (inclusive Starter).
+- Novas tabelas `condominium_public_links` (token/QR por condomínio) e `public_submissions`
+  (fila de moderação).
+- Páginas públicas sem login em `/p/{token}`: landing, auto-cadastro de morador e abertura de
+  ocorrência. Tenant resolvido pelo domínio; token escopado ao tenant; POSTs com `throttle:10,1`.
+- Gestão no painel em `/links-publicos`: gerar/rotacionar token, copiar URL, QR, ativar/desativar e
+  habilitar cada ação, com contador de pendências.
+- Moderação em `/links-publicos/moderacao`: fila filtrável e detalhe com aprovar/reprovar.
+- Aprovar auto-cadastro cria/reaproveita a Pessoa, vincula à unidade (gestor pode ajustar
+  unidade/relação) e envia convite ao portal **opcional** (e-mail/WhatsApp).
+- Aprovar ocorrência cria a Ocorrência aberta com contato anexado e SLA calculado pela prioridade.
+- Escopo por condomínio via `ScopesCondominiumsByRole` (mesma regra de Funcionários/Cronograma).
+- Notificação `PublicSubmissionReceived` aos gestores, respeitando preferências granulares (D11).
+
+Arquivos-chave:
+
+- `database/migrations/2026_06_30_000001_create_condominium_public_links_table.php`
+- `database/migrations/2026_06_30_000002_create_public_submissions_table.php`
+- `database/migrations/2026_06_30_000003_register_public_links_permissions_and_module.php`
+- `app/Models/CondominiumPublicLink.php`, `app/Models/PublicSubmission.php`
+- `app/Services/PublicSubmissionService.php`
+- `app/Http/Controllers/PublicIntakeController.php`
+- `app/Http/Controllers/Panel/PublicLinkController.php`
+- `app/Http/Controllers/Panel/PublicSubmissionController.php`
+- `app/Http/Controllers/Concerns/ScopesCondominiumsByRole.php`
+- `app/Notifications/PublicSubmissionReceived.php`
+- `resources/js/Pages/Public/`, `resources/js/Pages/PublicLinks/`, `resources/js/Layouts/PublicLayout.tsx`
+- `routes/web.php`, seeders (`PermissionSeeder`, `RoleSeeder`, `PlanSeeder`)
+
+Validações feitas:
+
+- `php -l` nos PHP alterados/criados.
+- `php artisan route:list --name=public --except-vendor` (13 rotas).
+- `npm run build` passou.
+- `git diff --check` passou, apenas com avisos CRLF do Windows.
+
 ### D11. Perfil de usuario + preferencias de notificacao granulares
 
 Implementado em 09/06/2026. Doc tecnica: `docs/tecnico/perfil-usuario-notificacoes.md`.
@@ -358,10 +401,9 @@ Observacoes para retomada:
 
 Proximo bloco recomendado atualizado:
 
-- **X3. Links publicos + QR por condominio**:
-  - auto-cadastro de morador;
-  - abertura publica de ocorrencia;
-  - moderacao/aprovacao antes de criar acesso definitivo.
+- **X3. Links publicos + QR por condominio** — concluido em 09/06/2026 (auto-cadastro de morador,
+  abertura publica de ocorrencia e moderacao/aprovacao antes de criar acesso definitivo). Fecha o
+  roadmap da Nova Onda. Ver `docs/tecnico/links-publicos.md`.
 
 ### Correções de plano + identidade do tenant/condomínio
 
@@ -556,10 +598,23 @@ Confirmar no Easypanel se há worker/cron com `php artisan schedule:run` ou `php
 
 ## Próximo passo sugerido
 
-O proximo item natural do roadmap e **X3. Links publicos + QR por condominio**.
+O roadmap da **Nova Onda** (`06-roadmap-nova-onda.md`) está **concluído**: Fases A, B, C, D e o
+booster X3 entregues. Não há mais itens abertos nesse roadmap.
 
-Motivo: a Fase D operacional ficou completa com D9, D10, D11 e D13. O X3 ajuda aquisicao e onboarding,
-reaproveitando portal, QR/portaria e o controle de moderacao por condominio.
+Pendência operacional antes de testar X3 em produção (Easypanel):
+
+```bash
+php artisan migrate --force
+php artisan db:seed --force   # se quiser refletir public_links em planos/papéis já existentes
+php artisan optimize:clear
+```
+
+Sugestões de continuidade (a definir com o usuário):
+
+- Anexos/fotos nas ocorrências públicas (hoje o intake é só texto).
+- Página pública de status/acompanhamento do envio por protocolo.
+- Endurecer anti-abuso (captcha/honeypot) nos formulários públicos.
+- Novo ciclo de produto a partir do estudo de concorrentes.
 
 ## Cuidados para a próxima implementação
 
