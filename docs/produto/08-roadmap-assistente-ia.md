@@ -26,10 +26,12 @@ evitar parecer juridico.
 
 ### 1. Admin > IA: configuracao global
 
-Status: implementado.
+Status: implementado e validado em 09/06/2026.
 
 - Criar tela `Admin > IA` para o superadmin.
 - Salvar provedor, modelo, URL base opcional, chave criptografada e status ativo.
+- Modelo em dropdown dependente do provedor selecionado: OpenAI lista apenas modelos OpenAI,
+  Gemini lista apenas modelos Gemini e Claude/Anthropic lista apenas modelos Claude.
 - Remover dependencia operacional exclusiva de `ANTHROPIC_API_KEY` no painel.
 - Manter fallback por `.env` apenas como compatibilidade tecnica.
 - Exibir status de configuracao e teste de conexao.

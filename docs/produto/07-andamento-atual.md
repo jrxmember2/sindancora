@@ -1,6 +1,6 @@
 # 07 — Andamento atual / handoff
 
-> Atualizado em 08/06/2026.
+> Atualizado em 09/06/2026.
 > Objetivo: dar contexto rápido para Codex/Claude ou outro agente continuar o Sindâncora sem
 > redescobrir o estado do projeto.
 
@@ -14,6 +14,9 @@
 - Projeto roda em produção via Easypanel/Docker.
 
 ## Estado confirmado
+
+- Em 09/06/2026, o usuario testou e finalizou o ajuste de `Admin > IA`: o campo `Modelo` fica em
+  dropdown e troca a lista conforme o provedor selecionado (OpenAI, Gemini ou Claude/Anthropic).
 
 - O usuário testou em produção/Easypanel a entrega de `Contas a pagar` + correção de troca de plano e informou que estava tudo certo.
 - A correção de plano deixou a mudança de plano refletir acessos e módulos:
@@ -34,6 +37,8 @@ O que foi entregue:
   - Nova configuracao global em `Admin > IA` (`/admin/ia`).
   - Nova tabela/model `ai_settings`, com chave criptografada.
   - Superadmin define provedor, modelo, URL base, chave, status ativo e testa conexao.
+  - Campo `Modelo` e um dropdown dependente do `Provedor`, com modelos pre-configurados por OpenAI,
+    Gemini e Claude/Anthropic.
   - O Assistente deixou de orientar uso direto de `ANTHROPIC_API_KEY` na tela do tenant.
 
 - **Bloco 2 - Provedores**
@@ -125,6 +130,7 @@ Arquivos-chave:
 
 Validacoes feitas:
 
+- Em 09/06/2026, validacao funcional manual do usuario no painel `Admin > IA` concluida.
 - `php -l` nos PHP alterados/criados.
 - `php artisan route:list --name=assistant --except-vendor` passou.
 - `npm run build` passou.
@@ -133,7 +139,8 @@ Validacoes feitas:
 
 Observacoes para retomada:
 
-- Nao houve teste real contra APIs externas porque depende de chaves validas em `Admin > IA`.
+- A tela `Admin > IA` foi validada pelo usuario em 09/06/2026. Testes contra provedores externos
+  continuam dependendo de chaves validas, permissao ao modelo e billing/projeto corretos no provedor.
 - Rodar `php artisan migrate --force` no ambiente antes de testar.
 - Se seeders forem usados para atualizar planos existentes, rodar tambem `php artisan db:seed --force`.
 - `public/build` pode mudar quando `npm run build` for executado; isso e esperado porque assets buildados
