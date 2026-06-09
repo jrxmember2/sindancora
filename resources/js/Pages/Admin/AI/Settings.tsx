@@ -33,6 +33,10 @@ interface LegalDocument {
     description: string | null;
     category: string;
     category_label: string;
+    jurisdiction_level: string;
+    jurisdiction_label: string;
+    state: string | null;
+    city: string | null;
     is_active: boolean;
     original_filename: string | null;
     file_size_bytes: number | null;
@@ -49,6 +53,7 @@ interface Props {
     defaults: Record<Provider, ProviderDefaults>;
     legalDocuments: LegalDocument[];
     legalCategories: Record<string, string>;
+    legalJurisdictions: Record<string, string>;
 }
 
 function formatBytes(bytes: number | null): string {
@@ -57,7 +62,7 @@ function formatBytes(bytes: number | null): string {
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export default function AiSettings({ setting, configured, providerOptions, modelOptions, defaults, legalDocuments, legalCategories }: Props) {
+export default function AiSettings({ setting, configured, providerOptions, modelOptions, defaults, legalDocuments, legalCategories, legalJurisdictions }: Props) {
     const { flash } = usePage<PageProps>().props;
 
     const availableModelForProvider = (provider: Provider, preferred?: string | null) => {
@@ -83,10 +88,13 @@ export default function AiSettings({ setting, configured, providerOptions, model
         enabled: setting.enabled,
     });
 
-    const legalForm = useForm<{ title: string; description: string; category: string; file: File | null; is_active: boolean }>({
+    const legalForm = useForm<{ title: string; description: string; category: string; jurisdiction_level: string; state: string; city: string; file: File | null; is_active: boolean }>({
         title: '',
         description: '',
         category: 'civil_code',
+        jurisdiction_level: 'federal',
+        state: '',
+        city: '',
         file: null,
         is_active: true,
     });
@@ -259,8 +267,8 @@ export default function AiSettings({ setting, configured, providerOptions, model
                         </span>
                     </div>
 
-                    <form onSubmit={uploadLegalDocument} className="grid gap-4 border-b border-gray-100 pb-5 lg:grid-cols-[1fr_180px_180px_auto]">
-                        <div>
+                    <form onSubmit={uploadLegalDocument} className="grid gap-4 border-b border-gray-100 pb-5 lg:grid-cols-6">
+                        <div className="lg:col-span-2">
                             <label className="mb-1 block text-sm font-medium text-gray-700">Titulo</label>
                             <input value={legalForm.data.title} onChange={(e) => legalForm.setData('title', e.target.value)} className={field} maxLength={200} />
                             {legalForm.errors.title && <p className="mt-1 text-xs text-red-600">{legalForm.errors.title}</p>}
@@ -275,6 +283,50 @@ export default function AiSettings({ setting, configured, providerOptions, model
                             {legalForm.errors.category && <p className="mt-1 text-xs text-red-600">{legalForm.errors.category}</p>}
                         </div>
                         <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Abrangencia</label>
+                            <select
+                                value={legalForm.data.jurisdiction_level}
+                                onChange={(e) => {
+                                    const level = e.target.value;
+                                    legalForm.setData({
+                                        ...legalForm.data,
+                                        jurisdiction_level: level,
+                                        state: ['state', 'municipal'].includes(level) ? legalForm.data.state : '',
+                                        city: level === 'municipal' ? legalForm.data.city : '',
+                                    });
+                                }}
+                                className={field}
+                            >
+                                {Object.entries(legalJurisdictions).map(([value, label]) => (
+                                    <option key={value} value={value}>{label}</option>
+                                ))}
+                            </select>
+                            {legalForm.errors.jurisdiction_level && <p className="mt-1 text-xs text-red-600">{legalForm.errors.jurisdiction_level}</p>}
+                        </div>
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">UF</label>
+                            <input
+                                value={legalForm.data.state}
+                                onChange={(e) => legalForm.setData('state', e.target.value.toUpperCase())}
+                                disabled={!['state', 'municipal'].includes(legalForm.data.jurisdiction_level)}
+                                className={field}
+                                maxLength={2}
+                                placeholder="SP"
+                            />
+                            {legalForm.errors.state && <p className="mt-1 text-xs text-red-600">{legalForm.errors.state}</p>}
+                        </div>
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Municipio</label>
+                            <input
+                                value={legalForm.data.city}
+                                onChange={(e) => legalForm.setData('city', e.target.value)}
+                                disabled={legalForm.data.jurisdiction_level !== 'municipal'}
+                                className={field}
+                                maxLength={120}
+                            />
+                            {legalForm.errors.city && <p className="mt-1 text-xs text-red-600">{legalForm.errors.city}</p>}
+                        </div>
+                        <div className="lg:col-span-2">
                             <label className="mb-1 block text-sm font-medium text-gray-700">Arquivo</label>
                             <label className="flex h-[38px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 text-sm text-gray-700 hover:bg-gray-50">
                                 <UploadCloud className="h-4 w-4 text-gray-400" />
@@ -288,7 +340,7 @@ export default function AiSettings({ setting, configured, providerOptions, model
                                 Enviar
                             </button>
                         </div>
-                        <div className="lg:col-span-4">
+                        <div className="lg:col-span-6">
                             <label className="mb-1 block text-sm font-medium text-gray-700">Descricao</label>
                             <textarea value={legalForm.data.description} onChange={(e) => legalForm.setData('description', e.target.value)} rows={2} className={`${field} resize-none`} maxLength={2000} />
                             {legalForm.errors.description && <p className="mt-1 text-xs text-red-600">{legalForm.errors.description}</p>}
@@ -305,6 +357,7 @@ export default function AiSettings({ setting, configured, providerOptions, model
                                 <tr>
                                     <th className="px-4 py-3">Documento</th>
                                     <th className="px-4 py-3">Categoria</th>
+                                    <th className="px-4 py-3">Abrangencia</th>
                                     <th className="px-4 py-3">Indexacao</th>
                                     <th className="px-4 py-3">Arquivo</th>
                                     <th className="px-4 py-3" />
@@ -313,7 +366,7 @@ export default function AiSettings({ setting, configured, providerOptions, model
                             <tbody className="divide-y divide-gray-50">
                                 {legalDocuments.length === 0 && (
                                     <tr>
-                                        <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500">Nenhum documento legal cadastrado.</td>
+                                        <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">Nenhum documento legal cadastrado.</td>
                                     </tr>
                                 )}
                                 {legalDocuments.map((document) => (
@@ -323,6 +376,7 @@ export default function AiSettings({ setting, configured, providerOptions, model
                                             {document.description && <p className="line-clamp-1 text-xs text-gray-400">{document.description}</p>}
                                         </td>
                                         <td className="px-4 py-3 text-gray-600">{document.category_label}</td>
+                                        <td className="px-4 py-3 text-gray-600">{document.jurisdiction_label}</td>
                                         <td className="px-4 py-3">
                                             <div className="flex flex-wrap items-center gap-1">
                                                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${document.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>

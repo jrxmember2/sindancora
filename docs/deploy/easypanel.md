@@ -111,6 +111,33 @@ SUPER_ADMIN_EMAIL=admin@sindancora.com.br
 SUPER_ADMIN_PASSWORD=SENHA_SUPER_FORTE_AQUI
 ```
 
+### Storage local com volume persistente
+
+Se **nao** for usar R2/S3 e mantiver `FILESYSTEM_DISK=local`, monte um volume persistente no servico
+da aplicacao:
+
+```text
+/var/www/html/storage/app
+```
+
+Esse caminho preserva todos os uploads do sistema:
+
+- logos de tenant e condominio;
+- documentos do condominio;
+- anexos de comunicados, ocorrencias, orcamentos e obras;
+- comprovantes/recibos de contas e cobrancas;
+- midias do WhatsApp;
+- base legal global da IA em `storage/app/private/global/ai/legal/...`.
+
+Volume opcional para logs:
+
+```text
+/var/www/html/storage/logs
+```
+
+Em producao, a recomendacao continua sendo R2/S3 (`FILESYSTEM_DISK=s3`). Nesse caso, os uploads ficam
+no bucket e nao dependem de volume local para persistir entre deploys.
+
 **IMPORTANTE — APP_KEY obrigatória:** Gere a chave antes de configurar:
 ```bash
 # Rode localmente no projeto para gerar a chave

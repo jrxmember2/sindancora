@@ -51,6 +51,7 @@ class AiSettingController extends Controller
             'defaults' => $defaults,
             'legalDocuments' => $this->legalDocumentsPayload(),
             'legalCategories' => AiLegalDocument::CATEGORIES,
+            'legalJurisdictions' => AiLegalDocument::JURISDICTIONS,
         ]);
     }
 
@@ -121,11 +122,27 @@ class AiSettingController extends Controller
         if ($request->has('is_active')) {
             $request->merge(['is_active' => $request->boolean('is_active')]);
         }
+        if ($request->filled('state')) {
+            $request->merge(['state' => strtoupper((string) $request->input('state'))]);
+        }
 
         $data = $request->validate([
             'title' => 'required|string|max:200',
             'description' => 'nullable|string|max:2000',
             'category' => ['required', 'string', Rule::in(array_keys(AiLegalDocument::CATEGORIES))],
+            'jurisdiction_level' => ['required', 'string', Rule::in(array_keys(AiLegalDocument::JURISDICTIONS))],
+            'state' => [
+                Rule::requiredIf(fn () => in_array($request->input('jurisdiction_level'), ['state', 'municipal'], true)),
+                'nullable',
+                'string',
+                'size:2',
+            ],
+            'city' => [
+                Rule::requiredIf(fn () => $request->input('jurisdiction_level') === 'municipal'),
+                'nullable',
+                'string',
+                'max:120',
+            ],
             'file' => 'required|file|max:51200|mimes:pdf,txt,md,csv,doc,docx,odt',
             'is_active' => 'sometimes|boolean',
         ]);
@@ -134,6 +151,9 @@ class AiSettingController extends Controller
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
             'category' => $data['category'],
+            'jurisdiction_level' => $data['jurisdiction_level'],
+            'state' => in_array($data['jurisdiction_level'], ['state', 'municipal'], true) ? ($data['state'] ?? null) : null,
+            'city' => $data['jurisdiction_level'] === 'municipal' ? ($data['city'] ?? null) : null,
             'is_active' => $request->has('is_active') ? $request->boolean('is_active') : true,
             'uploaded_by' => Auth::id(),
         ]);
@@ -227,6 +247,10 @@ class AiSettingController extends Controller
                 'description' => $document->description,
                 'category' => $document->category,
                 'category_label' => $document->categoryLabel(),
+                'jurisdiction_level' => $document->jurisdiction_level,
+                'jurisdiction_label' => $document->jurisdictionLabel(),
+                'state' => $document->state,
+                'city' => $document->city,
                 'is_active' => $document->is_active,
                 'original_filename' => $document->original_filename,
                 'file_size_bytes' => $document->file_size_bytes,

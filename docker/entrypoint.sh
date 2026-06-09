@@ -5,6 +5,17 @@ echo "==> SindÂncora — iniciando container..."
 
 cd /var/www/html
 
+echo "==> Preparando diretorios persistentes..."
+mkdir -p \
+    storage/app/private \
+    storage/app/public \
+    storage/framework/cache/data \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache || true
+
 # APP_KEY é obrigatória em produção
 if [ -z "$APP_KEY" ]; then
     echo "ERRO: variável APP_KEY não definida."

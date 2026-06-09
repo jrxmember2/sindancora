@@ -155,6 +155,9 @@ class AssistantService
             '<regras_de_resposta>',
             'Escopo da conversa: '.($condominium ? "somente o condominio {$condominium->name}." : 'tenant inteiro.'),
             'Ao usar documento do condominio, cite o marcador [D#]. Ao usar base legal global, cite o marcador [L#].',
+            $condominium
+                ? 'Base legal estadual/municipal filtrada por localidade: '.$this->condominiumLocation($condominium).'.'
+                : 'Sem condominio selecionado, a base legal local fica limitada a normas gerais/federais.',
             'Se o contexto nao trouxer a informacao solicitada, diga isso claramente.',
             '</regras_de_resposta>',
             $this->structuredSummary($tenant, $condominium),
@@ -179,20 +182,21 @@ class AssistantService
             $parts[] = '</trechos_de_documentos>';
         }
 
-        $legalDocs = $this->legalSearch->search($query, 5);
+        $legalDocs = $this->legalSearch->search($query, 5, $condominium);
         if ($legalDocs !== []) {
             $parts[] = "\n<base_legal_global>";
             foreach ($legalDocs as $index => $d) {
                 $label = 'L'.($index + 1);
                 $category = AiLegalDocument::CATEGORIES[$d['category']] ?? $d['category'];
-                $parts[] = "[{$label}] Base legal: {$d['title']} ({$category})\n".trim($d['content']);
+                $jurisdiction = $this->legalJurisdictionLabel($d);
+                $parts[] = "[{$label}] Base legal: {$d['title']} ({$category}; {$jurisdiction})\n".trim($d['content']);
                 $sources[] = [
                     'label' => $label,
                     'type' => 'legal',
                     'id' => $d['id'],
                     'title' => $d['title'],
                     'category' => $category,
-                    'scope' => 'Base legal global',
+                    'scope' => $jurisdiction,
                 ];
             }
             $parts[] = '</base_legal_global>';
@@ -242,6 +246,31 @@ class AssistantService
         }
 
         return implode("\n", $lines);
+    }
+
+    private function condominiumLocation(Condominium $condominium): string
+    {
+        return trim(collect([$condominium->city, $condominium->state])->filter()->implode('/')) ?: 'localidade nao informada';
+    }
+
+    /**
+     * @param array{jurisdiction_level?:string,state?:?string,city?:?string} $document
+     */
+    private function legalJurisdictionLabel(array $document): string
+    {
+        $level = $document['jurisdiction_level'] ?? 'general';
+        $level = $level !== '' ? $level : 'general';
+        $base = AiLegalDocument::JURISDICTIONS[$level] ?? $level;
+
+        if ($level === 'state' && ! empty($document['state'])) {
+            return "{$base} - {$document['state']}";
+        }
+
+        if ($level === 'municipal') {
+            return trim("{$base} - ".($document['city'] ?? '').'/'.($document['state'] ?? ''), ' -/');
+        }
+
+        return $base;
     }
 
     private function delinquencyContext(Tenant $tenant, ?Condominium $condominium = null): string

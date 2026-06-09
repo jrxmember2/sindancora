@@ -16,6 +16,9 @@ class AiLegalDocument extends Model
         'title',
         'description',
         'category',
+        'jurisdiction_level',
+        'state',
+        'city',
         'storage_provider',
         'storage_bucket',
         'storage_path',
@@ -36,13 +39,23 @@ class AiLegalDocument extends Model
     }
 
     public const CATEGORIES = [
+        'federal_constitution' => 'Constituicao Federal',
         'civil_code' => 'Codigo Civil',
         'penal_code' => 'Codigo Penal',
         'condominium_law' => 'Lei condominial',
+        'state_law' => 'Lei estadual',
+        'municipal_law' => 'Lei municipal',
         'jurisprudence' => 'Jurisprudencia',
         'platform_guidance' => 'Orientacao da plataforma',
         'reference' => 'Material de referencia',
         'other' => 'Outro',
+    ];
+
+    public const JURISDICTIONS = [
+        'general' => 'Geral',
+        'federal' => 'Federal',
+        'state' => 'Estadual',
+        'municipal' => 'Municipal',
     ];
 
     public function chunks(): HasMany
@@ -58,5 +71,21 @@ class AiLegalDocument extends Model
     public function categoryLabel(): string
     {
         return self::CATEGORIES[$this->category] ?? $this->category;
+    }
+
+    public function jurisdictionLabel(): string
+    {
+        $jurisdiction = $this->jurisdiction_level ?: 'general';
+        $level = self::JURISDICTIONS[$jurisdiction] ?? $jurisdiction;
+
+        if ($jurisdiction === 'state' && $this->state) {
+            return "{$level} - {$this->state}";
+        }
+
+        if ($jurisdiction === 'municipal') {
+            return trim("{$level} - {$this->city}/{$this->state}", ' -/');
+        }
+
+        return $level;
     }
 }

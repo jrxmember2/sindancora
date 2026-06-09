@@ -257,6 +257,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <Menu className="h-5 w-5" />
                     </button>
 
+                    <div className="flex min-w-0 items-center gap-2">
+                        {tenant?.logo_url ? (
+                            <img src={tenant.logo_url} alt={brandName} className="h-8 max-w-[160px] object-contain" />
+                        ) : (
+                            <div
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white"
+                                style={{ backgroundColor: primaryColor }}
+                            >
+                                {brandName.charAt(0).toUpperCase()}
+                            </div>
+                        )}
+                        <span className="hidden truncate text-sm font-semibold text-gray-900 sm:block">{brandName}</span>
+                    </div>
+
                     <div className="flex-1" />
 
                     {/* Sino de notificações */}

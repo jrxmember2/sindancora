@@ -60,16 +60,19 @@ admin nao exige alteracao nos fluxos consumidores.
 ## Base legal global
 
 - Tabelas `ai_legal_documents` e `ai_legal_document_chunks`.
-- Categorias: Codigo Civil, Codigo Penal, Lei condominial, Jurisprudencia, Orientacao da plataforma,
-  Material de referencia e Outro.
-- Upload e gestao em `Admin > IA`, sem cota de tenant e sem expor a base para administradores de tenant.
+- Categorias: Constituicao Federal, Codigo Civil, Codigo Penal, Lei condominial, Lei estadual,
+  Lei municipal, Jurisprudencia, Orientacao da plataforma, Material de referencia e Outro.
+- Upload e gestao em `Admin > IA`, com categoria, abrangencia juridica, UF/municipio quando aplicavel,
+  sem cota de tenant e sem expor a base para administradores de tenant.
+- Abrangencias: `general`/`federal` aplicam a todos; `state` exige UF; `municipal` exige UF + municipio.
 - Arquivos sao armazenados no disco padrao em `global/ai/legal/...`.
 - `App\Services\AI\LegalDocumentIndexer` reutiliza `DocumentTextExtractor` para extrair PDF/txt/md/csv e
   gravar chunks globais.
 - Disparo: `App\Jobs\IndexAiLegalDocument` no upload, ativacao e reindexacao manual.
 - Backfill: `php artisan ai-legal-documents:index` (`--force`).
-- `App\Services\AI\LegalDocumentSearch` consulta somente documentos ativos e combina os trechos com
-  os documentos atuais/liberados do tenant no contexto do assistente.
+- `App\Services\AI\LegalDocumentSearch` consulta somente documentos ativos, filtra leis estaduais e
+  municipais pela localidade do condominio selecionado e combina os trechos com os documentos
+  atuais/liberados do tenant no contexto do assistente.
 
 ## Fluxo por condominio e fontes
 
@@ -80,7 +83,8 @@ admin nao exige alteracao nos fluxos consumidores.
 - Usuarios com papel escopado por `user_roles.condominium_id` so listam/abrem conversas desse escopo;
   conversas antigas sem escopo so ficam acessiveis ao proprio usuario ou a perfis tenant-wide.
 - A busca documental do RAG consulta apenas documentos atuais/liberados do condominio selecionado.
-- A base legal global continua disponivel como apoio comum da plataforma.
+- A base legal global continua disponivel como apoio comum da plataforma. Leis estaduais e municipais
+  entram no RAG apenas quando batem com UF/cidade do condominio selecionado.
 - Respostas que usam RAG salvam `ai_messages.sources` com marcadores como `[D1]` (documento do
   condominio) e `[L1]` (base legal global), exibidos na tela do assistente.
 
