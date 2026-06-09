@@ -38,8 +38,9 @@
 @endphp
 <body>
     <div class="header">
-        @if ($tenant->getLogoUrl())
-            <img src="{{ $tenant->getLogoUrl() }}" class="logo" alt="{{ $tenant->getBrandName() }}">
+        @php($logoDataUri = $tenant->getLogoDataUri())
+        @if ($logoDataUri)
+            <img src="{{ $logoDataUri }}" class="logo" alt="{{ $tenant->getBrandName() }}">
         @endif
         <h1>{{ $tenant->getBrandName() }}</h1>
         <p class="muted">

@@ -118,7 +118,7 @@ export default function TenantProfile({ profile }: Props) {
                                 Logo
                                 <input
                                     type="file"
-                                    accept="image/png,image/jpeg,image/webp"
+                                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
                                     className="hidden"
                                     onChange={(e) => {
                                         setData('logo', e.target.files?.[0] ?? null);

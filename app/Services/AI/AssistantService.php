@@ -44,7 +44,8 @@ class AssistantService
         $context = $this->buildContext($tenant, $userText, $condominium);
         $messages[] = ['role' => 'user', 'content' => $userText."\n\n".$context['content']];
 
-        $answer = $this->ai->complete($this->systemPrompt($tenant), $messages, 2048);
+        // max_tokens nulo → usa o valor configurado em Admin > IA (slider).
+        $answer = $this->ai->complete($this->systemPrompt($tenant), $messages);
 
         // Persiste a mensagem do usuário (sem o contexto) e a resposta.
         $conversation->messages()->create(['role' => 'user', 'content' => $userText]);
@@ -135,13 +136,17 @@ class AssistantService
     private function systemPrompt(Tenant $tenant): string
     {
         // Estável (cacheável): não interpolar data/hora ou IDs voláteis aqui.
-        return "Você é o assistente de gestão do SindÂncora, um sistema de administração de condomínios. "
+        return "Você é o LemeIA, o assistente de gestão do SindÂncora, um sistema de administração de condomínios. "
             ."Ajuda o síndico/administrador com dúvidas sobre o condomínio, finanças, ocorrências, reservas e documentos. "
-            ."Responda em português do Brasil, de forma objetiva e profissional. Use SOMENTE as informações do contexto "
-            ."fornecido em cada pergunta (dados do condomínio e trechos de documentos); se algo não estiver no contexto, "
-            ."diga que não tem essa informação em vez de inventar. Quando usar trechos de documentos ou base legal, cite "
-            ."os marcadores das fontes fornecidas, como [D1] ou [L1]. A base legal global é apoio informativo e não "
-            ."substitui análise jurídica profissional. Responda diretamente, sem expor seu raciocínio.";
+            ."Responda em português do Brasil, de forma objetiva e profissional. Baseie-se nas informações do contexto "
+            ."fornecido em cada pergunta (dados do condomínio e trechos de documentos). Os trechos vêm de uma busca e "
+            ."podem estar parciais ou fora de ordem: leia todos com atenção e CONECTE informações relacionadas antes de "
+            ."concluir. Por exemplo, se a pergunta é sobre 'horário de obras' e os trechos falam em horários de entrega de "
+            ."material de construção, mudanças ou regras de obras/reformas, use esses trechos para responder, deixando "
+            ."claro o que exatamente o documento fixa. Só diga que não há a informação quando realmente não houver nada "
+            ."relacionado nos trechos. Nunca invente números, prazos ou regras que não estejam no contexto. Quando usar "
+            ."trechos de documentos ou base legal, cite os marcadores das fontes, como [D1] ou [L1]. A base legal global é "
+            ."apoio informativo e não substitui análise jurídica profissional. Responda diretamente, sem expor seu raciocínio.";
     }
 
     /**
@@ -163,7 +168,7 @@ class AssistantService
             $this->structuredSummary($tenant, $condominium),
         ];
 
-        $docs = $this->search->search($tenant->id, $query, 5, $condominium?->id);
+        $docs = $this->search->search($tenant->id, $query, 10, $condominium?->id);
         if ($docs !== []) {
             $parts[] = "\n<trechos_de_documentos>";
             foreach ($docs as $index => $d) {

@@ -34,6 +34,7 @@ class AiSettingController extends Controller
         $setting = AiSetting::first();
         $provider = $setting?->provider ?: AiSetting::defaultProvider();
         $defaults = $this->settings->defaults();
+        $tuning = AiSetting::tuningDefaults($provider);
 
         return Inertia::render('Admin/AI/Settings', [
             'setting' => [
@@ -41,6 +42,10 @@ class AiSettingController extends Controller
                 'model' => $setting?->model ?: data_get($defaults, "{$provider}.model"),
                 'base_url' => $setting?->base_url ?: data_get($defaults, "{$provider}.base_url"),
                 'enabled' => $setting?->enabled ?? true,
+                'temperature' => $setting?->temperature !== null ? (float) $setting->temperature : $tuning['temperature'],
+                // top_p só vem preenchido se o admin tiver ativado explicitamente (senão null = desligado).
+                'top_p' => $setting?->top_p !== null ? (float) $setting->top_p : null,
+                'max_tokens' => $setting?->max_tokens ?: $tuning['max_tokens'],
                 'has_key' => filled($setting?->api_key) || filled($this->settings->apiKey()),
                 'last_checked_at' => $setting?->last_checked_at?->toIso8601String(),
             ],
@@ -49,6 +54,11 @@ class AiSettingController extends Controller
             'providerOptions' => AiSetting::providerOptions(),
             'modelOptions' => $this->models->options(),
             'defaults' => $defaults,
+            'tuningDefaults' => [
+                AiSetting::PROVIDER_ANTHROPIC => AiSetting::tuningDefaults(AiSetting::PROVIDER_ANTHROPIC),
+                AiSetting::PROVIDER_OPENAI => AiSetting::tuningDefaults(AiSetting::PROVIDER_OPENAI),
+                AiSetting::PROVIDER_GEMINI => AiSetting::tuningDefaults(AiSetting::PROVIDER_GEMINI),
+            ],
             'legalDocuments' => $this->legalDocumentsPayload(),
             'legalCategories' => AiLegalDocument::CATEGORIES,
             'legalJurisdictions' => AiLegalDocument::JURISDICTIONS,
@@ -67,6 +77,9 @@ class AiSettingController extends Controller
             'base_url' => 'nullable|url|max:255',
             'api_key' => 'nullable|string|max:4000',
             'enabled' => 'boolean',
+            'temperature' => 'nullable|numeric|min:0|max:1',
+            'top_p' => 'nullable|numeric|min:0|max:1',
+            'max_tokens' => 'nullable|integer|min:256|max:8192',
         ], [
             'model.required' => 'Selecione um modelo disponivel para o provedor escolhido.',
             'model.in' => 'Selecione um modelo disponivel para o provedor escolhido.',
@@ -85,6 +98,11 @@ class AiSettingController extends Controller
             ? $data['base_url']
             : data_get($defaults, "{$provider}.base_url");
         $setting->enabled = (bool) ($data['enabled'] ?? false);
+
+        $tuning = AiSetting::tuningDefaults($provider);
+        $setting->temperature = $data['temperature'] ?? $tuning['temperature'];
+        $setting->top_p = $data['top_p'] ?? null;
+        $setting->max_tokens = $data['max_tokens'] ?? $tuning['max_tokens'];
 
         // Campo write-only: em branco mantem a chave ja salva apenas se o provedor nao mudou.
         if (filled($data['api_key'] ?? null)) {

@@ -40,6 +40,7 @@ import {
     ClipboardCheck,
     Hammer,
     QrCode,
+    ShipWheel,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -67,7 +68,7 @@ const navigation = [
     { name: 'Atendimento', href: '/inbox', icon: MessagesSquare, permission: 'inbox:use', module: 'whatsapp' },
     { name: 'Setores', href: '/setores', icon: Headset, permission: 'sectors:manage', module: 'whatsapp' },
     { name: 'Disparos', href: '/disparos', icon: Send, permission: 'campaigns:manage', module: 'whatsapp' },
-    { name: 'Assistente IA', href: '/assistente', icon: Sparkles, permission: 'ai:use', module: 'ai_assistant' },
+    { name: 'LemeIA', href: '/assistente', icon: ShipWheel, permission: 'ai:use', module: 'ai_assistant' },
 ];
 
 const adminNavigation = [

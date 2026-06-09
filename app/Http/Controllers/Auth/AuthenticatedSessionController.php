@@ -31,6 +31,13 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        // "Manter conectado por 12 horas": marcado → cookie persiste por 12h (lifetime da sessão);
+        // desmarcado → cookie de sessão (expira ao fechar o navegador). No servidor, o tempo de vida
+        // é sempre o lifetime configurado (720 min).
+        if (! $request->boolean('remember')) {
+            config(['session.expire_on_close' => true]);
+        }
+
         $request->session()->regenerate();
 
         $user = auth()->user();

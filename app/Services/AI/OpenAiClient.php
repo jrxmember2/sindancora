@@ -24,6 +24,12 @@ class OpenAiClient implements AiProviderClient
         $reasoningEffort = $this->reasoningEffort($model);
         if ($reasoningEffort) {
             $payload['reasoning'] = ['effort' => $reasoningEffort];
+        } else {
+            // Modelos de reasoning (gpt-5/o-series) não aceitam temperature/top_p; só envia nos demais.
+            $payload['temperature'] = $this->settings->temperature();
+            if ($this->settings->topP() !== null) {
+                $payload['top_p'] = $this->settings->topP();
+            }
         }
 
         try {

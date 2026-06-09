@@ -79,6 +79,27 @@ class AiSettingsManager
         return $this->setting()?->enabled ?? true;
     }
 
+    public function temperature(): float
+    {
+        $value = $this->setting()?->temperature;
+
+        return $value !== null ? (float) $value : AiSetting::tuningDefaults($this->provider())['temperature'];
+    }
+
+    public function topP(): ?float
+    {
+        $value = $this->setting()?->top_p;
+
+        return $value !== null ? (float) $value : null;
+    }
+
+    public function maxTokens(): int
+    {
+        $value = $this->setting()?->max_tokens;
+
+        return $value && $value > 0 ? (int) $value : AiSetting::tuningDefaults($this->provider())['max_tokens'];
+    }
+
     public function runtimeSupported(): bool
     {
         return in_array($this->provider(), array_keys(AiSetting::providerOptions()), true);

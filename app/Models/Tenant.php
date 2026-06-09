@@ -125,6 +125,32 @@ class Tenant extends Model
         return $this->getSettings('brand.logo_url');
     }
 
+    /**
+     * Logo embutida como data URI base64 — para relatórios em PDF (dompdf), onde URLs assinadas
+     * são frágeis. Retorna null se não houver logo ou o arquivo não puder ser lido.
+     */
+    public function getLogoDataUri(): ?string
+    {
+        $object = $this->logoObject();
+        if (! $object) {
+            return null;
+        }
+
+        try {
+            $contents = \Illuminate\Support\Facades\Storage::disk($object->storage_provider)->get($object->storage_path);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if ($contents === null) {
+            return null;
+        }
+
+        $mime = $object->mime_type ?: 'image/png';
+
+        return 'data:'.$mime.';base64,'.base64_encode($contents);
+    }
+
     public function getPrimaryColor(): string
     {
         return $this->getSettings('brand.primary_color', '#1e40af');

@@ -24,9 +24,11 @@ class GeminiClient implements AiProviderClient
                     'parts' => [['text' => $system]],
                 ],
                 'contents' => $this->mapMessages($messages),
-                'generationConfig' => [
+                'generationConfig' => array_filter([
                     'maxOutputTokens' => $maxTokens,
-                ],
+                    'temperature' => $this->settings->temperature(),
+                    'topP' => $this->settings->topP(),
+                ], fn ($v) => $v !== null),
             ]);
 
         if ($response->failed()) {

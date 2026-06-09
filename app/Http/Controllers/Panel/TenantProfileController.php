@@ -64,7 +64,8 @@ class TenantProfileController extends Controller
             'neighborhood' => 'nullable|string|max:100',
             'city' => 'nullable|string|max:100',
             'state' => 'nullable|string|size:2',
-            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            // Aceita SVG além de raster; limite 3 MB. Não usa a regra "image" porque ela bloqueia SVG.
+            'logo' => 'nullable|file|mimes:jpg,jpeg,png,webp,svg|max:3072',
             'remove_logo' => 'nullable|boolean',
         ]);
 

@@ -135,6 +135,28 @@ configuracao normal da IA deve ser feita em `Admin > IA`; variaveis `.env` sao f
 
 ## Guardrails
 
-O prompt do assistente exige uso apenas do contexto fornecido, citacao dos marcadores `[D#]`/`[L#]`
+O prompt do assistente exige uso do contexto fornecido, citacao dos marcadores `[D#]`/`[L#]`
 quando houver documentos/base legal e aviso claro quando a informacao nao estiver disponivel. A base
 legal global e apoio informativo e nao substitui analise juridica profissional.
+
+## LemeIA (rename) + qualidade do RAG (09/06/2026)
+
+- O assistente do tenant passou a se chamar **LemeIA** (icone de leme `ShipWheel`). Rotas
+  (`/assistente`) e a config global (`Admin > IA`) seguem iguais; mudou a identidade visual, o nome
+  no `systemPrompt` e os textos das telas.
+- **Recuperacao (`DocumentSearch`):** deixou de usar `plainto_tsquery` (AND estrito, que perdia
+  trechos quando a pergunta usava palavras nao co-ocorrentes no mesmo trecho) e passou a usar
+  **full-text com semantica OR rankeada** (`replace(plainto_tsquery::text,'&','|')::tsquery` +
+  `ts_rank`), com fallback ILIKE por termo. O `AssistantService` recupera ate **10 trechos** (era 5).
+- **Prompt:** instruido a CONECTAR trechos relacionados (ex.: "horario de obras" ⇄ horarios de
+  entrega de material/mudancas) e so dizer que nao ha informacao quando realmente nao houver.
+
+## Ajustes de geracao (temperatura / top_p / max_tokens)
+
+- `ai_settings` ganhou `temperature` (default 0.30), `top_p` (nullable) e `max_tokens` (default 2048).
+- `Admin > IA` tem **sliders** para esses parametros, pre-configurados por provedor
+  (`AiSetting::tuningDefaults`). Recomendado: ajustar pela temperatura e deixar top_p desligado.
+- `AiProviderManager::complete($system,$messages,?int $maxTokens=null)` usa o `max_tokens`
+  configurado quando o chamador nao especifica (o chat do LemeIA usa o valor configurado).
+- Os clients aplicam `temperature`/`top_p`: Claude e Gemini sempre; OpenAI apenas em modelos
+  **nao-reasoning** (gpt-5/o-series rejeitam temperature na Responses API).

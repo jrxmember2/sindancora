@@ -11,8 +11,17 @@ interface AiSetting {
     model: string | null;
     base_url: string | null;
     enabled: boolean;
+    temperature: number;
+    top_p: number | null;
+    max_tokens: number;
     has_key: boolean;
     last_checked_at: string | null;
+}
+
+interface TuningDefaults {
+    temperature: number;
+    top_p: number | null;
+    max_tokens: number;
 }
 
 interface ProviderDefaults {
@@ -51,6 +60,7 @@ interface Props {
     providerOptions: Record<Provider, string>;
     modelOptions: Record<Provider, ModelOption[]>;
     defaults: Record<Provider, ProviderDefaults>;
+    tuningDefaults: Record<Provider, TuningDefaults>;
     legalDocuments: LegalDocument[];
     legalCategories: Record<string, string>;
     legalJurisdictions: Record<string, string>;
@@ -62,7 +72,7 @@ function formatBytes(bytes: number | null): string {
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export default function AiSettings({ setting, configured, providerOptions, modelOptions, defaults, legalDocuments, legalCategories, legalJurisdictions }: Props) {
+export default function AiSettings({ setting, configured, providerOptions, modelOptions, defaults, tuningDefaults, legalDocuments, legalCategories, legalJurisdictions }: Props) {
     const { flash } = usePage<PageProps>().props;
 
     const availableModelForProvider = (provider: Provider, preferred?: string | null) => {
@@ -86,6 +96,9 @@ export default function AiSettings({ setting, configured, providerOptions, model
         base_url: setting.base_url ?? '',
         api_key: '',
         enabled: setting.enabled,
+        temperature: setting.temperature,
+        top_p: setting.top_p,
+        max_tokens: setting.max_tokens,
     });
 
     const legalForm = useForm<{ title: string; description: string; category: string; jurisdiction_level: string; state: string; city: string; file: File | null; is_active: boolean }>({
@@ -109,12 +122,17 @@ export default function AiSettings({ setting, configured, providerOptions, model
 
     const changeProvider = (provider: Provider) => {
         const preferredModel = availableModelForProvider(provider, defaults[provider]?.model);
+        const tuning = tuningDefaults[provider];
 
         form.setData({
             ...form.data,
             provider,
             model: preferredModel,
             base_url: defaults[provider]?.base_url ?? '',
+            // Pré-configura os ajustes recomendados ao trocar de provedor.
+            temperature: tuning?.temperature ?? form.data.temperature,
+            top_p: tuning?.top_p ?? null,
+            max_tokens: tuning?.max_tokens ?? form.data.max_tokens,
         });
     };
 
@@ -236,6 +254,81 @@ export default function AiSettings({ setting, configured, providerOptions, model
                         <input type="checkbox" checked={form.data.enabled} onChange={(e) => form.setData('enabled', e.target.checked)} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                         Integração de IA habilitada
                     </label>
+
+                    {/* Ajustes de geração — pré-configurados por provedor */}
+                    <div className="space-y-4 rounded-lg border border-gray-200 p-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-semibold text-gray-800">Ajustes de geração</h3>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const t = tuningDefaults[form.data.provider];
+                                    form.setData({ ...form.data, temperature: t.temperature, top_p: t.top_p, max_tokens: t.max_tokens });
+                                }}
+                                className="text-xs font-medium text-blue-600 hover:underline"
+                            >
+                                Restaurar recomendado
+                            </button>
+                        </div>
+
+                        <div>
+                            <div className="mb-1 flex items-center justify-between text-sm">
+                                <label className="font-medium text-gray-700">Temperatura</label>
+                                <span className="font-mono text-gray-900">{form.data.temperature.toFixed(2)}</span>
+                            </div>
+                            <input
+                                type="range" min={0} max={1} step={0.05}
+                                value={form.data.temperature}
+                                onChange={(e) => form.setData('temperature', parseFloat(e.target.value))}
+                                className="w-full accent-blue-600"
+                            />
+                            <p className="mt-1 text-xs text-gray-400">Menor = respostas mais precisas e factuais (recomendado para condomínio). Maior = mais criativas.</p>
+                            {form.errors.temperature && <p className="mt-1 text-xs text-red-600">{form.errors.temperature}</p>}
+                        </div>
+
+                        <div>
+                            <div className="mb-1 flex items-center justify-between text-sm">
+                                <label className="font-medium text-gray-700">Máximo de tokens da resposta</label>
+                                <span className="font-mono text-gray-900">{form.data.max_tokens}</span>
+                            </div>
+                            <input
+                                type="range" min={256} max={8192} step={128}
+                                value={form.data.max_tokens}
+                                onChange={(e) => form.setData('max_tokens', parseInt(e.target.value, 10))}
+                                className="w-full accent-blue-600"
+                            />
+                            <p className="mt-1 text-xs text-gray-400">Tamanho máximo das respostas do chat. Valores maiores permitem respostas mais longas.</p>
+                            {form.errors.max_tokens && <p className="mt-1 text-xs text-red-600">{form.errors.max_tokens}</p>}
+                        </div>
+
+                        <div>
+                            <label className="flex items-center gap-2 text-sm text-gray-700">
+                                <input
+                                    type="checkbox"
+                                    checked={form.data.top_p !== null}
+                                    onChange={(e) => form.setData('top_p', e.target.checked ? (tuningDefaults[form.data.provider]?.top_p ?? 1) : null)}
+                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                Ajustar top_p (avançado)
+                            </label>
+                            {form.data.top_p !== null && (
+                                <div className="mt-2">
+                                    <div className="mb-1 flex items-center justify-between text-sm">
+                                        <span className="text-gray-500">top_p</span>
+                                        <span className="font-mono text-gray-900">{form.data.top_p.toFixed(2)}</span>
+                                    </div>
+                                    <input
+                                        type="range" min={0} max={1} step={0.05}
+                                        value={form.data.top_p}
+                                        onChange={(e) => form.setData('top_p', parseFloat(e.target.value))}
+                                        className="w-full accent-blue-600"
+                                    />
+                                    <p className="mt-1 text-xs text-gray-400">Use temperatura OU top_p, não os dois ao mesmo tempo. Deixe desligado se não souber.</p>
+                                    {form.errors.top_p && <p className="mt-1 text-xs text-red-600">{form.errors.top_p}</p>}
+                                </div>
+                            )}
+                        </div>
+                    </div>
 
                     <div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-500">
                         As regras de foco condominial, uso de documentos e bloqueio de parecer jurídico serão aplicadas

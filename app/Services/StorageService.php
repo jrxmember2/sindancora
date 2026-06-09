@@ -24,6 +24,7 @@ class StorageService
         'image/png',
         'image/webp',
         'image/gif',
+        'image/svg+xml',
         'application/zip',
         'application/x-rar-compressed',
     ];

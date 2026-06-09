@@ -36,9 +36,12 @@ class ClaudeClient implements AiProviderClient
                 'content-type' => 'application/json',
             ])
             ->timeout(60)
-            ->post('/messages', [
+            ->post('/messages', array_filter([
                 'model' => $this->settings->model(),
                 'max_tokens' => $maxTokens,
+                'temperature' => $this->settings->temperature(),
+                // Anthropic recomenda usar temperature OU top_p; só envia top_p se configurado.
+                'top_p' => $this->settings->topP(),
                 'system' => [[
                     'type' => 'text',
                     'text' => $system,
@@ -48,7 +51,7 @@ class ClaudeClient implements AiProviderClient
                     'role' => $m['role'],
                     'content' => $m['content'],
                 ], $messages),
-            ]);
+            ], fn ($v) => $v !== null));
 
         if ($response->failed()) {
             $message = data_get($response->json(), 'error.message', 'Falha na chamada a IA.');

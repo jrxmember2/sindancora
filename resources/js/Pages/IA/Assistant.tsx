@@ -1,6 +1,6 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Building2, Check, Copy, FileText, Megaphone, Plus, Scale, Send, Sparkles, Trash2, TrendingDown } from 'lucide-react';
+import { Building2, Check, Copy, FileText, Megaphone, Plus, Scale, Send, ShipWheel, Trash2, TrendingDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface CondominiumRef { id: string; name: string }
@@ -119,7 +119,7 @@ export default function Assistant({
 
     return (
         <AppLayout>
-            <Head title="Assistente IA" />
+            <Head title="LemeIA" />
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
                 <aside className="lg:col-span-1">
@@ -150,8 +150,8 @@ export default function Assistant({
 
                 <section className="lg:col-span-3">
                     <div className="mb-3 flex flex-wrap items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-blue-600" />
-                        <h1 className="text-lg font-bold text-gray-900">Assistente IA</h1>
+                        <ShipWheel className="h-5 w-5 text-blue-600" />
+                        <h1 className="text-lg font-bold text-gray-900">LemeIA</h1>
                         <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
                             <label className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700">
                                 <Building2 className="h-4 w-4 text-gray-400" />

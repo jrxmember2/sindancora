@@ -21,13 +21,14 @@ class AiProviderManager
     /**
      * @param  array<int,array{role:string,content:string}>  $messages
      */
-    public function complete(string $system, array $messages, int $maxTokens = 4096): string
+    public function complete(string $system, array $messages, ?int $maxTokens = null): string
     {
         if (! $this->configured()) {
             throw new AiException($this->configurationError());
         }
 
-        return $this->client()->complete($system, $messages, $maxTokens);
+        // Sem max_tokens explícito, usa o valor configurado em Admin > IA.
+        return $this->client()->complete($system, $messages, $maxTokens ?? $this->settings->maxTokens());
     }
 
     private function client(): AiProviderClient
