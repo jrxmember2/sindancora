@@ -29,7 +29,6 @@ return new class extends Migration
                     'resource' => 'ai_interactions_monthly',
                     'limit_value' => $defaults[$plan->name] ?? 0,
                     'created_at' => $now,
-                    'updated_at' => $now,
                 ]);
             }
         }
