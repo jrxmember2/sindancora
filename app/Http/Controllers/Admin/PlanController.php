@@ -51,6 +51,7 @@ class PlanController extends Controller
         'maintenance' => 'Manutenção preventiva',
         'quotations' => 'Orçamentos/Cotações',
         'works' => 'Obras/Reformas',
+        'schedule' => 'Cronograma consolidado',
         'white_label' => 'White-label',
     ];
 

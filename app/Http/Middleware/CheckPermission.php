@@ -31,6 +31,7 @@ class CheckPermission
         'maintenance' => 'maintenance',
         'quotations' => 'quotations',
         'works' => 'works',
+        'schedule' => 'schedule',
     ];
 
     private const PLAN_MODULE_BY_PERMISSION = [

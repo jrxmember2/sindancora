@@ -26,6 +26,50 @@
 
 ## Última entrega implementada
 
+### D13. Cronograma consolidado
+
+Implementado em 09/06/2026. Doc tecnica: `docs/tecnico/cronograma-consolidado.md`.
+
+O que foi entregue:
+
+- Novo modulo `schedule` habilitado nos planos Profissional, Business e Enterprise.
+- Nova rota `/cronograma` (`schedule.index`) protegida por `schedule:read`.
+- Menu lateral "Cronograma" visivel apenas quando permissao e modulo do plano permitem.
+- Grade mensal com agenda lateral do mes.
+- Filtros por condominio e fonte.
+- Resumo de eventos totais, eventos de hoje, proximos 7 dias e atrasados.
+- Fontes consolidadas:
+  - reservas pendentes/aprovadas;
+  - assembleias agendadas;
+  - proximas manutencoes preventivas;
+  - inicio, prazo e conclusao de obras/reformas;
+  - prazos de SLA de ocorrencias abertas;
+  - contas a pagar abertas;
+  - cobrancas abertas.
+- O cronograma respeita permissao/modulo de cada fonte. Ex.: sem `financial`, nao mostra
+  `expenses` nem `charges`.
+- O escopo por condominio segue a mesma regra do assistente IA: usuarios tenant-wide veem todos
+  os condominios ativos; usuarios escopados por `user_roles.condominium_id` veem apenas seu escopo.
+
+Arquivos-chave:
+
+- `app/Http/Controllers/Panel/ScheduleController.php`
+- `resources/js/Pages/Schedule/Index.tsx`
+- `resources/js/Layouts/AppLayout.tsx`
+- `routes/web.php`
+- `database/seeders/PermissionSeeder.php`
+- `database/seeders/RoleSeeder.php`
+- `database/seeders/PlanSeeder.php`
+- `app/Http/Middleware/CheckPermission.php`
+- `app/Http/Controllers/Admin/PlanController.php`
+
+Validacoes feitas:
+
+- `php -l` nos PHP alterados/criados.
+- `php artisan route:list --name=schedule --except-vendor` passou.
+- `npm run build` passou.
+- `git diff --check` passou, apenas com avisos CRLF do Windows.
+
 ### C12. Obras/Reformas
 
 Implementado em 09/06/2026. Doc tecnica: `docs/tecnico/obras.md`.
@@ -192,10 +236,10 @@ Observacoes para retomada:
 
 Proximo bloco recomendado:
 
-- **D13. Cronograma consolidado**:
-  - consolidar manutencoes, obras, ocorrencias, reservas e vencimentos em uma agenda operacional;
-  - filtros por condominio, modulo, periodo e responsavel;
-  - visao de proximos prazos para o sindico.
+- **D10. Relatorios consolidados multi-condominio**:
+  - consolidar indicadores operacionais e financeiros por condominio;
+  - permitir periodo, modulos e exportacao;
+  - aproveitar o cronograma consolidado como uma das bases de prazos/eventos.
 
 ### Correções de plano + identidade do tenant/condomínio
 
@@ -393,9 +437,11 @@ Confirmar no Easypanel se há worker/cron com `php artisan schedule:run` ou `php
 
 ## Próximo passo sugerido
 
-O próximo item natural do roadmap é **D13. Cronograma consolidado**.
+O próximo item natural do roadmap é **D10. Relatórios consolidados multi-condomínio**.
 
-Motivo: fornecedores, manutenção, orçamentos, obras, contas a pagar, ocorrências e reservas agora têm datas operacionais. Um calendário consolidado fecha a visão diária do síndico.
+Motivo: o sistema agora tem dados operacionais ricos em fornecedores, manutenção, orçamentos,
+obras, contas a pagar, ocorrências, reservas e cronograma. A próxima evolução é transformar isso
+em relatórios executivos comparáveis por período e condomínio.
 
 ## Cuidados para a próxima implementação
 

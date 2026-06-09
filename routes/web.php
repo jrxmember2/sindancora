@@ -30,6 +30,7 @@ use App\Http\Controllers\Panel\QuickReplyController;
 use App\Http\Controllers\Panel\ReportController;
 use App\Http\Controllers\Panel\ReservationController;
 use App\Http\Controllers\Panel\RoleController;
+use App\Http\Controllers\Panel\ScheduleController;
 use App\Http\Controllers\Panel\SectorController;
 use App\Http\Controllers\Panel\TenantProfileController;
 use App\Http\Controllers\Panel\UnitController;
@@ -66,6 +67,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('panel')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Cronograma consolidado
+    Route::middleware('permission:schedule:read')->group(function () {
+        Route::get('cronograma', [ScheduleController::class, 'index'])->name('schedule.index');
+    });
 
     // Usuários
     Route::middleware('permission:users:read')->group(function () {

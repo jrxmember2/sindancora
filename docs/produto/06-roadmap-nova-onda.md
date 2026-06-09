@@ -63,7 +63,10 @@ Legenda esforço: 🟢 baixo · 🟡 médio · 🔴 alto. Valor: ⭐ alto difere
 - [ ] **D9. Funcionários + controle de férias** (CTPS, admissão, alertas de férias) ⭐ 🟡
 - [ ] **D10. Relatórios consolidados multi-condomínio** configuráveis (módulos + período) ⭐ 🟡
 - [ ] **D11. Preferências de notificação granulares por usuário** (matriz evento × canal) 🟡 🟡
-- [ ] **D13. Cronograma consolidado** (calendário de manutenções + ocorrências + reservas) 🟡 🟡
+- [x] **D13. Cronograma consolidado** (calendário de manutenções + ocorrências + reservas) 🟡 🟡 — concluída (09/06/2026)
+  - `/cronograma` consolida reservas, assembleias, manutenções, obras/reformas, SLA de ocorrências,
+    contas a pagar e cobranças, respeitando permissões, módulos de plano e escopo por condomínio.
+    Ver `docs/tecnico/cronograma-consolidado.md`.
 
 ### Booster de aquisição (encaixa em qualquer fase)
 - [ ] **X3. Links públicos + QR por condomínio** para auto-cadastro de morador / abrir ocorrência,

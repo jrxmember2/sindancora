@@ -145,6 +145,9 @@ class PermissionSeeder extends Seeder
             ['module' => 'works', 'action' => 'read',   'description' => 'Visualizar obras e reformas'],
             ['module' => 'works', 'action' => 'update', 'description' => 'Editar obras, anexos, andamentos e contas vinculadas'],
             ['module' => 'works', 'action' => 'delete', 'description' => 'Remover obras e reformas'],
+
+            // Cronograma consolidado
+            ['module' => 'schedule', 'action' => 'read', 'description' => 'Visualizar cronograma consolidado'],
         ];
 
         foreach ($permissions as $perm) {

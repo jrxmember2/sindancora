@@ -7,6 +7,7 @@ import {
     UserRound,
     Megaphone,
     AlertCircle,
+    CalendarDays,
     CalendarRange,
     FileText,
     Settings,
@@ -42,6 +43,7 @@ import type { PageProps } from '@/types';
 
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Cronograma', href: '/cronograma', icon: CalendarDays, permission: 'schedule:read', module: 'schedule' },
     { name: 'Condomínios', href: '/condominios', icon: Building2, permission: 'condominiums:read', module: 'condominiums' },
     { name: 'Pessoas', href: '/pessoas', icon: UserRound, permission: 'persons:read', module: 'persons' },
     { name: 'Usuários', href: '/usuarios', icon: Users, permission: 'users:read' },
