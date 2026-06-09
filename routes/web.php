@@ -66,11 +66,13 @@ Route::prefix('p/{token}')->name('public.intake.')->group(function () {
 
     Route::get('morador', [PublicIntakeController::class, 'residentForm'])->name('resident');
     Route::get('ocorrencia', [PublicIntakeController::class, 'occurrenceForm'])->name('occurrence');
+    Route::get('status', [PublicIntakeController::class, 'statusForm'])->name('status');
 
-    // Envios públicos: throttle anti-abuso (10/min por IP).
+    // Envios e consulta pública: throttle anti-abuso por IP.
     Route::middleware('throttle:10,1')->group(function () {
         Route::post('morador', [PublicIntakeController::class, 'residentStore'])->name('resident.store');
         Route::post('ocorrencia', [PublicIntakeController::class, 'occurrenceStore'])->name('occurrence.store');
+        Route::post('status', [PublicIntakeController::class, 'statusCheck'])->name('status.check');
     });
 });
 

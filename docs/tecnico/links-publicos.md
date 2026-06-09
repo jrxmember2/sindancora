@@ -70,6 +70,43 @@ Reprovar apenas registra status/motivo/revisor.
 condomínios ativos; usuários escopados por `user_roles.condominium_id` veem apenas seu escopo. Vale
 para a listagem de links, a fila e as ações de moderação.
 
+## Endurecimento anti-abuso (superfície pública)
+
+Como os formulários são públicos e sem login, o intake tem camadas de proteção:
+
+- **Honeypot**: campo oculto `company_site` nos dois formulários. Se vier preenchido (bot), o
+  envio é descartado silenciosamente (finge sucesso). Componente `HoneypotField`.
+- **Captcha Cloudflare Turnstile (opcional)**: `config/services.php` → `turnstile`. Sem
+  `TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET`, a verificação é no-op e o widget não aparece (dev segue
+  funcionando). Com as chaves, o token é validado em `CaptchaVerifier::verify()`; falha de rede não
+  derruba o envio (honeypot + rate-limit seguem). Widget no front: `TurnstileWidget`.
+- **Throttle por IP**: `throttle:10,1` nas rotas POST (envios e consulta de status).
+- **Limite por IP+condomínio**: máx. `MAX_PENDING_PER_IP_DAY` (5) envios por IP/condomínio em 24h.
+- **Dedupe**: envio idêntico (mesmo tipo + telefone + condomínio) pendente nos últimos 10 min é
+  tratado como duplicado e cai direto na confirmação, sem criar novo registro.
+
+Variáveis de ambiente (opcionais) para ativar o captcha:
+
+```
+TURNSTILE_SITE_KEY=...
+TURNSTILE_SECRET=...
+```
+
+## Foto na ocorrência pública
+
+O formulário de ocorrência aceita até **3 imagens** (jpg/png/webp, 5 MB cada). As fotos são
+anexadas à própria `PublicSubmission` (`entity_type = public_submission`). Na **aprovação**, os
+`StorageObject` são re-apontados para `entity_type = occurrence` + `entity_id` da ocorrência, então
+aparecem automaticamente como anexos dela. Na **reprovação**, as fotos são soft-deletadas (liberando
+cota). O `AttachmentController` autoriza `public_submission` por `public_links:read`/`:manage`. As
+fotos também aparecem na tela de moderação.
+
+## Acompanhamento por protocolo
+
+Cada `PublicSubmission` recebe um `protocol` (8 chars, único por tenant), exibido na tela de
+confirmação. Em `/p/{token}/status`, o solicitante informa protocolo + telefone usado no envio e vê
+o status (Pendente/Aprovado/Reprovado) com mensagem genérica — sem expor dados sensíveis.
+
 ## Notificações
 
 Novo envio dispara `PublicSubmissionReceived` aos gestores (papéis de painel) do tenant. Respeita as

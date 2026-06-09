@@ -53,7 +53,15 @@ export default function Landing({ token, condominium, allow }: LandingProps) {
                 )}
             </div>
 
-            <p className="mt-6 text-center text-xs text-gray-400">
+            {hasAny && (
+                <div className="mt-6 text-center">
+                    <Link href={route('public.intake.status', { token })} className="text-sm font-medium text-blue-600 hover:underline">
+                        Já enviei — acompanhar pelo protocolo
+                    </Link>
+                </div>
+            )}
+
+            <p className="mt-4 text-center text-xs text-gray-400">
                 Seus dados passam por moderação da administração antes de qualquer acesso.
             </p>
         </PublicLayout>

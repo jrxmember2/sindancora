@@ -70,6 +70,7 @@ class AttachmentController extends Controller
             'document' => $user->hasPermission('documents:read'),
             'quotation_proposal' => $user->hasPermission('quotations:read') && $this->planAllows('quotations'),
             'work' => $user->hasPermission('works:read') && $this->planAllows('works'),
+            'public_submission' => $user->hasPermission('public_links:read') && $this->planAllows('public_links'),
             default => false,
         };
     }
@@ -89,6 +90,7 @@ class AttachmentController extends Controller
             'common_area' => $user->hasPermission('reservations:approve'),
             'quotation_proposal' => $this->canManageQuotationProposal($user, $object->entity_id),
             'work' => $this->canManageWork($user, $object->entity_id),
+            'public_submission' => $user->hasPermission('public_links:manage') && $this->planAllows('public_links'),
             default => false,
         };
     }

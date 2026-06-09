@@ -66,7 +66,7 @@ class PublicSubmissionController extends Controller
     {
         $this->authorizeSubmission($submission, $request);
 
-        $submission->load(['condominium:id,name', 'reviewer:id,name', 'person:id,name', 'occurrence:id,title']);
+        $submission->load(['condominium:id,name', 'reviewer:id,name', 'person:id,name', 'occurrence:id,title', 'attachments']);
 
         $units = [];
         if ($submission->type === 'resident_signup') {
@@ -82,6 +82,7 @@ class PublicSubmissionController extends Controller
                 'id' => $submission->id,
                 'type' => $submission->type,
                 'type_label' => PublicSubmission::TYPES[$submission->type] ?? $submission->type,
+                'protocol' => $submission->protocol,
                 'status' => $submission->status,
                 'status_label' => PublicSubmission::STATUSES[$submission->status] ?? $submission->status,
                 'name' => $submission->name,
@@ -97,6 +98,7 @@ class PublicSubmissionController extends Controller
                 'occurrence' => $submission->occurrence?->only(['id', 'title']),
                 'created_at' => $submission->created_at,
             ],
+            'attachments' => $submission->attachmentsPayload(),
             'units' => $units,
             'relations' => PersonUnitLink::typeLabels(),
             'categories' => Occurrence::CATEGORIES,

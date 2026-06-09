@@ -2,6 +2,8 @@ import { Link, useForm } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { FormEventHandler } from 'react';
 import PublicLayout from '@/Layouts/PublicLayout';
+import TurnstileWidget from '@/Components/TurnstileWidget';
+import HoneypotField from '@/Components/HoneypotField';
 
 interface Option {
     value: string;
@@ -13,9 +15,10 @@ interface Props {
     condominium: { name: string };
     units: Option[];
     relations: Record<string, string>;
+    captchaSiteKey: string | null;
 }
 
-export default function ResidentSignup({ token, condominium, units, relations }: Props) {
+export default function ResidentSignup({ token, condominium, units, relations, captchaSiteKey }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         document: '',
@@ -25,6 +28,8 @@ export default function ResidentSignup({ token, condominium, units, relations }:
         relation: 'owner',
         unit_id: '',
         notes: '',
+        company_site: '',
+        'cf-turnstile-response': '',
     });
 
     const submit: FormEventHandler = (e) => {
@@ -92,6 +97,15 @@ export default function ResidentSignup({ token, condominium, units, relations }:
                     <textarea value={data.notes} onChange={(e) => setData('notes', e.target.value)} rows={2} className={field} />
                     {errors.notes && <p className="mt-1 text-xs text-red-600">{errors.notes}</p>}
                 </div>
+
+                <HoneypotField value={data.company_site} onChange={(v) => setData('company_site', v)} />
+
+                {captchaSiteKey && (
+                    <div>
+                        <TurnstileWidget siteKey={captchaSiteKey} onVerify={(t) => setData('cf-turnstile-response', t)} />
+                        {(errors as Record<string, string>).captcha && <p className="mt-1 text-xs text-red-600">{(errors as Record<string, string>).captcha}</p>}
+                    </div>
+                )}
 
                 <button
                     type="submit"

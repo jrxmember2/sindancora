@@ -1,6 +1,7 @@
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Check, X } from 'lucide-react';
+import AttachmentList, { type Attachment } from '@/Components/AttachmentList';
 
 interface Option { value: string; label: string }
 
@@ -8,6 +9,7 @@ interface Submission {
     id: string;
     type: string;
     type_label: string;
+    protocol: string | null;
     status: string;
     status_label: string;
     name: string | null;
@@ -26,6 +28,7 @@ interface Submission {
 
 interface Props {
     submission: Submission;
+    attachments: Attachment[];
     units: Option[];
     relations: Record<string, string>;
     categories: Record<string, string>;
@@ -33,7 +36,7 @@ interface Props {
     canManage: boolean;
 }
 
-export default function ModerationShow({ submission: s, units, relations, categories, priorities, canManage }: Props) {
+export default function ModerationShow({ submission: s, attachments, units, relations, categories, priorities, canManage }: Props) {
     const p = s.payload ?? {};
     const isResident = s.type === 'resident_signup';
 
@@ -85,7 +88,10 @@ export default function ModerationShow({ submission: s, units, relations, catego
                 <div className="lg:col-span-3">
                     <div className="rounded-xl border border-gray-200 bg-white p-5">
                         <div className="mb-4 flex items-center justify-between">
-                            <h2 className="font-semibold text-gray-900">{s.type_label}</h2>
+                            <div>
+                                <h2 className="font-semibold text-gray-900">{s.type_label}</h2>
+                                {s.protocol && <span className="font-mono text-xs tracking-widest text-gray-400">Protocolo {s.protocol}</span>}
+                            </div>
                             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">{s.status_label}</span>
                         </div>
                         <dl className="grid grid-cols-2 gap-4">
@@ -114,6 +120,13 @@ export default function ModerationShow({ submission: s, units, relations, catego
                                 {row('Observações', p.notes as string)}
                             </div>
                         ) : null}
+
+                        {attachments.length > 0 && (
+                            <div className="mt-4 border-t border-gray-100 pt-4">
+                                <dt className="mb-2 text-xs text-gray-500">Fotos enviadas</dt>
+                                <AttachmentList attachments={attachments} canRemove={canManage} />
+                            </div>
+                        )}
                     </div>
 
                     {s.status !== 'pending' && (

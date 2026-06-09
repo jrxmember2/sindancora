@@ -6,6 +6,7 @@ use App\Models\Occurrence;
 use App\Models\Person;
 use App\Models\PersonUnitLink;
 use App\Models\PublicSubmission;
+use App\Models\StorageObject;
 use App\Models\Unit;
 use App\Models\User;
 use App\Notifications\PublicSubmissionReceived;
@@ -24,6 +25,7 @@ class PublicSubmissionService
     public function __construct(
         private readonly InvitationService $invitations,
         private readonly OccurrenceService $occurrences,
+        private readonly StorageService $storage,
     ) {}
 
     /**
@@ -116,6 +118,16 @@ class PublicSubmissionService
 
             $this->occurrences->ensureDueAt($occurrence);
 
+            // Re-aponta as fotos do envio para a ocorrência (aparecem como anexos dela).
+            StorageObject::where('tenant_id', $submission->tenant_id)
+                ->where('entity_type', PublicSubmission::ATTACHMENT_ENTITY)
+                ->where('entity_id', $submission->id)
+                ->whereNull('deleted_at')
+                ->update([
+                    'entity_type' => Occurrence::ATTACHMENT_ENTITY,
+                    'entity_id' => $occurrence->id,
+                ]);
+
             $submission->forceFill([
                 'status' => 'approved',
                 'occurrence_id' => $occurrence->id,
@@ -127,10 +139,16 @@ class PublicSubmissionService
         });
     }
 
-    /** Reprova um envio público, registrando o motivo e o revisor. */
+    /** Reprova um envio público, registrando o motivo e o revisor e liberando anexos/cota. */
     public function reject(PublicSubmission $submission, ?string $notes, User $reviewer): void
     {
         $this->assertPending($submission);
+
+        // Libera as fotos do envio (soft delete → lixeira) para não consumir cota indevidamente.
+        $submission->loadMissing('attachments');
+        foreach ($submission->attachments as $attachment) {
+            $this->storage->delete($attachment);
+        }
 
         $submission->forceFill([
             'status' => 'rejected',

@@ -59,6 +59,14 @@ return [
         'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'),
     ],
 
+    // Captcha Cloudflare Turnstile (anti-abuso dos formulários públicos). Opcional:
+    // sem as chaves, a verificação é ignorada (no-op) e o widget não é exibido.
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY'),
+        'secret' => env('TURNSTILE_SECRET'),
+        'verify_url' => env('TURNSTILE_VERIFY_URL', 'https://challenges.cloudflare.com/turnstile/v0/siteverify'),
+    ],
+
     // Servidor Evolution API (auto-hospedado). Chave global nunca exposta ao tenant.
     'evolution' => [
         'base_url' => env('EVOLUTION_BASE_URL'),
