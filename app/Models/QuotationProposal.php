@@ -75,4 +75,9 @@ class QuotationProposal extends Model
     {
         return $this->hasOne(MaintenancePlan::class, 'quotation_proposal_id');
     }
+
+    public function work(): HasOne
+    {
+        return $this->hasOne(Work::class, 'quotation_proposal_id');
+    }
 }

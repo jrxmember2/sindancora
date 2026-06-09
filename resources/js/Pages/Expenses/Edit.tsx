@@ -23,6 +23,7 @@ interface Expense {
     notes: string | null;
     maintenance_record: { plan: { id: string; title: string } | null } | null;
     quotation_proposal: { quotation: { id: string; title: string } | null } | null;
+    work: { id: string; title: string; status: string } | null;
 }
 
 interface Props {
@@ -43,6 +44,7 @@ export default function ExpenseEdit({ expense, condominiums, suppliers, categori
     const can = (permission: string) => permissions.includes('*') || permissions.includes(permission);
     const canOpenMaintenance = can('maintenance:read') && (auth.user?.is_super_admin || (tenant?.plan?.modules ?? []).includes('maintenance'));
     const canOpenQuotations = can('quotations:read') && (auth.user?.is_super_admin || (tenant?.plan?.modules ?? []).includes('quotations'));
+    const canOpenWorks = can('works:read') && (auth.user?.is_super_admin || (tenant?.plan?.modules ?? []).includes('works'));
 
     const { data, setData, patch, processing, errors } = useForm({
         condominium_id: expense.condominium_id,
@@ -98,6 +100,18 @@ export default function ExpenseEdit({ expense, condominiums, suppliers, categori
                             </Link>
                         ) : (
                             <span className="font-medium">{expense.quotation_proposal.quotation.title}</span>
+                        )}
+                    </div>
+                )}
+                {expense.work && (
+                    <div className="mb-5 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                        Obra:{' '}
+                        {canOpenWorks ? (
+                            <Link href={route('works.show', expense.work.id)} className="font-medium underline">
+                                {expense.work.title}
+                            </Link>
+                        ) : (
+                            <span className="font-medium">{expense.work.title}</span>
                         )}
                     </div>
                 )}

@@ -8,6 +8,7 @@ use App\Models\PersonUnitLink;
 use App\Models\QuotationProposal;
 use App\Models\StorageObject;
 use App\Models\User;
+use App\Models\Work;
 use App\Services\StorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -68,6 +69,7 @@ class AttachmentController extends Controller
             'common_area' => true, // áreas comuns são visíveis aos moradores do tenant
             'document' => $user->hasPermission('documents:read'),
             'quotation_proposal' => $user->hasPermission('quotations:read') && $this->planAllows('quotations'),
+            'work' => $user->hasPermission('works:read') && $this->planAllows('works'),
             default => false,
         };
     }
@@ -86,8 +88,18 @@ class AttachmentController extends Controller
             'occurrence' => $user->hasPermission('occurrences:update') || $this->isOccurrenceAuthor($user, $object->entity_id),
             'common_area' => $user->hasPermission('reservations:approve'),
             'quotation_proposal' => $this->canManageQuotationProposal($user, $object->entity_id),
+            'work' => $this->canManageWork($user, $object->entity_id),
             default => false,
         };
+    }
+
+    private function canManageWork(User $user, ?string $workId): bool
+    {
+        if (! $workId || ! $user->hasPermission('works:update') || ! $this->planAllows('works')) {
+            return false;
+        }
+
+        return Work::where('tenant_id', app('tenant')->id)->whereKey($workId)->exists();
     }
 
     private function canManageQuotationProposal(User $user, ?string $proposalId): bool

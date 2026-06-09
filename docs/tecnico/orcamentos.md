@@ -17,6 +17,7 @@ Integrações de trilha:
 
 - `expenses.quotation_proposal_id` quando uma proposta aprovada gera conta a pagar.
 - `maintenance_plans.quotation_proposal_id` quando uma proposta aprovada gera manutenção.
+- `works.quotation_proposal_id` quando uma proposta aprovada gera obra/reforma.
 
 ## Regras principais
 
@@ -25,9 +26,10 @@ Integrações de trilha:
   - proposta escolhida vira `approved`;
   - demais propostas do orçamento viram `rejected`;
   - orçamento vira `approved`, com `approved_proposal_id`, `approved_at` e `approved_by`.
-- Ao aprovar, o usuário pode opcionalmente gerar **manutenção** e/ou **conta a pagar**.
+- Ao aprovar, o usuário pode opcionalmente gerar **manutenção**, **obra/reforma** e/ou **conta a pagar**.
 - Gerar conta a pagar exige `expenses:create` e módulo `financial` ativo.
 - Gerar manutenção exige `maintenance:create` e módulo `maintenance` ativo.
+- Gerar obra/reforma exige `works:create` e módulo `works` ativo.
 - Orçamento aprovado não pode ser editado/removido.
 
 ## Permissões e planos
@@ -62,13 +64,14 @@ Páginas em `resources/js/Pages/Quotations/`:
 
 - `Index`: KPIs, filtros por status/categoria/condomínio/busca e ações.
 - `Create` / `Edit`: dados do orçamento.
-- `Show`: escopo, propostas, anexos, comparação, aprovação e geração opcional de manutenção/conta.
+- `Show`: escopo, propostas, anexos, comparação, aprovação e geração opcional de manutenção/obra/conta.
 
 Integrações visuais:
 
 - Fornecedor mostra contagem e lista recente de propostas.
 - Conta a pagar mostra origem em orçamento quando houver `quotation_proposal_id`.
 - Manutenção mostra origem em orçamento quando houver `quotation_proposal_id`.
+- Obra/Reforma mostra origem em orçamento quando houver `quotation_proposal_id`.
 
 ## Deploy
 

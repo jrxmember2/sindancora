@@ -30,6 +30,7 @@ class CheckPermission
         'suppliers' => 'suppliers',
         'maintenance' => 'maintenance',
         'quotations' => 'quotations',
+        'works' => 'works',
     ];
 
     private const PLAN_MODULE_BY_PERMISSION = [

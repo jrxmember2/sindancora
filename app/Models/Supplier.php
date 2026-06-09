@@ -81,4 +81,10 @@ class Supplier extends Model
     {
         return $this->hasMany(QuotationProposal::class);
     }
+
+    /** @return HasMany<Work> */
+    public function works(): HasMany
+    {
+        return $this->hasMany(Work::class);
+    }
 }

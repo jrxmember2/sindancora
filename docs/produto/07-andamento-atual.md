@@ -26,6 +26,50 @@
 
 ## Última entrega implementada
 
+### C12. Obras/Reformas
+
+Implementado em 09/06/2026. Doc tecnica: `docs/tecnico/obras.md`.
+
+O que foi entregue:
+
+- Novo modulo `works` habilitado nos planos Profissional, Business e Enterprise.
+- Novas tabelas `works` e `work_updates`.
+- `expenses.work_id` vincula contas a pagar a uma obra/reforma.
+- Cadastro, listagem, edicao e detalhe de obras por condominio.
+- Campos de tipo, status, prioridade, cronograma, progresso, fornecedor, responsavel, orcamento
+  previsto e custo final.
+- Anexos por `StorageObject` com `entity_type = work`.
+- Linha do tempo de andamentos, com opcao de atualizar status/progresso.
+- Criacao de conta a pagar a partir da obra, respeitando `expenses:create` e modulo `financial`.
+- Aprovacao de proposta em Orcamentos pode gerar obra/reforma automaticamente.
+- Se a aprovacao de orcamento gerar obra e conta no mesmo ato, a conta fica vinculada por
+  `quotation_proposal_id` e `work_id`.
+- Contas a pagar mostram origem em obra na listagem e na edicao.
+
+Arquivos-chave:
+
+- `database/migrations/2026_06_26_000001_create_works_tables.php`
+- `app/Models/Work.php`
+- `app/Models/WorkUpdate.php`
+- `app/Http/Controllers/Panel/WorkController.php`
+- `app/Http/Controllers/Panel/QuotationController.php`
+- `app/Http/Controllers/Panel/ExpenseController.php`
+- `app/Http/Controllers/AttachmentController.php`
+- `resources/js/Pages/Works/`
+- `resources/js/Pages/Quotations/Show.tsx`
+- `resources/js/Pages/Expenses/Index.tsx`
+- `resources/js/Pages/Expenses/Edit.tsx`
+- `routes/web.php`
+
+Validacoes feitas:
+
+- `php -l` nos PHP alterados/criados.
+- `php artisan route:list --name=works --except-vendor` passou.
+- `php artisan route:list --name=quotations --except-vendor` passou.
+- `php artisan route:list --name=expenses --except-vendor` passou.
+- `npm run build` passou.
+- `git diff --check` passou, apenas com avisos CRLF do Windows.
+
 ### Assistente IA condominial - blocos 1 a 6
 
 Implementado em 08/06/2026. O roadmap detalhado esta em
@@ -148,14 +192,10 @@ Observacoes para retomada:
 
 Proximo bloco recomendado:
 
-- **C12. Obras**:
-  - cadastro de obra/reforma por condominio;
-  - vinculo opcional com orcamento/proposta aprovada;
-  - orcamento previsto vs custo final;
-  - cronograma/status;
-  - fornecedores envolvidos;
-  - anexos e historico;
-  - vinculo com contas a pagar.
+- **D13. Cronograma consolidado**:
+  - consolidar manutencoes, obras, ocorrencias, reservas e vencimentos em uma agenda operacional;
+  - filtros por condominio, modulo, periodo e responsavel;
+  - visao de proximos prazos para o sindico.
 
 ### Correções de plano + identidade do tenant/condomínio
 
@@ -320,6 +360,7 @@ Arquivos-chave:
 - `php artisan route:list --name=maintenance --except-vendor`
 - `php artisan route:list --name=suppliers --except-vendor`
 - `php artisan route:list --name=expenses --except-vendor`
+- `php artisan route:list --name=works --except-vendor`
 - `php artisan route:list --name=condominiums.units --except-vendor`
 - `npm run build` passou (`tsc && vite build`).
 - `git diff --check` passou.
@@ -352,17 +393,9 @@ Confirmar no Easypanel se há worker/cron com `php artisan schedule:run` ou `php
 
 ## Próximo passo sugerido
 
-O próximo item natural do roadmap é **C12. Obras**:
+O próximo item natural do roadmap é **D13. Cronograma consolidado**.
 
-- cadastro de obra/reforma por condomínio;
-- vínculo opcional com orçamento/proposta aprovada;
-- orçamento previsto vs custo final;
-- cronograma/status;
-- fornecedores envolvidos;
-- anexos e histórico;
-- vínculo com contas a pagar.
-
-Motivo: fornecedores, manutenção, contas a pagar e orçamentos agora estão integrados. Obras deve usar essa base para fechar o ciclo de contratação, execução e controle financeiro.
+Motivo: fornecedores, manutenção, orçamentos, obras, contas a pagar, ocorrências e reservas agora têm datas operacionais. Um calendário consolidado fecha a visão diária do síndico.
 
 ## Cuidados para a próxima implementação
 

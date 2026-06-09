@@ -50,6 +50,7 @@ class PlanController extends Controller
         'suppliers' => 'Fornecedores',
         'maintenance' => 'Manutenção preventiva',
         'quotations' => 'Orçamentos/Cotações',
+        'works' => 'Obras/Reformas',
         'white_label' => 'White-label',
     ];
 

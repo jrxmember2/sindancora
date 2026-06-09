@@ -14,7 +14,8 @@
 - `expenses` (model `App\Models\Expense`): contas a pagar/despesas do condomínio. Campos-chave:
   `category`, `description`, `amount`, `status` (`pending/paid/overdue/cancelled`), `due_date`,
   `expense_date` (competência), `paid_at`, `paid_amount`, `payment_method`, `supplier_id` opcional,
-  `supplier` livre para legado, `maintenance_record_id` quando veio de manutenção, `document_number`,
+  `supplier` livre para legado, `maintenance_record_id` quando veio de manutenção,
+  `quotation_proposal_id` quando veio de orçamento, `work_id` quando pertence a obra/reforma, `document_number`,
   `reminder_days`, `reminder_sent_at` e comprovante/
   nota fiscal (`receipt_storage_object_id`). Soft delete.
 - Relações: `Unit::charges()`, `Condominium::charges()`/`expenses()`.
@@ -64,6 +65,9 @@ cache `tenant:domain:*`.
 - Contas geradas por proposta aprovada de orçamento usam `quotation_proposal_id`, preservando a
   trilha: orçamento -> proposta aprovada -> conta a pagar. A criação automática exige
   `quotations:approve`, `expenses:create` e módulo `financial` ativo.
+- Contas geradas por obra/reforma usam `work_id`, preservando a trilha:
+  obra/reforma -> conta a pagar. A criação exige `works:update`, `expenses:create` e módulo
+  `financial` ativo.
 - Lembrete: comando `expenses:notify-due` roda diariamente no scheduler e notifica gestores ativos
   quando `days_until_due <= reminder_days`; marca `reminder_sent_at` para não repetir.
 
