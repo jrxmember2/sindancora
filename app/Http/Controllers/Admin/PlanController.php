@@ -48,6 +48,7 @@ class PlanController extends Controller
         'assemblies' => 'Assembleias',
         'gatehouse' => 'Portaria',
         'suppliers' => 'Fornecedores',
+        'employees' => 'Funcionarios e ferias',
         'maintenance' => 'Manutenção preventiva',
         'quotations' => 'Orçamentos/Cotações',
         'works' => 'Obras/Reformas',

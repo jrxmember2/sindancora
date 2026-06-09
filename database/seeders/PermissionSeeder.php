@@ -147,6 +147,12 @@ class PermissionSeeder extends Seeder
             ['module' => 'works', 'action' => 'delete', 'description' => 'Remover obras e reformas'],
 
             // Cronograma consolidado
+            // Funcionarios e ferias
+            ['module' => 'employees', 'action' => 'create', 'description' => 'Cadastrar funcionarios'],
+            ['module' => 'employees', 'action' => 'read',   'description' => 'Visualizar funcionarios e ferias'],
+            ['module' => 'employees', 'action' => 'update', 'description' => 'Editar funcionarios e periodos de ferias'],
+            ['module' => 'employees', 'action' => 'delete', 'description' => 'Remover funcionarios e periodos de ferias'],
+
             ['module' => 'schedule', 'action' => 'read', 'description' => 'Visualizar cronograma consolidado'],
         ];
 

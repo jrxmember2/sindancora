@@ -60,7 +60,9 @@ Legenda esforço: 🟢 baixo · 🟡 médio · 🔴 alto. Valor: ⭐ alto difere
     a pagar vinculada; fornecedor mostra manutenções, execuções e contas consolidadas.
 
 ### Fase D — Pessoas, relatórios e visão consolidada
-- [ ] **D9. Funcionários + controle de férias** (CTPS, admissão, alertas de férias) ⭐ 🟡
+- [x] **D9. Funcionarios + controle de ferias** (CTPS, admissao, alertas de ferias) - concluida (09/06/2026)
+  - `employees` + `employee_vacation_periods`, alerta diario `employees:notify-vacations`,
+    escopo por condominio e fonte `employee_vacations` no cronograma. Ver `docs/tecnico/funcionarios-ferias.md`.
 - [x] **D10. Relatórios consolidados multi-condomínio** configuráveis (módulos + período) ⭐ 🟡 — concluída (09/06/2026)
   - `/relatorios` consolida financeiro, ocorrências, reservas, manutenções, obras/reformas,
     documentos e orçamentos em KPIs, comparação por condomínio, série mensal e rankings.

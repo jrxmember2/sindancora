@@ -27,6 +27,7 @@ cobrancas no cronograma.
 | Assembleias | `assemblies` | `scheduled_at`, quando preenchido |
 | Manutencoes | `maintenance_plans` | `next_due_date`, somente planos ativos |
 | Obras/Reformas | `works` | `start_date`, `expected_end_date` e `completed_at` |
+| Ferias | `employee_vacation_periods` | `deadline_date`, somente `pending` e `scheduled` |
 | Ocorrencias | `occurrences` | `due_at`, somente ocorrencias nao encerradas |
 | Contas a pagar | `expenses` | `due_date`, somente abertas |
 | Cobrancas | `charges` | `due_date`, somente abertas |

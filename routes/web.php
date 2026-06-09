@@ -14,6 +14,7 @@ use App\Http\Controllers\Panel\CommonAreaController;
 use App\Http\Controllers\Panel\CondominiumController;
 use App\Http\Controllers\Panel\DashboardController;
 use App\Http\Controllers\Panel\DocumentController;
+use App\Http\Controllers\Panel\EmployeeController;
 use App\Http\Controllers\Panel\ExpenseController;
 use App\Http\Controllers\Panel\GatehouseController;
 use App\Http\Controllers\Panel\InboxController;
@@ -179,6 +180,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Pessoa — detalhe (dinâmica, registrada após as estáticas acima)
     Route::middleware('permission:persons:read')->group(function () {
         Route::get('pessoas/{person}', [PersonController::class, 'show'])->name('persons.show');
+    });
+
+    // Funcionarios e controle de ferias.
+    Route::middleware('permission:employees:create')->group(function () {
+        Route::get('funcionarios/criar', [EmployeeController::class, 'create'])->name('employees.create');
+        Route::post('funcionarios', [EmployeeController::class, 'store'])->name('employees.store');
+    });
+    Route::middleware('permission:employees:update')->group(function () {
+        Route::get('funcionarios/{employee}/editar', [EmployeeController::class, 'edit'])->name('employees.edit');
+        Route::match(['put', 'patch'], 'funcionarios/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
+        Route::post('funcionarios/{employee}/ferias', [EmployeeController::class, 'storeVacationPeriod'])->name('employees.vacations.store');
+        Route::match(['put', 'patch'], 'funcionarios/ferias/{period}', [EmployeeController::class, 'updateVacationPeriod'])->name('employees.vacations.update');
+    });
+    Route::middleware('permission:employees:delete')->group(function () {
+        Route::delete('funcionarios/ferias/{period}', [EmployeeController::class, 'destroyVacationPeriod'])->name('employees.vacations.destroy');
+        Route::delete('funcionarios/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
+    });
+    Route::middleware('permission:employees:read')->group(function () {
+        Route::get('funcionarios', [EmployeeController::class, 'index'])->name('employees.index');
+        Route::get('funcionarios/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
     });
 
     // Comunicados — rotas estáticas (create) antes da dinâmica {announcement} (show).

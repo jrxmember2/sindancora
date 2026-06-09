@@ -28,6 +28,7 @@ class CheckPermission
         'sectors' => 'whatsapp',
         'campaigns' => 'whatsapp',
         'suppliers' => 'suppliers',
+        'employees' => 'employees',
         'maintenance' => 'maintenance',
         'quotations' => 'quotations',
         'works' => 'works',

@@ -26,6 +26,47 @@
 
 ## Última entrega implementada
 
+### D9. Funcionarios + controle de ferias
+
+Implementado em 09/06/2026. Doc tecnica: `docs/tecnico/funcionarios-ferias.md`.
+
+O que foi entregue:
+
+- Novo modulo `employees` habilitado nos planos Profissional, Business e Enterprise.
+- Novas tabelas `employees` e `employee_vacation_periods`.
+- CRUD de funcionarios por condominio, com documento, contato, cargo, tipo de vinculo, status,
+  admissao, desligamento, CTPS, PIS/PASEP, salario e observacoes.
+- Controle de periodos de ferias com periodo aquisitivo, prazo limite, datas de gozo, dias, status
+  e observacoes.
+- Cadastro pode criar automaticamente o primeiro periodo aquisitivo a partir da admissao.
+- Alertas de ferias proximas/atrasadas via `employees:notify-vacations`, agendado diariamente as 08:15.
+- Notificacao `EmployeeVacationDue` por banco, e-mail e broadcast.
+- Escopo por condominio respeita `user_roles.condominium_id` no CRUD, alertas e cronograma.
+- Cronograma consolidado ganhou a fonte `employee_vacations`.
+- Menu lateral ganhou "Funcionarios" condicionado a permissao `employees:read` e modulo `employees`.
+- Migration idempotente registra permissoes, vincula papeis padrao e habilita modulo nos planos.
+
+Arquivos-chave:
+
+- `database/migrations/2026_06_28_000001_create_employees_tables.php`
+- `database/migrations/2026_06_28_000002_register_employees_permissions_and_module.php`
+- `app/Models/Employee.php`
+- `app/Models/EmployeeVacationPeriod.php`
+- `app/Http/Controllers/Panel/EmployeeController.php`
+- `app/Console/Commands/NotifyDueEmployeeVacations.php`
+- `app/Notifications/EmployeeVacationDue.php`
+- `resources/js/Pages/Employees/`
+- `app/Http/Controllers/Panel/ScheduleController.php`
+- `resources/js/Pages/Schedule/Index.tsx`
+
+Validacoes feitas:
+
+- `php -l` nos PHP alterados/criados.
+- `php artisan route:list --name=employees --except-vendor` passou.
+- `php artisan route:list --name=schedule --except-vendor` passou.
+- `npm run build` passou.
+- `git diff --check` passou, apenas com avisos CRLF do Windows.
+
 ### D10. Relatorios consolidados multi-condominio
 
 Implementado em 09/06/2026. Doc tecnica: `docs/tecnico/relatorios-consolidados.md`.
@@ -276,12 +317,12 @@ Observacoes para retomada:
 - `public/build` pode mudar quando `npm run build` for executado; isso e esperado porque assets buildados
   estao versionados neste repo.
 
-Proximo bloco recomendado:
+Proximo bloco recomendado atualizado:
 
-- **D9. Funcionarios + controle de ferias**:
-  - cadastro operacional de funcionarios por condominio;
-  - dados trabalhistas basicos, admissao e status;
-  - controle de ferias e alertas.
+- **D11. Preferencias de notificacao granulares por usuario**:
+  - matriz de eventos por canal;
+  - opt-in/opt-out por usuario;
+  - base para reduzir excesso de alertas apos D9.
 
 ### Correções de plano + identidade do tenant/condomínio
 
@@ -459,13 +500,8 @@ Depois de commitar/pushar a última entrega, rodar no container da aplicação:
 
 ```bash
 php artisan migrate --force
-php artisan optimize:clear
-```
-
-Se houver alteração de permissões/planos em alguma entrega futura, também rodar:
-
-```bash
 php artisan db:seed --force
+php artisan optimize:clear
 ```
 
 O scheduler já é importante para:
@@ -473,16 +509,18 @@ O scheduler já é importante para:
 - `documents:notify-expiring`;
 - `maintenance:notify-due`;
 - `expenses:notify-due`;
+- `occurrences:notify-sla`;
+- `employees:notify-vacations`;
 - rotinas financeiras existentes.
 
 Confirmar no Easypanel se há worker/cron com `php artisan schedule:run` ou `php artisan schedule:work`.
 
 ## Próximo passo sugerido
 
-O próximo item natural do roadmap é **D9. Funcionários + controle de férias**.
+O proximo item natural do roadmap e **D11. Preferencias de notificacao granulares por usuario**.
 
-Motivo: o sistema já cobre a visão executiva multi-condomínio com D10. A próxima lacuna operacional
-da Fase D é cadastrar funcionários por condomínio e controlar férias/admissão/status com alertas.
+Motivo: D9 adicionou mais um alerta operacional. A proxima lacuna e permitir que cada usuario controle
+quais eventos recebe e por quais canais, antes de aumentar ainda mais o volume de notificacoes.
 
 ## Cuidados para a próxima implementação
 

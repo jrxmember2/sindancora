@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Assembly;
 use App\Models\Charge;
 use App\Models\Condominium;
+use App\Models\EmployeeVacationPeriod;
 use App\Models\Expense;
 use App\Models\MaintenancePlan;
 use App\Models\Occurrence;
@@ -26,6 +27,7 @@ class ScheduleController extends Controller
         'assemblies' => ['label' => 'Assembleias', 'permission' => 'assemblies:read', 'module' => 'assemblies'],
         'maintenance' => ['label' => 'Manutencoes', 'permission' => 'maintenance:read', 'module' => 'maintenance'],
         'works' => ['label' => 'Obras/Reformas', 'permission' => 'works:read', 'module' => 'works'],
+        'employee_vacations' => ['label' => 'Ferias', 'permission' => 'employees:read', 'module' => 'employees'],
         'occurrences' => ['label' => 'Ocorrencias', 'permission' => 'occurrences:read', 'module' => 'occurrences'],
         'expenses' => ['label' => 'Contas a pagar', 'permission' => 'expenses:read', 'module' => 'financial'],
         'charges' => ['label' => 'Cobrancas', 'permission' => 'charges:read', 'module' => 'financial'],
@@ -59,6 +61,10 @@ class ScheduleController extends Controller
 
         if ($this->shouldLoad('works', $selectedSource, $availableSources)) {
             $events = $events->merge($this->workEvents($tenant->id, $start, $end, $condominiumIds, $selectedCondominiumId));
+        }
+
+        if ($this->shouldLoad('employee_vacations', $selectedSource, $availableSources)) {
+            $events = $events->merge($this->employeeVacationEvents($tenant->id, $start, $end, $condominiumIds, $selectedCondominiumId));
         }
 
         if ($this->shouldLoad('occurrences', $selectedSource, $availableSources)) {
@@ -245,6 +251,35 @@ class ScheduleController extends Controller
         }
 
         return $events;
+    }
+
+    private function employeeVacationEvents(string $tenantId, Carbon $start, Carbon $end, array $condominiumIds, ?string $condominiumId): Collection
+    {
+        return EmployeeVacationPeriod::where('tenant_id', $tenantId)
+            ->with(['employee:id,tenant_id,condominium_id,name,position,vacation_alert_days', 'employee.condominium:id,name'])
+            ->whereIn('status', ['pending', 'scheduled'])
+            ->whereBetween('deadline_date', [$start->toDateString(), $end->toDateString()])
+            ->whereHas('employee', function (Builder $query) use ($condominiumIds, $condominiumId) {
+                $query->when($condominiumId, fn (Builder $employee, string $id) => $employee->where('condominium_id', $id), fn (Builder $employee) => $employee->whereIn('condominium_id', $condominiumIds));
+            })
+            ->orderBy('deadline_date')
+            ->get(['id', 'tenant_id', 'employee_id', 'acquisition_start', 'acquisition_end', 'deadline_date', 'status', 'days'])
+            ->map(fn (EmployeeVacationPeriod $period) => $this->event([
+                'id' => 'employee-vacation-'.$period->id,
+                'record_id' => $period->id,
+                'source' => 'employee_vacations',
+                'title' => 'Ferias: '.$period->employee?->name,
+                'description' => trim(collect([
+                    $period->employee?->position,
+                    'Periodo aquisitivo '.$period->acquisition_start?->format('d/m/Y').' a '.$period->acquisition_end?->format('d/m/Y'),
+                ])->filter()->implode(' | ')),
+                'date' => $period->deadline_date?->toDateString(),
+                'status' => $period->deadline_status ?? $period->status,
+                'status_label' => $this->vacationStatusLabel($period),
+                'condominium' => $this->condominiumPayload($period->employee?->condominium),
+                'url' => $period->employee ? route('employees.show', $period->employee, false) : null,
+                'is_overdue' => $period->deadline_status === 'overdue',
+            ]));
     }
 
     private function occurrenceEvents(string $tenantId, Carbon $start, Carbon $end, array $condominiumIds, ?string $condominiumId): Collection
@@ -487,6 +522,16 @@ class ScheduleController extends Controller
             'due_soon' => 'SLA vence em 24h',
             'on_time' => 'No prazo',
             default => Occurrence::STATUSES[$occurrence->status] ?? $occurrence->status,
+        };
+    }
+
+    private function vacationStatusLabel(EmployeeVacationPeriod $period): string
+    {
+        return match ($period->deadline_status) {
+            'overdue' => 'Atrasada ha '.abs($period->days_until_deadline ?? 0).'d',
+            'due_soon' => ($period->days_until_deadline ?? 0) === 0 ? 'Vence hoje' : 'Vence em '.$period->days_until_deadline.'d',
+            'ok' => EmployeeVacationPeriod::STATUSES[$period->status] ?? $period->status,
+            default => EmployeeVacationPeriod::STATUSES[$period->status] ?? $period->status,
         };
     }
 

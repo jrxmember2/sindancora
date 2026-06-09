@@ -37,3 +37,6 @@ Schedule::command('expenses:notify-due')->dailyAt('07:45')->withoutOverlapping()
 
 // Alerta de SLA de chamados (ocorrências) próximos do prazo ou atrasados — uma vez por dia
 Schedule::command('occurrences:notify-sla')->dailyAt('08:00')->withoutOverlapping();
+
+// Alerta de ferias de funcionarios proximas do prazo limite ou atrasadas
+Schedule::command('employees:notify-vacations')->dailyAt('08:15')->withoutOverlapping();
