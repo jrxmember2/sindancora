@@ -27,7 +27,7 @@ export default function PortalUnit({ person, links, linkTypes }: Props) {
                     <p className="text-sm font-medium text-gray-900">{person.name}</p>
                     {person.email && <p className="mt-1 flex items-center gap-2 text-sm text-gray-600"><Mail className="h-3.5 w-3.5 text-gray-400" /> {person.email}</p>}
                     {person.phone && <p className="mt-1 flex items-center gap-2 text-sm text-gray-600"><Phone className="h-3.5 w-3.5 text-gray-400" /> {person.phone}</p>}
-                    <Link href={route('portal.profile.edit')} className="mt-3 inline-block text-sm text-blue-600 hover:text-blue-700">Editar perfil →</Link>
+                    <Link href={route('profile.edit')} className="mt-3 inline-block text-sm text-blue-600 hover:text-blue-700">Editar perfil →</Link>
                 </div>
 
                 {/* Vínculos ativos */}

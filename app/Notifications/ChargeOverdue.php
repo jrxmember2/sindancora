@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Models\Charge;
 use App\Notifications\Channels\WhatsAppChannel;
 use App\Notifications\Concerns\BroadcastsNotification;
+use App\Notifications\Concerns\RespectsNotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -12,7 +13,7 @@ use Illuminate\Notifications\Notification;
 
 class ChargeOverdue extends Notification implements ShouldQueue
 {
-    use BroadcastsNotification, Queueable;
+    use BroadcastsNotification, Queueable, RespectsNotificationPreferences;
 
     /** Tenant do job (usado pelo hook de fila p/ aplicar o SMTP do tenant no envio do e-mail). */
     public ?string $tenantId;
@@ -25,7 +26,7 @@ class ChargeOverdue extends Notification implements ShouldQueue
     /** @return array<int, string|class-string> */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail', 'broadcast', WhatsAppChannel::class];
+        return $this->preferredChannels($notifiable, 'charge_overdue', ['database', 'mail', 'broadcast', WhatsAppChannel::class]);
     }
 
     public function toWhatsapp(object $notifiable): string

@@ -120,9 +120,13 @@ export default function PortalLayout({ children, title }: { children: React.Reac
                 {/* Menu do usuário */}
                 <div className="relative">
                     <button onClick={() => setMenuOpen((o) => !o)} className="flex items-center gap-1.5 rounded-lg p-1 hover:bg-gray-100">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
-                            {auth.user?.name?.charAt(0).toUpperCase()}
-                        </span>
+                        {auth.user?.avatar_url ? (
+                            <img src={auth.user.avatar_url} alt={auth.user.name} className="h-8 w-8 rounded-full object-cover" />
+                        ) : (
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
+                                {auth.user?.name?.charAt(0).toUpperCase()}
+                            </span>
+                        )}
                         <ChevronDown className="hidden h-4 w-4 text-gray-400 sm:block" />
                     </button>
                     {menuOpen && (
@@ -133,7 +137,7 @@ export default function PortalLayout({ children, title }: { children: React.Reac
                                     <p className="truncate text-sm font-medium text-gray-900">{auth.user?.name}</p>
                                     <p className="truncate text-xs text-gray-500">{auth.user?.email}</p>
                                 </div>
-                                <Link href="/portal/perfil" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                                <Link href="/perfil" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
                                     <UserRound className="h-4 w-4" /> Meu perfil
                                 </Link>
                                 <Link href="/portal/minha-unidade" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">

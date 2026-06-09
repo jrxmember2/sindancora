@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Panel\AnnouncementController;
 use App\Http\Controllers\Panel\ApiKeyController;
 use App\Http\Controllers\Panel\AssemblyController;
@@ -55,6 +56,15 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Perfil do usuario - painel, portal e superadmin.
+    Route::get('/perfil', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/perfil', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/perfil/senha', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::post('/perfil/foto', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
+    Route::delete('/perfil/foto', [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
+    Route::get('/perfil/foto', [ProfileController::class, 'avatar'])->name('profile.avatar');
+    Route::patch('/perfil/notificacoes', [ProfileController::class, 'updateNotifications'])->name('profile.notifications.update');
+
     // Notificações in-app — disponíveis a qualquer usuário autenticado (painel e portal).
     Route::get('/notificacoes', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notificacoes/marcar-todas', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');

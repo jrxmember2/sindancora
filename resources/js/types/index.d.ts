@@ -2,6 +2,7 @@ export interface AuthUser {
     id: string;
     name: string;
     email: string;
+    avatar_url: string | null;
     is_super_admin: boolean;
     permissions: string[];
     sign_messages: boolean;

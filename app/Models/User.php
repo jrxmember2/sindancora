@@ -20,8 +20,14 @@ class User extends Authenticatable
 
     protected $fillable = [
         'tenant_id', 'person_id', 'name', 'email', 'phone', 'document',
+        'avatar_path', 'avatar_mime_type', 'avatar_original_filename',
         'password', 'status', 'is_super_admin', 'last_login_at', 'sign_messages',
     ];
+
+    protected $appends = ['avatar_url'];
+
+    /** @var array<string, array<string, bool>> */
+    private array $notificationPreferenceCache = [];
 
     /** Papéis com acesso ao painel administrativo (todos exceto o morador). */
     public const PANEL_ROLES = ['admin', 'sindico', 'subsindico', 'conselheiro'];
@@ -52,6 +58,11 @@ class User extends Authenticatable
     public function userRoles(): HasMany
     {
         return $this->hasMany(UserRole::class);
+    }
+
+    public function notificationPreferences(): HasMany
+    {
+        return $this->hasMany(UserNotificationPreference::class);
     }
 
     /** Setores de atendimento dos quais o usuário é membro (escopo da inbox). */
@@ -158,6 +169,46 @@ class User extends Authenticatable
     public function isActive(): bool
     {
         return $this->status === 'active';
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (! $this->avatar_path) {
+            return null;
+        }
+
+        try {
+            return route('profile.avatar', ['v' => optional($this->updated_at)->timestamp]);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /** @param array<int, string> $defaultChannels */
+    public function notificationChannelsFor(string $event, array $defaultChannels): array
+    {
+        $preferences = $this->notificationPreferenceMap();
+
+        return array_values(array_filter($defaultChannels, function (string $channel) use ($event, $preferences) {
+            return $preferences[$event][$channel] ?? true;
+        }));
+    }
+
+    /** @return array<string, array<string, bool>> */
+    private function notificationPreferenceMap(): array
+    {
+        if ($this->notificationPreferenceCache !== []) {
+            return $this->notificationPreferenceCache;
+        }
+
+        $preferences = $this->relationLoaded('notificationPreferences')
+            ? $this->notificationPreferences
+            : $this->notificationPreferences()->get();
+
+        return $this->notificationPreferenceCache = $preferences
+            ->groupBy('event')
+            ->map(fn ($items) => $items->pluck('enabled', 'channel')->map(fn ($enabled) => (bool) $enabled)->all())
+            ->all();
     }
 
     /**

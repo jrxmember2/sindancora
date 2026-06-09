@@ -67,7 +67,9 @@ Legenda esforço: 🟢 baixo · 🟡 médio · 🔴 alto. Valor: ⭐ alto difere
   - `/relatorios` consolida financeiro, ocorrências, reservas, manutenções, obras/reformas,
     documentos e orçamentos em KPIs, comparação por condomínio, série mensal e rankings.
     Ver `docs/tecnico/relatorios-consolidados.md`.
-- [ ] **D11. Preferências de notificação granulares por usuário** (matriz evento × canal) 🟡 🟡
+- [x] **D11. Preferencias de notificacao granulares por usuario** (perfil unificado + matriz evento x canal) - concluida (09/06/2026)
+  - Pagina `/perfil` para dados pessoais, senha, foto/avatar e preferencias por evento/canal.
+    Notificacoes passam a respeitar opt-in/opt-out por usuario. Ver `docs/tecnico/perfil-usuario-notificacoes.md`.
 - [x] **D13. Cronograma consolidado** (calendário de manutenções + ocorrências + reservas) 🟡 🟡 — concluída (09/06/2026)
   - `/cronograma` consolida reservas, assembleias, manutenções, obras/reformas, SLA de ocorrências,
     contas a pagar e cobranças, respeitando permissões, módulos de plano e escopo por condomínio.

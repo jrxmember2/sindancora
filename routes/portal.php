@@ -6,7 +6,6 @@ use App\Http\Controllers\Portal\ChargeController;
 use App\Http\Controllers\Portal\DashboardController;
 use App\Http\Controllers\Portal\DocumentController;
 use App\Http\Controllers\Portal\OccurrenceController;
-use App\Http\Controllers\Portal\ProfileController;
 use App\Http\Controllers\Portal\ReservationController;
 use App\Http\Controllers\Portal\UnitController;
 use App\Http\Controllers\Portal\VisitorAuthorizationController;
@@ -70,6 +69,6 @@ Route::middleware(['auth', 'verified', 'resident'])
         Route::get('minha-unidade', [UnitController::class, 'show'])->name('unit.show');
 
         // Meu perfil
-        Route::get('perfil', [ProfileController::class, 'edit'])->name('profile.edit');
-        Route::match(['put', 'patch'], 'perfil', [ProfileController::class, 'update'])->name('profile.update');
+        Route::get('perfil', fn () => redirect()->route('profile.edit'))->name('profile.edit');
+        Route::match(['put', 'patch'], 'perfil', fn () => redirect()->route('profile.edit'))->name('profile.update');
     });

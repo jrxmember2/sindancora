@@ -26,6 +26,45 @@
 
 ## Última entrega implementada
 
+### D11. Perfil de usuario + preferencias de notificacao granulares
+
+Implementado em 09/06/2026. Doc tecnica: `docs/tecnico/perfil-usuario-notificacoes.md`.
+
+O que foi entregue:
+
+- Pagina unica `/perfil` para superadmin, usuarios do painel e moradores do portal.
+- Edicao de nome, e-mail e telefone.
+- Troca de senha com validacao da senha atual.
+- Upload/remocao de foto de usuario, com avatar exibido nos menus dos layouts.
+- Nova tabela `user_notification_preferences` com matriz evento x canal por usuario.
+- Registry central `NotificationPreferenceRegistry` para eventos/canais configuraveis.
+- Trait `RespectsNotificationPreferences` para filtrar os canais retornados por `via()`.
+- Notificacoes de comunicados, ocorrencias, SLA, reservas, portaria, financeiro, documentos,
+  manutencoes e ferias agora respeitam opt-in/opt-out por usuario.
+- `/portal/perfil` foi mantido como redirect para o perfil unificado.
+
+Arquivos-chave:
+
+- `database/migrations/2026_06_29_000001_create_user_notification_preferences.php`
+- `app/Http/Controllers/ProfileController.php`
+- `app/Models/User.php`
+- `app/Models/UserNotificationPreference.php`
+- `app/Support/NotificationPreferenceRegistry.php`
+- `app/Notifications/Concerns/RespectsNotificationPreferences.php`
+- `resources/js/Pages/Profile/Edit.tsx`
+- `resources/js/Layouts/AppLayout.tsx`
+- `resources/js/Layouts/AdminLayout.tsx`
+- `resources/js/Layouts/PortalLayout.tsx`
+- `routes/web.php`
+- `routes/portal.php`
+
+Validacoes feitas:
+
+- `php -l` nos PHP alterados/criados.
+- `php artisan route:list --name=profile --except-vendor` passou.
+- `npm run build` passou.
+- `git diff --check` passou, apenas com avisos CRLF do Windows quando aplicavel.
+
 ### D9. Funcionarios + controle de ferias
 
 Implementado em 09/06/2026. Doc tecnica: `docs/tecnico/funcionarios-ferias.md`.
@@ -319,10 +358,10 @@ Observacoes para retomada:
 
 Proximo bloco recomendado atualizado:
 
-- **D11. Preferencias de notificacao granulares por usuario**:
-  - matriz de eventos por canal;
-  - opt-in/opt-out por usuario;
-  - base para reduzir excesso de alertas apos D9.
+- **X3. Links publicos + QR por condominio**:
+  - auto-cadastro de morador;
+  - abertura publica de ocorrencia;
+  - moderacao/aprovacao antes de criar acesso definitivo.
 
 ### Correções de plano + identidade do tenant/condomínio
 
@@ -517,10 +556,10 @@ Confirmar no Easypanel se há worker/cron com `php artisan schedule:run` ou `php
 
 ## Próximo passo sugerido
 
-O proximo item natural do roadmap e **D11. Preferencias de notificacao granulares por usuario**.
+O proximo item natural do roadmap e **X3. Links publicos + QR por condominio**.
 
-Motivo: D9 adicionou mais um alerta operacional. A proxima lacuna e permitir que cada usuario controle
-quais eventos recebe e por quais canais, antes de aumentar ainda mais o volume de notificacoes.
+Motivo: a Fase D operacional ficou completa com D9, D10, D11 e D13. O X3 ajuda aquisicao e onboarding,
+reaproveitando portal, QR/portaria e o controle de moderacao por condominio.
 
 ## Cuidados para a próxima implementação
 

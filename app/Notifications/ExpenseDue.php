@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Expense;
 use App\Notifications\Concerns\BroadcastsNotification;
+use App\Notifications\Concerns\RespectsNotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -11,7 +12,7 @@ use Illuminate\Notifications\Notification;
 
 class ExpenseDue extends Notification implements ShouldQueue
 {
-    use BroadcastsNotification, Queueable;
+    use BroadcastsNotification, Queueable, RespectsNotificationPreferences;
 
     public ?string $tenantId;
 
@@ -23,7 +24,7 @@ class ExpenseDue extends Notification implements ShouldQueue
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail', 'broadcast'];
+        return $this->preferredChannels($notifiable, 'expense_due', ['database', 'mail', 'broadcast']);
     }
 
     private function situation(): string

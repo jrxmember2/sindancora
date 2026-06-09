@@ -4,20 +4,21 @@ namespace App\Notifications;
 
 use App\Models\VisitorAuthorization;
 use App\Notifications\Concerns\BroadcastsNotification;
+use App\Notifications\Concerns\RespectsNotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
 class VisitorArrived extends Notification implements ShouldQueue
 {
-    use BroadcastsNotification, Queueable;
+    use BroadcastsNotification, Queueable, RespectsNotificationPreferences;
 
     public function __construct(public VisitorAuthorization $authorization) {}
 
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['database', 'broadcast'];
+        return $this->preferredChannels($notifiable, 'visitor_arrived', ['database', 'broadcast']);
     }
 
     /** @return array<string, mixed> */

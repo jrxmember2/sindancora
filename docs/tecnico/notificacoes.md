@@ -41,11 +41,22 @@ tenant_id null, necessário no contexto do comando agendado sem tenant resolvido
 `GET /notificacoes`, `POST /notificacoes/marcar-todas`, `POST /notificacoes/{id}/lida`
 — sem middleware de permissão (qualquer usuário autenticado vê as suas).
 
+## Preferencias por usuario
+
+A D11 adicionou preferencias granulares em `/perfil`, documentadas em
+`docs/tecnico/perfil-usuario-notificacoes.md`.
+
+Eventos/canais ficam centralizados em `App\Support\NotificationPreferenceRegistry`.
+Notificacoes que precisam respeitar opt-in/opt-out usam o trait
+`App\Notifications\Concerns\RespectsNotificationPreferences` no metodo `via()`.
+
+Por padrao, ausencia de linha em `user_notification_preferences` significa canal habilitado.
+
 ## Deploy
 
 Só `php artisan migrate --force`. Não exige seed.
 
 ## Pendências
 
-Templates de e-mail por tipo de evento, preferências de e-mail por usuário, e notificar
-moradores in-app (depende do portal — Fase 4). Ver `docs/produto/02-roadmap-mvp.md` §3.5.
+Templates de e-mail por tipo de evento e ampliar notificacoes in-app para fluxos de moradores que
+ainda nao usam `Notification`. Ver `docs/produto/02-roadmap-mvp.md` §3.5.

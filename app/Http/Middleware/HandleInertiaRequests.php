@@ -28,6 +28,7 @@ class HandleInertiaRequests extends Middleware
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'avatar_url' => $user->avatar_url,
                     'is_super_admin' => $user->is_super_admin,
                     'permissions' => $user->permissionNames(),
                     'sign_messages' => (bool) $user->sign_messages,

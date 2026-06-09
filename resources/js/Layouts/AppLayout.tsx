@@ -217,15 +217,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 {/* User Menu */}
                 <div className="border-t p-4">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
-                            {auth.user?.name?.charAt(0).toUpperCase()}
-                        </div>
+                        {auth.user?.avatar_url ? (
+                            <img src={auth.user.avatar_url} alt={auth.user.name} className="h-9 w-9 rounded-full object-cover" />
+                        ) : (
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
+                                {auth.user?.name?.charAt(0).toUpperCase()}
+                            </div>
+                        )}
                         <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-gray-900">{auth.user?.name}</p>
                             <p className="truncate text-xs text-gray-500">{auth.user?.email}</p>
                         </div>
                     </div>
                     <div className="mt-3 space-y-1">
+                        <Link
+                            href="/perfil"
+                            className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100"
+                        >
+                            <UserRound className="h-4 w-4" />
+                            Meu perfil
+                        </Link>
                         {can('settings:payments') && (
                             <Link
                                 href="/configuracoes/pagamentos"

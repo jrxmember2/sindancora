@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Document;
 use App\Notifications\Concerns\BroadcastsNotification;
+use App\Notifications\Concerns\RespectsNotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -11,7 +12,7 @@ use Illuminate\Notifications\Notification;
 
 class DocumentExpiring extends Notification implements ShouldQueue
 {
-    use BroadcastsNotification, Queueable;
+    use BroadcastsNotification, Queueable, RespectsNotificationPreferences;
 
     /** Tenant do job (usado pelo hook de fila p/ aplicar o SMTP do tenant no envio do e-mail). */
     public ?string $tenantId;
@@ -24,7 +25,7 @@ class DocumentExpiring extends Notification implements ShouldQueue
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail', 'broadcast'];
+        return $this->preferredChannels($notifiable, 'document_expiring', ['database', 'mail', 'broadcast']);
     }
 
     private function situation(): string

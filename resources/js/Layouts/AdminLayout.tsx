@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import {
-    LayoutDashboard, Building2, LogOut, Menu, X, Shield, Package, MessageCircle, Sparkles,
+    LayoutDashboard, Building2, LogOut, Menu, X, Shield, Package, MessageCircle, Sparkles, UserRound,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -56,14 +56,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                 <div className="border-t border-gray-700 p-4">
                     <div className="flex items-center gap-3 mb-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-semibold">
-                            {auth.user?.name?.charAt(0).toUpperCase()}
-                        </div>
+                        {auth.user?.avatar_url ? (
+                            <img src={auth.user.avatar_url} alt={auth.user.name} className="h-9 w-9 rounded-full object-cover" />
+                        ) : (
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white text-sm font-semibold">
+                                {auth.user?.name?.charAt(0).toUpperCase()}
+                            </div>
+                        )}
                         <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-white">{auth.user?.name}</p>
                             <p className="truncate text-xs text-gray-400">{auth.user?.email}</p>
                         </div>
                     </div>
+                    <Link
+                        href="/perfil"
+                        className="mb-1 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-gray-300 hover:bg-gray-800"
+                    >
+                        <UserRound className="h-4 w-4" />
+                        Meu perfil
+                    </Link>
                     <Link
                         href="/logout"
                         method="post"
