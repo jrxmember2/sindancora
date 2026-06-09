@@ -36,6 +36,7 @@ import {
     Wrench,
     Timer,
     ClipboardCheck,
+    Hammer,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -53,6 +54,7 @@ const navigation = [
     { name: 'Fornecedores', href: '/fornecedores', icon: Truck, permission: 'suppliers:read', module: 'suppliers' },
     { name: 'Manutenção', href: '/manutencoes', icon: Wrench, permission: 'maintenance:read', module: 'maintenance' },
     { name: 'Orçamentos', href: '/orcamentos', icon: ClipboardCheck, permission: 'quotations:read', module: 'quotations' },
+    { name: 'Obras', href: '/obras', icon: Hammer, permission: 'works:read', module: 'works' },
     { name: 'Relatórios', href: '/relatorios', icon: BarChart3, permission: 'reports:read', module: 'reports' },
     { name: 'Assembleias', href: '/assembleias', icon: Vote, permission: 'assemblies:read', module: 'assemblies' },
     { name: 'Portaria', href: '/visitantes', icon: DoorOpen, permission: 'gatehouse:read', module: 'gatehouse' },

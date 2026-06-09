@@ -139,6 +139,12 @@ class PermissionSeeder extends Seeder
             ['module' => 'quotations', 'action' => 'update',  'description' => 'Editar orçamentos e propostas'],
             ['module' => 'quotations', 'action' => 'approve', 'description' => 'Aprovar ou reprovar propostas'],
             ['module' => 'quotations', 'action' => 'delete',  'description' => 'Remover orçamentos e propostas'],
+
+            // Obras/Reformas
+            ['module' => 'works', 'action' => 'create', 'description' => 'Criar obras e reformas'],
+            ['module' => 'works', 'action' => 'read',   'description' => 'Visualizar obras e reformas'],
+            ['module' => 'works', 'action' => 'update', 'description' => 'Editar obras, anexos, andamentos e contas vinculadas'],
+            ['module' => 'works', 'action' => 'delete', 'description' => 'Remover obras e reformas'],
         ];
 
         foreach ($permissions as $perm) {

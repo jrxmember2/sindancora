@@ -33,6 +33,7 @@ interface Expense {
     supplier_record: { name: string } | null;
     maintenance_record: { plan: { id: string; title: string } | null } | null;
     quotation_proposal: { quotation: { id: string; title: string } | null } | null;
+    work: { id: string; title: string; status: string } | null;
 }
 
 interface Summary {
@@ -99,8 +100,10 @@ export default function ExpensesIndex({ expenses, total, summary, condominiums, 
     const can = (permission: string) => perms.includes('*') || perms.includes(permission);
     const planAllowsMaintenance = auth.user?.is_super_admin || (tenant?.plan?.modules ?? []).includes('maintenance');
     const planAllowsQuotations = auth.user?.is_super_admin || (tenant?.plan?.modules ?? []).includes('quotations');
+    const planAllowsWorks = auth.user?.is_super_admin || (tenant?.plan?.modules ?? []).includes('works');
     const canOpenMaintenance = can('maintenance:read') && planAllowsMaintenance;
     const canOpenQuotations = can('quotations:read') && planAllowsQuotations;
+    const canOpenWorks = can('works:read') && planAllowsWorks;
 
     const apply = (params: Record<string, string>) => router.get(
         route('expenses.index'),
@@ -223,6 +226,16 @@ export default function ExpensesIndex({ expenses, total, summary, condominiums, 
                                                             {expense.quotation_proposal.quotation.title}
                                                         </Link>
                                                     ) : expense.quotation_proposal.quotation.title}
+                                                </p>
+                                            )}
+                                            {expense.work && (
+                                                <p className="mt-1 text-xs text-gray-400">
+                                                    Obra:{' '}
+                                                    {canOpenWorks ? (
+                                                        <Link href={route('works.show', expense.work.id)} className="text-blue-600 hover:underline">
+                                                            {expense.work.title}
+                                                        </Link>
+                                                    ) : expense.work.title}
                                                 </p>
                                             )}
                                         </td>

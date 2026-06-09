@@ -10,6 +10,7 @@ use App\Models\MaintenancePlan;
 use App\Models\Quotation;
 use App\Models\QuotationProposal;
 use App\Models\Supplier;
+use App\Models\Work;
 use App\Services\StorageService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -92,6 +93,7 @@ class QuotationController extends Controller
             'proposals.attachments:id,entity_id,original_filename,file_size_bytes,created_at',
             'proposals.expense:id,quotation_proposal_id,status,due_date,amount,description',
             'proposals.maintenancePlan:id,quotation_proposal_id,title',
+            'proposals.work:id,quotation_proposal_id,title,status',
         ]);
 
         return Inertia::render('Quotations/Show', [
@@ -100,8 +102,10 @@ class QuotationController extends Controller
             'proposalStatuses' => QuotationProposal::STATUSES,
             'suppliers' => $this->supplierOptions($quotation->tenant_id),
             'frequencies' => MaintenancePlan::FREQUENCIES,
+            'workTypes' => Category::optionsFor($quotation->tenant_id, 'work', Work::TYPES),
             'canGenerateExpense' => $this->canGenerateExpense($request),
             'canCreateMaintenance' => $this->canCreateMaintenance($request),
+            'canCreateWork' => $this->canCreateWork($request),
         ]);
     }
 
@@ -214,16 +218,24 @@ class QuotationController extends Controller
             'maintenance_frequency' => [Rule::requiredIf($request->boolean('generate_maintenance')), 'nullable', Rule::in(array_keys(MaintenancePlan::FREQUENCIES))],
             'maintenance_next_due_date' => [Rule::requiredIf($request->boolean('generate_maintenance')), 'nullable', 'date'],
             'maintenance_alert_days' => 'nullable|integer|min:0|max:365',
+            'generate_work' => 'boolean',
+            'work_type' => [Rule::requiredIf($request->boolean('generate_work')), 'nullable', Rule::in(array_keys(Category::optionsFor($quotation->tenant_id, 'work', Work::TYPES)))],
+            'work_start_date' => 'nullable|date',
+            'work_expected_end_date' => 'nullable|date',
         ]);
 
         $data['generate_expense'] = $request->boolean('generate_expense');
         $data['generate_maintenance'] = $request->boolean('generate_maintenance');
+        $data['generate_work'] = $request->boolean('generate_work');
 
         if ($data['generate_expense']) {
             abort_unless($this->canGenerateExpense($request), 403);
         }
         if ($data['generate_maintenance']) {
             abort_unless($this->canCreateMaintenance($request), 403);
+        }
+        if ($data['generate_work']) {
+            abort_unless($this->canCreateWork($request), 403);
         }
 
         DB::transaction(function () use ($quotation, $proposal, $data, $request) {
@@ -240,12 +252,18 @@ class QuotationController extends Controller
                 'approved_at' => now(),
             ]);
 
+            $work = null;
+
             if ($data['generate_maintenance']) {
                 $this->createMaintenanceFromProposal($quotation, $proposal, $data);
             }
 
+            if ($data['generate_work']) {
+                $work = $this->createWorkFromProposal($quotation, $proposal, $data, $request);
+            }
+
             if ($data['generate_expense']) {
-                $this->createExpenseFromProposal($quotation, $proposal, $data, $request);
+                $this->createExpenseFromProposal($quotation, $proposal, $data, $request, $work);
             }
         });
 
@@ -321,7 +339,38 @@ class QuotationController extends Controller
         ]);
     }
 
-    private function createExpenseFromProposal(Quotation $quotation, QuotationProposal $proposal, array $data, Request $request): Expense
+    private function createWorkFromProposal(Quotation $quotation, QuotationProposal $proposal, array $data, Request $request): Work
+    {
+        $existing = $proposal->work()->first();
+        if ($existing) {
+            return $existing;
+        }
+
+        return Work::create([
+            'tenant_id' => $quotation->tenant_id,
+            'condominium_id' => $quotation->condominium_id,
+            'supplier_id' => $proposal->supplier_id,
+            'quotation_id' => $quotation->id,
+            'quotation_proposal_id' => $proposal->id,
+            'created_by' => $request->user()?->id,
+            'title' => $quotation->title,
+            'type' => $data['work_type'] ?? 'renovation',
+            'status' => 'approved',
+            'priority' => 'normal',
+            'description' => trim(implode("\n\n", array_filter([
+                $quotation->description,
+                "Gerada pela proposta aprovada do orçamento {$quotation->title}.",
+                $proposal->notes ? "Observações da proposta: {$proposal->notes}" : null,
+            ]))) ?: null,
+            'start_date' => $data['work_start_date'] ?? null,
+            'expected_end_date' => $data['work_expected_end_date'] ?? null,
+            'budget_amount' => $proposal->amount,
+            'progress_percent' => 0,
+            'notes' => null,
+        ]);
+    }
+
+    private function createExpenseFromProposal(Quotation $quotation, QuotationProposal $proposal, array $data, Request $request, ?Work $work = null): Expense
     {
         return Expense::create([
             'tenant_id' => $quotation->tenant_id,
@@ -337,6 +386,7 @@ class QuotationController extends Controller
             'document_number' => $data['expense_document_number'] ?? null,
             'reminder_days' => $data['expense_reminder_days'] ?? 3,
             'quotation_proposal_id' => $proposal->id,
+            'work_id' => $work?->id,
             'notes' => trim(implode("\n\n", array_filter([
                 "Gerada pela proposta aprovada do orçamento {$quotation->title}.",
                 $proposal->notes,
@@ -401,6 +451,12 @@ class QuotationController extends Controller
     {
         return $request->user()?->hasPermission('maintenance:create')
             && $this->planAllows('maintenance', $request);
+    }
+
+    private function canCreateWork(Request $request): bool
+    {
+        return $request->user()?->hasPermission('works:create')
+            && $this->planAllows('works', $request);
     }
 
     private function planAllows(string $module, Request $request): bool

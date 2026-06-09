@@ -35,6 +35,7 @@ use App\Http\Controllers\Panel\TenantProfileController;
 use App\Http\Controllers\Panel\UnitController;
 use App\Http\Controllers\Panel\UserController;
 use App\Http\Controllers\Panel\WebhookController;
+use App\Http\Controllers\Panel\WorkController;
 use App\Http\Controllers\Panel\WhatsappBotController;
 use App\Http\Controllers\Panel\WhatsappReportController;
 use App\Http\Controllers\Panel\WhatsappConnectionController;
@@ -332,6 +333,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('permission:quotations:read')->group(function () {
         Route::get('orcamentos', [QuotationController::class, 'index'])->name('quotations.index');
         Route::get('orcamentos/{quotation}', [QuotationController::class, 'show'])->name('quotations.show');
+    });
+
+    // Obras/Reformas — acompanhamento operacional com anexos, andamentos e contas vinculadas.
+    Route::middleware('permission:works:create')->group(function () {
+        Route::get('obras/criar', [WorkController::class, 'create'])->name('works.create');
+        Route::post('obras', [WorkController::class, 'store'])->name('works.store');
+    });
+    Route::middleware('permission:works:update')->group(function () {
+        Route::get('obras/{work}/editar', [WorkController::class, 'edit'])->name('works.edit');
+        Route::match(['put', 'patch'], 'obras/{work}', [WorkController::class, 'update'])->name('works.update');
+        Route::post('obras/{work}/andamentos', [WorkController::class, 'storeUpdate'])->name('works.updates.store');
+        Route::post('obras/{work}/contas-a-pagar', [WorkController::class, 'storeExpense'])->name('works.expenses.store');
+    });
+    Route::middleware('permission:works:delete')->group(function () {
+        Route::delete('obras/{work}', [WorkController::class, 'destroy'])->name('works.destroy');
+    });
+    Route::middleware('permission:works:read')->group(function () {
+        Route::get('obras', [WorkController::class, 'index'])->name('works.index');
+        Route::get('obras/{work}', [WorkController::class, 'show'])->name('works.show');
     });
 
     // Cobranças — rotas estáticas (criar, gerar) antes da dinâmica {charge}.

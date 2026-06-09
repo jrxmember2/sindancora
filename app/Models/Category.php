@@ -32,6 +32,7 @@ class Category extends Model
         'supplier' => 'Fornecedores',
         'maintenance' => 'Manutenções',
         'quotation' => 'Orçamentos/Cotações',
+        'work' => 'Obras/Reformas',
     ];
 
     /**

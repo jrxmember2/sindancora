@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { CheckCircle2, ClipboardCheck, Paperclip, Pencil, Plus, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle2, ClipboardCheck, Hammer, Paperclip, Pencil, Plus, Trash2, XCircle } from 'lucide-react';
 import type { PageProps } from '@/types';
 import type { Option } from './QuotationForm';
 
@@ -24,6 +24,12 @@ interface MaintenancePlan {
     title: string;
 }
 
+interface Work {
+    id: string;
+    title: string;
+    status: string;
+}
+
 interface Proposal {
     id: string;
     supplier_id: string | null;
@@ -38,6 +44,7 @@ interface Proposal {
     supplier: { id: string; name: string } | null;
     expense: Expense | null;
     maintenance_plan: MaintenancePlan | null;
+    work: Work | null;
 }
 
 interface Quotation {
@@ -63,8 +70,10 @@ interface Props {
     proposalStatuses: Record<string, string>;
     suppliers: Option[];
     frequencies: Record<string, string>;
+    workTypes: Record<string, string>;
     canGenerateExpense: boolean;
     canCreateMaintenance: boolean;
+    canCreateWork: boolean;
 }
 
 const today = new Date().toISOString().slice(0, 10);
@@ -92,8 +101,10 @@ export default function QuotationShow({
     proposalStatuses,
     suppliers,
     frequencies,
+    workTypes,
     canGenerateExpense,
     canCreateMaintenance,
+    canCreateWork,
 }: Props) {
     const { auth, tenant } = usePage<PageProps>().props;
     const permissions = auth.user?.permissions ?? [];
@@ -102,6 +113,7 @@ export default function QuotationShow({
     const canOpenExpenses = can('expenses:read') && planAllows('financial');
     const canEditExpenses = can('expenses:update') && planAllows('financial');
     const canOpenMaintenance = can('maintenance:read') && planAllows('maintenance');
+    const canOpenWorks = can('works:read') && planAllows('works');
     const isClosed = ['approved', 'rejected', 'cancelled'].includes(quotation.status);
 
     const proposalForm = useForm({
@@ -122,6 +134,10 @@ export default function QuotationShow({
         maintenance_frequency: 'once',
         maintenance_next_due_date: today,
         maintenance_alert_days: '15',
+        generate_work: false,
+        work_type: 'renovation',
+        work_start_date: '',
+        work_expected_end_date: '',
     });
 
     const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
@@ -139,8 +155,11 @@ export default function QuotationShow({
         setSelectedProposal(proposal);
         approvalForm.setData('generate_expense', false);
         approvalForm.setData('generate_maintenance', false);
+        approvalForm.setData('generate_work', false);
         approvalForm.setData('expense_due_date', today);
         approvalForm.setData('maintenance_next_due_date', today);
+        approvalForm.setData('work_start_date', '');
+        approvalForm.setData('work_expected_end_date', '');
     };
 
     const approve = (event: React.FormEvent) => {
@@ -328,6 +347,14 @@ export default function QuotationShow({
                                                 ) : proposal.maintenance_plan.title}
                                             </p>
                                         )}
+                                        {proposal.work && (
+                                            <p className="mt-1 text-xs text-gray-500">
+                                                Obra:{' '}
+                                                {canOpenWorks ? (
+                                                    <Link href={route('works.show', proposal.work.id)} className="text-blue-600 hover:underline">{proposal.work.title}</Link>
+                                                ) : proposal.work.title}
+                                            </p>
+                                        )}
                                     </td>
                                     <td className="px-4 py-3 text-right font-semibold text-gray-900">{brl(proposal.amount)}</td>
                                     <td className="px-4 py-3 text-gray-600">{proposal.execution_days !== null ? `${proposal.execution_days} dia(s)` : '-'}</td>
@@ -385,7 +412,7 @@ export default function QuotationShow({
                             </p>
                         </div>
 
-                        <div className="grid gap-4 lg:grid-cols-2">
+                        <div className="grid gap-4 lg:grid-cols-3">
                             {canCreateMaintenance && (
                                 <div className="rounded-lg border border-white bg-white p-4">
                                     <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -408,6 +435,35 @@ export default function QuotationShow({
                                             <div>
                                                 <label className="mb-1 block text-xs font-medium text-gray-600">Alerta</label>
                                                 <input type="number" min={0} max={365} value={approvalForm.data.maintenance_alert_days} onChange={(e) => approvalForm.setData('maintenance_alert_days', e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {canCreateWork && (
+                                <div className="rounded-lg border border-white bg-white p-4">
+                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                        <input type="checkbox" checked={approvalForm.data.generate_work} onChange={(e) => approvalForm.setData('generate_work', e.target.checked)} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                        Gerar obra/reforma
+                                    </label>
+                                    {approvalForm.data.generate_work && (
+                                        <div className="mt-3 grid gap-3">
+                                            <div>
+                                                <label className="mb-1 block text-xs font-medium text-gray-600">Tipo</label>
+                                                <select value={approvalForm.data.work_type} onChange={(e) => approvalForm.setData('work_type', e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
+                                                    {Object.entries(workTypes).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="grid gap-3 sm:grid-cols-2">
+                                                <div>
+                                                    <label className="mb-1 block text-xs font-medium text-gray-600">Início</label>
+                                                    <input type="date" value={approvalForm.data.work_start_date} onChange={(e) => approvalForm.setData('work_start_date', e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-xs font-medium text-gray-600">Previsão</label>
+                                                    <input type="date" value={approvalForm.data.work_expected_end_date} onChange={(e) => approvalForm.setData('work_expected_end_date', e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+                                                </div>
                                             </div>
                                         </div>
                                     )}
@@ -446,7 +502,7 @@ export default function QuotationShow({
                                 Cancelar
                             </button>
                             <button type="submit" disabled={approvalForm.processing} className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
-                                <CheckCircle2 className="h-4 w-4" />
+                                {approvalForm.data.generate_work ? <Hammer className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
                                 {approvalForm.processing ? 'Aprovando...' : 'Confirmar aprovação'}
                             </button>
                         </div>

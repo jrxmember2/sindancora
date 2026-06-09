@@ -62,6 +62,11 @@ class Condominium extends Model
         return $this->hasMany(Quotation::class);
     }
 
+    public function works(): HasMany
+    {
+        return $this->hasMany(Work::class);
+    }
+
     public function activeManagers(): HasMany
     {
         return $this->hasMany(CondominiumManager::class)->whereNull('end_date');
