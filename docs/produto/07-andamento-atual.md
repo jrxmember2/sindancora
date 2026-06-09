@@ -26,6 +26,48 @@
 
 ## Última entrega implementada
 
+### D10. Relatorios consolidados multi-condominio
+
+Implementado em 09/06/2026. Doc tecnica: `docs/tecnico/relatorios-consolidados.md`.
+
+O que foi entregue:
+
+- A rota existente `/relatorios` passou a abrir uma visao consolidada multi-condominio.
+- O modulo continua protegido por `reports:read` e modulo de plano `reports`.
+- Filtros por periodo, multiplos condominios e modulos.
+- Escopo por condominio respeita `user_roles.condominium_id`: usuarios tenant-wide veem todos os
+  condominios ativos; usuarios escopados veem somente seu escopo.
+- Cada bloco interno respeita permissao e modulo da fonte:
+  - financeiro depende de `financial`;
+  - ocorrencias depende de `occurrences:read` e modulo `occurrences`;
+  - reservas depende de `reservations:read` e modulo `reservations`;
+  - manutencoes depende de `maintenance:read` e modulo `maintenance`;
+  - obras depende de `works:read` e modulo `works`;
+  - documentos depende de `documents:read` e modulo `documents`;
+  - orcamentos depende de `quotations:read` e modulo `quotations`.
+- KPIs gerais de estrutura, financeiro, inadimplencia, operacao e risco.
+- Comparativo por condominio com saldo, inadimplencia, ocorrencias, SLA, manutencoes, obras,
+  documentos e score de risco.
+- Serie mensal com recebido, despesas e movimentos operacionais.
+- Rankings de inadimplencia, risco operacional e contas pagas.
+- Exports financeiros PDF/XLSX existentes foram preservados.
+
+Arquivos-chave:
+
+- `app/Http/Controllers/Panel/ReportController.php`
+- `app/Services/Reports/ConsolidatedReportBuilder.php`
+- `resources/js/Pages/Reports/Index.tsx`
+- `docs/tecnico/relatorios-consolidados.md`
+
+Validacoes feitas:
+
+- `php -l app/Services/Reports/ConsolidatedReportBuilder.php` passou.
+- `php -l app/Http/Controllers/Panel/ReportController.php` passou.
+- `php artisan route:list --name=reports --except-vendor` passou.
+- `npm run build` passou (`tsc && vite build`).
+- `git diff --check` passou, apenas com avisos CRLF do Windows.
+- `npm run typecheck` nao existe no `package.json`; o typecheck fica coberto pelo `npm run build`.
+
 ### D13. Cronograma consolidado
 
 Implementado em 09/06/2026. Doc tecnica: `docs/tecnico/cronograma-consolidado.md`.
@@ -236,10 +278,10 @@ Observacoes para retomada:
 
 Proximo bloco recomendado:
 
-- **D10. Relatorios consolidados multi-condominio**:
-  - consolidar indicadores operacionais e financeiros por condominio;
-  - permitir periodo, modulos e exportacao;
-  - aproveitar o cronograma consolidado como uma das bases de prazos/eventos.
+- **D9. Funcionarios + controle de ferias**:
+  - cadastro operacional de funcionarios por condominio;
+  - dados trabalhistas basicos, admissao e status;
+  - controle de ferias e alertas.
 
 ### Correções de plano + identidade do tenant/condomínio
 
@@ -437,11 +479,10 @@ Confirmar no Easypanel se há worker/cron com `php artisan schedule:run` ou `php
 
 ## Próximo passo sugerido
 
-O próximo item natural do roadmap é **D10. Relatórios consolidados multi-condomínio**.
+O próximo item natural do roadmap é **D9. Funcionários + controle de férias**.
 
-Motivo: o sistema agora tem dados operacionais ricos em fornecedores, manutenção, orçamentos,
-obras, contas a pagar, ocorrências, reservas e cronograma. A próxima evolução é transformar isso
-em relatórios executivos comparáveis por período e condomínio.
+Motivo: o sistema já cobre a visão executiva multi-condomínio com D10. A próxima lacuna operacional
+da Fase D é cadastrar funcionários por condomínio e controlar férias/admissão/status com alertas.
 
 ## Cuidados para a próxima implementação
 

@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Panel;
 use App\Exports\FinancialReportExport;
 use App\Http\Controllers\Controller;
 use App\Models\Charge;
-use App\Models\Condominium;
 use App\Models\Expense;
+use App\Services\Reports\ConsolidatedReportBuilder;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -18,18 +18,23 @@ use Inertia\Response;
 
 class ReportController extends Controller
 {
+    public function __construct(
+        private readonly ConsolidatedReportBuilder $consolidatedReportBuilder,
+    ) {}
+
     public function index(Request $request): Response
     {
-        [$from, $to, $condominiumId] = $this->params($request);
+        [$from, $to] = $this->periodParams($request);
 
-        return Inertia::render('Reports/Financial', [
-            'report' => $this->build($from, $to, $condominiumId),
-            'condominiums' => $this->condominiumOptions(),
-            'filters' => [
-                'condominium_id' => $condominiumId,
-                'from' => $from->toDateString(),
-                'to' => $to->toDateString(),
-            ],
+        return Inertia::render('Reports/Index', [
+            'report' => $this->consolidatedReportBuilder->build(
+                app('tenant'),
+                $request->user(),
+                $from,
+                $to,
+                $this->arrayParam($request, 'condominium_ids'),
+                $this->arrayParam($request, 'modules'),
+            ),
             'canExport' => $request->user()->hasPermission('reports:export'),
         ]);
     }
@@ -63,11 +68,44 @@ class ReportController extends Controller
     /** @return array{0:Carbon,1:Carbon,2:?string} */
     private function params(Request $request): array
     {
-        $from = $this->parseDate($request->from) ?? Carbon::now()->startOfYear();
-        $to = $this->parseDate($request->to) ?? Carbon::now()->endOfDay();
+        [$from, $to] = $this->periodParams($request);
         $condominiumId = $request->condominium_id ?: null;
 
-        return [$from->startOfDay(), $to->endOfDay(), $condominiumId];
+        return [$from, $to, $condominiumId];
+    }
+
+    /** @return array{0:Carbon,1:Carbon} */
+    private function periodParams(Request $request): array
+    {
+        $fromInput = $request->input('from');
+        $toInput = $request->input('to');
+        $from = $this->parseDate(is_string($fromInput) ? $fromInput : null) ?? Carbon::now()->subMonths(5)->startOfMonth();
+        $to = $this->parseDate(is_string($toInput) ? $toInput : null) ?? Carbon::now()->endOfDay();
+
+        if ($from->gt($to)) {
+            [$from, $to] = [$to, $from];
+        }
+
+        return [$from->startOfDay(), $to->endOfDay()];
+    }
+
+    /** @return array<int,string> */
+    private function arrayParam(Request $request, string $key): array
+    {
+        $value = $request->input($key, []);
+
+        if (is_string($value)) {
+            $value = $value === '' ? [] : explode(',', $value);
+        }
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return collect($value)
+            ->filter(fn ($item) => is_string($item) && $item !== '')
+            ->values()
+            ->all();
     }
 
     private function parseDate(?string $value): ?Carbon
@@ -161,13 +199,5 @@ class ReportController extends Controller
             'delinquents' => $delinquents,
             'months' => $months,
         ];
-    }
-
-    private function condominiumOptions(): \Illuminate\Support\Collection
-    {
-        return Condominium::where('tenant_id', app('tenant')->id)
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]);
     }
 }

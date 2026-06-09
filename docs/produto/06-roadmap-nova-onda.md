@@ -61,7 +61,10 @@ Legenda esforço: 🟢 baixo · 🟡 médio · 🔴 alto. Valor: ⭐ alto difere
 
 ### Fase D — Pessoas, relatórios e visão consolidada
 - [ ] **D9. Funcionários + controle de férias** (CTPS, admissão, alertas de férias) ⭐ 🟡
-- [ ] **D10. Relatórios consolidados multi-condomínio** configuráveis (módulos + período) ⭐ 🟡
+- [x] **D10. Relatórios consolidados multi-condomínio** configuráveis (módulos + período) ⭐ 🟡 — concluída (09/06/2026)
+  - `/relatorios` consolida financeiro, ocorrências, reservas, manutenções, obras/reformas,
+    documentos e orçamentos em KPIs, comparação por condomínio, série mensal e rankings.
+    Ver `docs/tecnico/relatorios-consolidados.md`.
 - [ ] **D11. Preferências de notificação granulares por usuário** (matriz evento × canal) 🟡 🟡
 - [x] **D13. Cronograma consolidado** (calendário de manutenções + ocorrências + reservas) 🟡 🟡 — concluída (09/06/2026)
   - `/cronograma` consolida reservas, assembleias, manutenções, obras/reformas, SLA de ocorrências,

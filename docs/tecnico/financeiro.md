@@ -87,7 +87,9 @@ cache `tenant:domain:*`.
   unidade. Contas pendentes não reduzem o saldo até a baixa (`status=paid`/`paid_at`).
 - Exportação: **PDF** via `barryvdh/laravel-dompdf` (view `resources/views/reports/financial.blade.php`,
   prestação de contas) e **XLSX** via `maatwebsite/excel` (`App\Exports\FinancialReportExport`).
-- Página `resources/js/Pages/Reports/Financial.tsx` (cards + tabela mensal + inadimplentes + export).
+- A página principal de `/relatorios` foi evoluída na D10 para
+  `resources/js/Pages/Reports/Index.tsx` (relatórios consolidados multi-condomínio). Os exports
+  PDF/XLSX continuam usando o agregado financeiro legado do `ReportController`.
 
 ### Dependências e ambiente
 
