@@ -125,7 +125,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const visibleAdminNav = adminNavigation.filter((item) => can(item.permission) && canUseModule(item.module));
 
     const brandName = tenant?.brand_name ?? 'SindÂncora';
-    const primaryColor = tenant?.primary_color ?? '#1e40af';
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -145,19 +144,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             >
                 {/* Logo */}
                 <div className="flex h-16 items-center justify-between border-b px-4">
-                    <div className="flex items-center gap-2">
-                        {tenant?.logo_url ? (
-                            <img src={tenant.logo_url} alt={brandName} className="h-9 max-w-[170px] object-contain" />
-                        ) : (
-                            <>
-                                <div
-                                    className="flex h-8 w-8 items-center justify-center rounded-lg text-white text-sm font-bold"
-                                    style={{ backgroundColor: primaryColor }}
-                                >
-                                    {brandName.charAt(0).toUpperCase()}
-                                </div>
-                                <span className="text-lg font-semibold text-gray-900">{brandName}</span>
-                            </>
+                    <div className="flex min-w-0 items-center gap-2.5">
+                        <img src="/brand/logo.svg" alt="SindÂncora" className="h-9 w-auto flex-shrink-0" />
+                        {tenant && (
+                            <span
+                                className="min-w-0 truncate border-l border-gray-200 pl-2.5 text-xs font-medium text-gray-500"
+                                title={brandName}
+                            >
+                                {brandName}
+                            </span>
                         )}
                     </div>
                     <button
@@ -275,19 +270,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <Menu className="h-5 w-5" />
                     </button>
 
-                    <div className="flex min-w-0 items-center gap-2">
-                        {tenant?.logo_url ? (
-                            <img src={tenant.logo_url} alt={brandName} className="h-9 max-w-[170px] object-contain" />
-                        ) : (
-                            <>
-                                <div
-                                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white"
-                                    style={{ backgroundColor: primaryColor }}
-                                >
-                                    {brandName.charAt(0).toUpperCase()}
-                                </div>
-                                <span className="hidden truncate text-sm font-semibold text-gray-900 sm:block">{brandName}</span>
-                            </>
+                    <div className="flex min-w-0 items-center gap-2.5">
+                        <img src="/brand/logo.svg" alt="SindÂncora" className="h-9 w-auto flex-shrink-0" />
+                        {tenant && (
+                            <span
+                                className="hidden min-w-0 truncate border-l border-gray-200 pl-2.5 text-sm font-semibold text-gray-700 sm:block"
+                                title={brandName}
+                            >
+                                {brandName}
+                            </span>
                         )}
                     </div>
 
