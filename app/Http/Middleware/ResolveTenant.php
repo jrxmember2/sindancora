@@ -70,13 +70,28 @@ class ResolveTenant
     {
         $cacheKey = "tenant:domain:{$host}";
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($host) {
-            $domain = TenantDomain::with('tenant')
-                ->where('domain', $host)
+        // Cacheia apenas o mapeamento domínio→tenant_id (estável). O modelo Tenant é sempre
+        // carregado fresco do banco, para que marca/logo/cor recém-salvas reflitam logo após um
+        // refresh — inclusive em deploy com múltiplas réplicas ou cache não compartilhado, onde
+        // limpar o cache em um processo não alcança os demais. O lookup por domínio (com JOIN)
+        // continua cacheado; só o carregamento do tenant por PK (barato e indexado) é por request.
+        $tenantId = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($host) {
+            return TenantDomain::where('domain', $host)
                 ->where('active', true)
-                ->first();
-
-            return $domain?->tenant;
+                ->value('tenant_id');
         });
+
+        if (! $tenantId) {
+            return null;
+        }
+
+        $tenant = Tenant::find($tenantId);
+
+        // Domínio em cache apontando para tenant inexistente/removido: descarta o mapeamento obsoleto.
+        if (! $tenant) {
+            Cache::forget($cacheKey);
+        }
+
+        return $tenant;
     }
 }

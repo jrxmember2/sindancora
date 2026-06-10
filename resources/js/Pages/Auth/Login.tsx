@@ -79,7 +79,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                         className="relative flex w-fit items-center gap-2.5 opacity-80 transition hover:opacity-100"
                     >
                         <span className="flex items-center rounded-md bg-white px-2 py-1 shadow-sm">
-                            <img src="/brand/serratech.svg" alt="Serratech" className="h-4 w-auto" />
+                            <img src="/brand/serratech-full.svg" alt="Serratech" className="h-4 w-auto" />
                         </span>
                         <span className="text-sm text-blue-100">Powered by Serratech</span>
                     </a>
@@ -185,7 +185,7 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                             rel="noopener noreferrer"
                             className="mt-10 flex items-center justify-center gap-2 text-xs text-slate-400 transition hover:text-slate-600 lg:hidden"
                         >
-                            <img src="/brand/serratech.svg" alt="Serratech" className="h-3.5 w-auto" />
+                            <img src="/brand/serratech-full.svg" alt="Serratech" className="h-3.5 w-auto" />
                             Powered by Serratech
                         </a>
                     </div>

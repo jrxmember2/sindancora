@@ -8,7 +8,6 @@ use App\Rules\CpfCnpj;
 use App\Services\StorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -119,17 +118,8 @@ class TenantProfileController extends Controller
             'settings' => $settings,
         ]);
 
-        // O ResolveTenant cacheia o tenant por domínio (5 min). Sem invalidar, a logo/marca
-        // recém-salvas não refletem no painel nem no header até o cache expirar.
-        $this->forgetTenantCache($tenant);
-
+        // O ResolveTenant carrega o tenant fresco a cada request (só o mapeamento domínio→id é
+        // cacheado), então marca/logo/cor já refletem no próximo request sem invalidar nada.
         return back()->with('success', 'Dados do tenant atualizados.');
-    }
-
-    private function forgetTenantCache(Tenant $tenant): void
-    {
-        foreach ($tenant->domains()->pluck('domain') as $domain) {
-            Cache::forget("tenant:domain:{$domain}");
-        }
     }
 }
