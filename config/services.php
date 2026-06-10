@@ -77,4 +77,13 @@ return [
         'media_max_mb' => (int) env('WHATSAPP_MEDIA_MAX_MB', 16),
     ],
 
+    // OAuth do Google Drive (armazenamento externo do tenant para midia de WhatsApp). App global da
+    // plataforma; o redirect_uri e unico e central (registrado no Google Cloud Console). Escopo
+    // drive.file (nao-sensivel). Sem as chaves, a integracao fica indisponivel.
+    'google_drive' => [
+        'client_id' => env('GOOGLE_DRIVE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_DRIVE_CLIENT_SECRET'),
+        'redirect_uri' => env('GOOGLE_DRIVE_REDIRECT_URI'),
+    ],
+
 ];

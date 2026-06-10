@@ -5,13 +5,19 @@ namespace App\Services;
 use App\Exceptions\StorageQuotaException;
 use App\Models\StorageObject;
 use App\Models\Tenant;
+use App\Models\TenantDriveSetting;
 use App\Models\TenantStorageAddon;
+use App\Services\Google\GoogleDriveService;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 class StorageService
 {
+    public const PROVIDER_GOOGLE_DRIVE = 'google_drive';
+
     private const ALLOWED_MIMES = [
         'application/pdf',
         'application/msword',
@@ -114,6 +120,26 @@ class StorageService
             abort(422, 'Arquivo de mídia acima do limite permitido.');
         }
 
+        // Mídia de WhatsApp vai para o Google Drive do tenant quando conectado (não conta cota).
+        if ($entityType === 'wa_media' && $tenant->hasActiveDrive()) {
+            return $this->storeRawOnDrive($tenant, $entityType, $entityId, $contents, $filename, $mimeType, $visibility, $condominiumId, $size);
+        }
+
+        return $this->storeRawOnDisk($tenant, $entityType, $entityId, $contents, $filename, $mimeType, $visibility, $condominiumId, $size);
+    }
+
+    /** Armazena bytes no disco da plataforma (respeitando cota e contador). */
+    private function storeRawOnDisk(
+        Tenant $tenant,
+        string $entityType,
+        string $entityId,
+        string $contents,
+        string $filename,
+        ?string $mimeType,
+        string $visibility,
+        ?string $condominiumId,
+        int $size,
+    ): StorageObject {
         $this->checkQuota($tenant, $size);
 
         $uuid = (string) Str::uuid();
@@ -147,10 +173,59 @@ class StorageService
         return $object;
     }
 
+    /**
+     * Armazena bytes no Google Drive do tenant. NÃO consome cota do plano nem incrementa contador.
+     * Em qualquer falha do Drive cai para o disco da plataforma — a mídia nunca é perdida.
+     */
+    private function storeRawOnDrive(
+        Tenant $tenant,
+        string $entityType,
+        string $entityId,
+        string $contents,
+        string $filename,
+        ?string $mimeType,
+        string $visibility,
+        ?string $condominiumId,
+        int $size,
+    ): StorageObject {
+        $setting = $tenant->driveSetting;
+
+        try {
+            $fileId = app(GoogleDriveService::class)->upload($setting, $contents, $filename, $mimeType);
+        } catch (\Throwable $e) {
+            Log::warning('Drive externo indisponível; usando storage da plataforma', [
+                'tenant' => $tenant->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->storeRawOnDisk($tenant, $entityType, $entityId, $contents, $filename, $mimeType, $visibility, $condominiumId, $size);
+        }
+
+        return StorageObject::create([
+            'tenant_id' => $tenant->id,
+            'condominium_id' => $condominiumId,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'storage_provider' => self::PROVIDER_GOOGLE_DRIVE,
+            'storage_bucket' => $setting->root_folder_id,
+            'storage_path' => $fileId,
+            'original_filename' => $filename,
+            'mime_type' => $mimeType,
+            'file_size_bytes' => $size,
+            'checksum_sha256' => hash('sha256', $contents),
+            'visibility' => $visibility,
+            'uploaded_by' => auth()->id(),
+        ]);
+    }
+
     public function delete(StorageObject $object, bool $immediate = false): void
     {
         if ($immediate) {
-            Storage::disk($object->storage_provider)->delete($object->storage_path);
+            if ($object->storage_provider === self::PROVIDER_GOOGLE_DRIVE) {
+                $this->deleteFromDrive($object);
+            } else {
+                Storage::disk($object->storage_provider)->delete($object->storage_path);
+            }
             $object->delete();
         } else {
             $object->update([
@@ -158,6 +233,33 @@ class StorageService
                 'permanent_delete_at' => now()->addDays(30),
             ]);
         }
+    }
+
+    /** Apaga o arquivo no Google Drive do tenant dono do objeto. Best-effort. */
+    public function deleteFromDrive(StorageObject $object): void
+    {
+        $setting = TenantDriveSetting::forTenant($object->tenant_id)->first();
+        if ($setting && $setting->isActive()) {
+            app(GoogleDriveService::class)->delete($setting, $object->storage_path);
+        }
+    }
+
+    /**
+     * Retorna o conteúdo bruto de um objeto, independente do provider. Usado para servir mídia do
+     * Drive por proxy (não há URL pública para arquivo privado do Drive).
+     */
+    public function getContents(StorageObject $object): string
+    {
+        if ($object->storage_provider === self::PROVIDER_GOOGLE_DRIVE) {
+            $setting = TenantDriveSetting::forTenant($object->tenant_id)->first();
+            if (! $setting || ! $setting->isActive()) {
+                throw new RuntimeException('Google Drive não está conectado para este tenant.');
+            }
+
+            return app(GoogleDriveService::class)->download($setting, $object->storage_path);
+        }
+
+        return Storage::disk($object->storage_provider)->get($object->storage_path);
     }
 
     public function getSignedUrl(StorageObject $object, int $expiresInMinutes = 60): string
@@ -187,7 +289,9 @@ class StorageService
 
     public function getUsedBytes(Tenant $tenant): int
     {
+        // Mídia no Google Drive do tenant não consome a cota do plano (é o Drive dele).
         return (int) StorageObject::where('tenant_id', $tenant->id)
+            ->where('storage_provider', '!=', self::PROVIDER_GOOGLE_DRIVE)
             ->whereNull('deleted_at')
             ->sum('file_size_bytes');
     }

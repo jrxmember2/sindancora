@@ -1,6 +1,6 @@
 # 07 — Andamento atual / handoff
 
-> Atualizado em 09/06/2026.
+> Atualizado em 10/06/2026.
 > Objetivo: dar contexto rápido para Codex/Claude ou outro agente continuar o Sindâncora sem
 > redescobrir o estado do projeto.
 
@@ -609,12 +609,54 @@ php artisan db:seed --force   # se quiser refletir public_links em planos/papéi
 php artisan optimize:clear
 ```
 
+### Google Drive externo para mídia de WhatsApp (concluído)
+
+Implementado em 10/06/2026. Doc técnica: `docs/tecnico/whatsapp-drive-externo.md`. Atende o backlog
+da iniciativa WhatsApp ("plugar drive externo"). O tenant conecta a própria conta Google (OAuth,
+escopo `drive.file`); a partir daí a mídia da **inbox** (`entity_type='wa_media'`) é gravada no Drive
+dele, **sem contar na cota do plano**. Disparos e demais anexos seguem na plataforma. Decisões: só
+mídia nova; arquivos são de responsabilidade do tenant (aviso na UI).
+
+Pontos-chave: tabela `tenant_drive_settings` (refresh_token encriptado); `GoogleDriveService` (Http
+puro, sem google/apiclient); roteamento no `StorageService::storeRaw` com **fallback** para o disco
+da plataforma se o Drive falhar; serving por proxy autenticado no `InboxController::media`; callback
+OAuth central (`/oauth/google-drive/callback`, bypass no `ResolveTenant`, tenant no `state` assinado);
+tela `Settings/Storage.tsx` em `/configuracoes/armazenamento` (menu Administração → Armazenamento).
+
+**Deploy:** `migrate --force` + `optimize:clear`; criar OAuth Client no Google Cloud Console
+(redirect_uri central) e setar `GOOGLE_DRIVE_CLIENT_ID/SECRET/REDIRECT_URI`. Sem novo seed.
+
+Validado: `php -l` (todos), `route:list` (3 settings.storage + callback), `npm run build` verde.
+
+### Endurecimento do X3 (concluído)
+
+Entregue no commit `b9fd94e1 "Endurecimento do X3"`, logo após o X3 base. Fecha os três itens que
+antes estavam listados como sugestões:
+
+- **Fotos nas ocorrências públicas:** `PublicIntakeController@occurrenceStore` aceita `photos`
+  (máx. 3, jpg/png/webp, 5 MB), anexa à `PublicSubmission` (`ATTACHMENT_ENTITY = public_submission`)
+  e reaponta os `StorageObject` para a Ocorrência na aprovação. Estouro de cota não derruba o envio.
+- **Acompanhamento por protocolo:** rotas `GET/POST /p/{token}/status` (`public.intake.status` /
+  `public.intake.status.check`) e tela `resources/js/Pages/Public/Status.tsx`. Consulta exige
+  protocolo + telefone (confere os dígitos) e mostra tipo/status.
+- **Anti-abuso:** honeypot (`company_site`), captcha Turnstile via `App\Services\CaptchaVerifier`,
+  `throttle:10,1` nas rotas de POST, dedupe (mesmo tipo+telefone+condomínio em 10 min) e teto de
+  `MAX_PENDING_PER_IP_DAY = 5` por IP/condomínio em 24h.
+
+Com isso o roadmap da Nova Onda + booster X3 está integralmente fechado.
+
 Sugestões de continuidade (a definir com o usuário):
 
-- Anexos/fotos nas ocorrências públicas (hoje o intake é só texto).
-- Página pública de status/acompanhamento do envio por protocolo.
-- Endurecer anti-abuso (captcha/honeypot) nos formulários públicos.
-- Novo ciclo de produto a partir do estudo de concorrentes.
+- **Hardening do WhatsApp** — a iniciativa inteira (Fases 1–6) já está no master e funcionando. O que
+  resta é endurecimento: **auth/segredo no webhook da Evolution** (`POST /api/webhooks/evolution` hoje
+  é público — gap de segurança real) e expurgo de mídia antiga. O Drive externo já foi entregue
+  (10/06).
+- **Portaria Digital (Fase 6.6)** — papel porteiro, `/portaria`, QR de visitantes; última subfase
+  do MVP. (Auditar antes: pode já estar implementada como o X3/WhatsApp.)
+- **Logo do tenant não persiste** — o upload em *Configurações → Dados do tenant* (ainda usado no
+  cabeçalho dos relatórios PDF) não reflete após refresh; investigar a fundo. O header do painel já
+  foi desacoplado disso (usa a logo fixa do SindÂncora + nome do tenant).
+- **Novo ciclo de produto** a partir do estudo de concorrentes.
 
 ## Cuidados para a próxima implementação
 

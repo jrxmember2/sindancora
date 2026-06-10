@@ -21,7 +21,9 @@ class ResolveTenant
 
         // Webhooks de gateways chegam sem sessão e em domínio arbitrário; o tenant é
         // resolvido dentro do controller a partir do payload, não pelo host.
-        if ($this->isSuperAdminDomain($host) || $request->is('admin', 'admin/*', 'up', 'api/webhooks/*')) {
+        // O callback do OAuth do Google Drive chega num domínio central fixo (redirect_uri único) e
+        // resolve o tenant pelo `state` assinado, não pelo host.
+        if ($this->isSuperAdminDomain($host) || $request->is('admin', 'admin/*', 'up', 'api/webhooks/*', 'oauth/google-drive/*')) {
             return $next($request);
         }
 

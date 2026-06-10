@@ -81,6 +81,17 @@ class Tenant extends Model
         return $this->hasOne(TenantWhatsappSetting::class);
     }
 
+    public function driveSetting(): HasOne
+    {
+        return $this->hasOne(TenantDriveSetting::class);
+    }
+
+    /** Tem Google Drive conectado e ativo para descarregar mídia de WhatsApp? */
+    public function hasActiveDrive(): bool
+    {
+        return (bool) $this->driveSetting?->isActive();
+    }
+
     public function whatsappConnections(): HasMany
     {
         return $this->hasMany(WhatsappConnection::class);

@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\OAuth\GoogleDriveCallbackController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicIntakeController;
+use App\Http\Controllers\Panel\DriveIntegrationController;
 use App\Http\Controllers\Panel\AnnouncementController;
 use App\Http\Controllers\Panel\ApiKeyController;
 use App\Http\Controllers\Panel\AssemblyController;
@@ -75,6 +77,10 @@ Route::prefix('p/{token}')->name('public.intake.')->group(function () {
         Route::post('status', [PublicIntakeController::class, 'statusCheck'])->name('status.check');
     });
 });
+
+// Callback central do OAuth do Google Drive (redirect_uri único). Fora do ResolveTenant e sem auth:
+// o tenant é identificado pelo `state` assinado e o usuário é devolvido ao domínio do tenant.
+Route::get('oauth/google-drive/callback', GoogleDriveCallbackController::class)->name('oauth.google-drive.callback');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Perfil do usuario - painel, portal e superadmin.
@@ -492,6 +498,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('permission:settings:update')->group(function () {
         Route::get('configuracoes/tenant', [TenantProfileController::class, 'edit'])->name('settings.tenant.edit');
         Route::post('configuracoes/tenant', [TenantProfileController::class, 'update'])->name('settings.tenant.update');
+
+        // Configurações > Armazenamento (Google Drive externo para mídia de WhatsApp)
+        Route::get('configuracoes/armazenamento', [DriveIntegrationController::class, 'show'])->name('settings.storage.show');
+        Route::get('configuracoes/armazenamento/conectar', [DriveIntegrationController::class, 'connect'])->name('settings.storage.connect');
+        Route::delete('configuracoes/armazenamento', [DriveIntegrationController::class, 'disconnect'])->name('settings.storage.disconnect');
     });
 
     // Configurações > Pagamentos (integração Asaas por tenant)

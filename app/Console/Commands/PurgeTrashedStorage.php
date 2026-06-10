@@ -6,6 +6,7 @@ use App\Models\Document;
 use App\Models\StorageObject;
 use App\Models\Tenant;
 use App\Services\PlanLimitService;
+use App\Services\StorageService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 
@@ -20,7 +21,7 @@ class PurgeTrashedStorage extends Command
 
     protected $description = 'Remove definitivamente os arquivos na lixeira cujo prazo de 30 dias expirou e os registros soft-deletados.';
 
-    public function handle(PlanLimitService $limits): int
+    public function handle(PlanLimitService $limits, StorageService $storage): int
     {
         $dryRun = (bool) $this->option('dry-run');
         $prefix = $dryRun ? '[dry-run] ' : '';
@@ -50,13 +51,20 @@ class PurgeTrashedStorage extends Command
             }
 
             try {
-                Storage::disk($object->storage_provider)->delete($object->storage_path);
+                if ($object->storage_provider === StorageService::PROVIDER_GOOGLE_DRIVE) {
+                    $storage->deleteFromDrive($object);
+                } else {
+                    Storage::disk($object->storage_provider)->delete($object->storage_path);
+                }
             } catch (\Throwable $e) {
                 $this->warn("Falha ao apagar o arquivo {$object->storage_path}: {$e->getMessage()}");
             }
 
-            $mb = (int) ceil($object->file_size_bytes / 1024 / 1024);
-            $freedMbByTenant[$object->tenant_id] = ($freedMbByTenant[$object->tenant_id] ?? 0) + $mb;
+            // Mídia no Drive do tenant nunca contou cota → não ajusta o contador de storage.
+            if ($object->storage_provider !== StorageService::PROVIDER_GOOGLE_DRIVE) {
+                $mb = (int) ceil($object->file_size_bytes / 1024 / 1024);
+                $freedMbByTenant[$object->tenant_id] = ($freedMbByTenant[$object->tenant_id] ?? 0) + $mb;
+            }
 
             $object->delete();
             $purged++;

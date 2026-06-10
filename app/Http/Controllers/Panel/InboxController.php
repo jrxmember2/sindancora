@@ -321,6 +321,17 @@ class InboxController extends Controller
         abort_unless($conversation !== null, 404);
         $this->authorizeTenant($conversation); // mesma regra de escopo por setor
 
+        // Drive externo: arquivo privado, sem URL pública → servimos por proxy autenticado (inline).
+        if ($object->storage_provider === StorageService::PROVIDER_GOOGLE_DRIVE) {
+            $contents = $this->storage->getContents($object);
+
+            return new StreamedResponse(fn () => print($contents), 200, [
+                'Content-Type' => $object->mime_type ?: 'application/octet-stream',
+                'Content-Disposition' => 'inline; filename="'.addslashes((string) $object->original_filename).'"',
+                'Content-Length' => (string) strlen($contents),
+            ]);
+        }
+
         $disk = Storage::disk($object->storage_provider);
 
         try {
