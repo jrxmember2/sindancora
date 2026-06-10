@@ -147,17 +147,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             >
                 {/* Logo */}
                 <div className="flex h-16 items-center justify-between border-b px-4">
-                    <div className="flex min-w-0 items-center gap-2.5">
-                        <img src="/brand/logo.svg" alt="SindÂncora" className="h-9 w-auto flex-shrink-0" />
-                        {tenant && (
-                            <span
-                                className="min-w-0 truncate border-l border-gray-200 pl-2.5 text-xs font-medium text-gray-500"
-                                title={brandName}
-                            >
-                                {brandName}
-                            </span>
-                        )}
-                    </div>
+                    <img src="/brand/logo.svg" alt="SindÂncora" className="h-10 w-auto" />
                     <button
                         onClick={() => setSidebarOpen(false)}
                         className="rounded p-1 text-gray-400 hover:text-gray-600 lg:hidden"
