@@ -1,6 +1,6 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
-import { MessageCircle, CheckCircle2, XCircle, Plug } from 'lucide-react';
+import { MessageCircle, CheckCircle2, XCircle, Plug, ShieldCheck, RefreshCw } from 'lucide-react';
 import type { PageProps } from '@/types';
 
 interface Setting {
@@ -13,9 +13,10 @@ interface Setting {
 interface Props {
     setting: Setting;
     configured: boolean;
+    webhook_registration_url: string | null;
 }
 
-export default function EvolutionSettings({ setting, configured }: Props) {
+export default function EvolutionSettings({ setting, configured, webhook_registration_url }: Props) {
     const { flash } = usePage<PageProps>().props;
 
     const form = useForm({
@@ -33,6 +34,7 @@ export default function EvolutionSettings({ setting, configured }: Props) {
     };
 
     const test = () => router.post(route('admin.evolution.test'), {}, { preserveScroll: true });
+    const resync = () => router.post(route('admin.evolution.webhooks.resync'), {}, { preserveScroll: true });
 
     return (
         <AdminLayout>
@@ -96,6 +98,34 @@ export default function EvolutionSettings({ setting, configured }: Props) {
                         )}
                     </div>
                 </form>
+
+                {/* Segurança do webhook: URL protegida por segredo + re-sincronização das instâncias */}
+                {webhook_registration_url && (
+                    <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-6">
+                        <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                            <ShieldCheck className="h-5 w-5 text-green-600" /> Webhook protegido
+                        </h2>
+                        <p className="text-sm text-gray-500">
+                            O recebimento exige um segredo na URL. Esta é a URL completa que as instâncias usam
+                            (registrada automaticamente ao criar/parear). Após alterar a URL base do webhook,
+                            re-sincronize para reaplicar o segredo nas conexões já existentes.
+                        </p>
+                        <input
+                            type="text"
+                            readOnly
+                            value={webhook_registration_url}
+                            onFocus={(e) => e.currentTarget.select()}
+                            className="w-full rounded-lg border-gray-200 bg-gray-50 font-mono text-xs text-gray-600"
+                        />
+                        <button
+                            type="button"
+                            onClick={resync}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                            <RefreshCw className="h-4 w-4" /> Re-sincronizar webhooks
+                        </button>
+                    </div>
+                )}
             </div>
         </AdminLayout>
     );

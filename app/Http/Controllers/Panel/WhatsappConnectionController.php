@@ -75,7 +75,7 @@ class WhatsappConnectionController extends Controller
 
         $instance = $this->uniqueInstanceName($tenant->slug ?? 'tenant');
 
-        $payload = $this->evolution->createInstance($instance, $this->evolution->webhookUrl());
+        $payload = $this->evolution->createInstance($instance, $this->evolution->registrationWebhookUrl());
         $token = $this->resolveToken($payload);
 
         // A criação falhou se não veio nem dados da instância nem token.
@@ -101,7 +101,7 @@ class WhatsappConnectionController extends Controller
         }
 
         // Webhook setado à parte (idempotente) — não depende do formato aceito na criação.
-        if ($url = $this->evolution->webhookUrl()) {
+        if ($url = $this->evolution->registrationWebhookUrl()) {
             $this->evolution->setWebhook($instance, $url);
         }
 
@@ -140,7 +140,7 @@ class WhatsappConnectionController extends Controller
     /** Recria a instância no servidor (mesmo nome) e guarda o QR/token/webhook. Retorna o payload. */
     private function recreateInstance(WhatsappConnection $connection): array
     {
-        $payload = $this->evolution->createInstance($connection->instance, $this->evolution->webhookUrl());
+        $payload = $this->evolution->createInstance($connection->instance, $this->evolution->registrationWebhookUrl());
 
         if ($token = $this->resolveToken($payload)) {
             $connection->update(['token' => $token]);
@@ -151,7 +151,7 @@ class WhatsappConnectionController extends Controller
             Cache::put($this->qrCacheKey($connection->instance), $qr, now()->addSeconds(120));
         }
 
-        if ($url = $this->evolution->webhookUrl()) {
+        if ($url = $this->evolution->registrationWebhookUrl()) {
             $this->evolution->setWebhook($connection->instance, $url);
         }
 

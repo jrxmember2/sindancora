@@ -609,6 +609,20 @@ php artisan db:seed --force   # se quiser refletir public_links em planos/papéi
 php artisan optimize:clear
 ```
 
+### Auth do webhook da Evolution (concluído)
+
+Implementado em 10/06/2026. Fecha o gap de segurança: `POST /api/webhooks/evolution` era público
+(só casava pela `instance`), permitindo injetar mensagens falsas na inbox de um tenant. Agora a rota
+é `POST /api/webhooks/evolution/{secret?}` e o `EvolutionWebhookController` confere o segredo
+(`hash_equals`) contra `EvolutionSetting::webhookSecret()` (gerado/persistido na 1ª vez). O segredo
+vai na URL registrada via `EvolutionManager::registrationWebhookUrl()` (usada no
+`WhatsappConnectionController` ao criar/recriar/parear). Super admin em `/admin/whatsapp` vê a URL
+protegida e tem botão **Re-sincronizar webhooks**; também há o comando `whatsapp:resync-webhooks`.
+
+**Deploy:** `migrate --force` (coluna `evolution_settings.webhook_secret`) + `optimize:clear`. Após
+o deploy, rodar `php artisan whatsapp:resync-webhooks` (ou o botão no super admin) para reaplicar o
+segredo nas instâncias já existentes — senão os eventos delas passam a ser rejeitados (403).
+
 ### Google Drive externo para mídia de WhatsApp (concluído)
 
 Implementado em 10/06/2026. Doc técnica: `docs/tecnico/whatsapp-drive-externo.md`. Atende o backlog
@@ -645,14 +659,15 @@ antes estavam listados como sugestões:
 
 Com isso o roadmap da Nova Onda + booster X3 está integralmente fechado.
 
+**Status do MVP:** completo. X3, WhatsApp (Fases 1–6) e **Portaria (6.6)** — todos construídos e no
+master. Portaria confirmada em 10/06: `Portaria\PortariaController` (check-in autorizado/avulso,
+validar QR), `VisitorAuthorization`/`VisitorVisit`, `/portaria` + autorização de visitantes no portal
+do morador, telas em `Pages/Portaria`.
+
 Sugestões de continuidade (a definir com o usuário):
 
-- **Hardening do WhatsApp** — a iniciativa inteira (Fases 1–6) já está no master e funcionando. O que
-  resta é endurecimento: **auth/segredo no webhook da Evolution** (`POST /api/webhooks/evolution` hoje
-  é público — gap de segurança real) e expurgo de mídia antiga. O Drive externo já foi entregue
-  (10/06).
-- **Portaria Digital (Fase 6.6)** — papel porteiro, `/portaria`, QR de visitantes; última subfase
-  do MVP. (Auditar antes: pode já estar implementada como o X3/WhatsApp.)
+- **Hardening do WhatsApp** — auth do webhook ✅ e Drive externo ✅ entregues (10/06). Resta:
+  **expurgo de mídia antiga** do WhatsApp (command agendado).
 - **Logo do tenant não persiste** — o upload em *Configurações → Dados do tenant* (ainda usado no
   cabeçalho dos relatórios PDF) não reflete após refresh; investigar a fundo. O header do painel já
   foi desacoplado disso (usa a logo fixa do SindÂncora + nome do tenant).

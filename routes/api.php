@@ -19,7 +19,8 @@ Route::get('/health', fn () => response()->json([
 
 // Webhooks de gateways (públicos, sem tenant por host — resolvido no controller pelo payload)
 Route::post('/webhooks/asaas', [WebhookController::class, 'asaas'])->name('webhooks.asaas');
-Route::post('/webhooks/evolution', [EvolutionWebhookController::class, 'handle'])->name('webhooks.evolution');
+// O segredo no caminho é conferido no controller (impede POSTs forjados na inbox dos tenants).
+Route::post('/webhooks/evolution/{secret?}', [EvolutionWebhookController::class, 'handle'])->name('webhooks.evolution');
 
 // API v1
 Route::prefix('v1')->group(function () {

@@ -5,9 +5,13 @@ painel. Sem setores e sem chatbot (Fase 3).
 
 ## Recebimento (webhook)
 
-`POST /api/webhooks/evolution` (`Api\EvolutionWebhookController`, público — `ResolveTenant` ignora
-`api/webhooks/*`). Configure a URL no super admin (`/admin/whatsapp` → campo webhook); a Evolution
-passa a enviar eventos. Tratados:
+`POST /api/webhooks/evolution/{secret?}` (`Api\EvolutionWebhookController` — `ResolveTenant` ignora
+`api/webhooks/*`). **Protegido por segredo** (10/06/2026): o `{secret}` é conferido com `hash_equals`
+contra `EvolutionSetting::webhookSecret()` (gerado/persistido na 1ª vez); sem o segredo correto →
+403. O segredo entra na URL registrada via `EvolutionManager::registrationWebhookUrl()`. Configure a
+URL base no super admin (`/admin/whatsapp` → campo webhook); ali também aparece a URL protegida e o
+botão **Re-sincronizar webhooks** (ou `php artisan whatsapp:resync-webhooks`) para reaplicar o
+segredo nas instâncias já criadas. A Evolution passa a enviar eventos. Tratados:
 - **`messages.upsert`**: identifica a conexão pela `instance`; ignora grupos (`@g.us`) e `status@broadcast`;
   extrai telefone (jid), nome (`pushName`), id (`key.id`) e texto; grava via `WaInboxService`. Mídia
   entra como placeholder (Fase 4).
@@ -52,4 +56,5 @@ conexões já são criadas com ele quando o webhook está setado.
 
 3) Setores + chatbot (menu de condomínio obrigatório no multi + roteamento + fora de expediente);
 4) mídia (StorageService) + respostas prontas; 5) tempo real (Reverb) + relatórios; (paralelo) disparo
-em massa. Hardening pendente: autenticação/segredo no webhook da Evolution.
+em massa. Hardening: autenticação/segredo no webhook da Evolution ✅ (10/06); Drive externo ✅ (10/06).
+Pendente: expurgo de mídia antiga.

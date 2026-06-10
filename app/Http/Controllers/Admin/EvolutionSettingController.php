@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\EvolutionSetting;
+use App\Models\WhatsappConnection;
 use App\Services\Whatsapp\EvolutionManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,6 +32,8 @@ class EvolutionSettingController extends Controller
                 'last_checked_at' => $setting?->last_checked_at?->toIso8601String(),
             ],
             'configured' => $this->evolution->isConfigured(),
+            // URL protegida (base + segredo) que deve ser registrada na Evolution.
+            'webhook_registration_url' => filled($setting?->webhook_url) ? $this->evolution->registrationWebhookUrl() : null,
         ]);
     }
 
@@ -70,5 +73,25 @@ class EvolutionSettingController extends Controller
         return back()->with($ok ? 'success' : 'error', $ok
             ? 'Conexão com o servidor Evolution OK.'
             : 'Não foi possível conectar ao servidor Evolution. Verifique URL e chave.');
+    }
+
+    /** Re-registra o webhook (com segredo) em todas as instâncias já criadas. */
+    public function resyncWebhooks(): RedirectResponse
+    {
+        $url = $this->evolution->registrationWebhookUrl();
+
+        if (blank($url)) {
+            return back()->with('error', 'Configure a URL do webhook antes de re-sincronizar.');
+        }
+
+        $connections = WhatsappConnection::withoutGlobalScope('tenant')->get(['id', 'instance']);
+        $ok = 0;
+        foreach ($connections as $connection) {
+            if ($this->evolution->setWebhook($connection->instance, $url)) {
+                $ok++;
+            }
+        }
+
+        return back()->with('success', "Webhooks re-sincronizados em {$ok} de {$connections->count()} conexões.");
     }
 }

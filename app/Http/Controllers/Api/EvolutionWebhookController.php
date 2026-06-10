@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\EvolutionSetting;
 use App\Models\WhatsappConnection;
 use App\Services\Whatsapp\EvolutionManager;
 use App\Services\WaInboxService;
@@ -22,8 +23,12 @@ class EvolutionWebhookController extends Controller
         private readonly EvolutionManager $evolution,
     ) {}
 
-    public function handle(Request $request): JsonResponse
+    public function handle(Request $request, ?string $secret = null): JsonResponse
     {
+        // Segredo na URL: bloqueia POSTs forjados na inbox dos tenants. Comparação constante.
+        $expected = EvolutionSetting::current()->webhookSecret();
+        abort_unless(is_string($secret) && hash_equals($expected, $secret), 403);
+
         try {
             $event = $this->normalizeEvent((string) $request->input('event'));
             $instance = $request->input('instance');

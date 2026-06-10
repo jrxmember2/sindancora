@@ -37,6 +37,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'super_admin'])->gro
         Route::get('/', [EvolutionSettingController::class, 'edit'])->name('edit');
         Route::match(['put', 'patch'], '/', [EvolutionSettingController::class, 'update'])->name('update');
         Route::post('/testar', [EvolutionSettingController::class, 'test'])->name('test');
+        Route::post('/resync-webhooks', [EvolutionSettingController::class, 'resyncWebhooks'])->name('webhooks.resync');
     });
 
     Route::prefix('ia')->name('ai.')->group(function () {

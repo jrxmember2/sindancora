@@ -49,6 +49,20 @@ class EvolutionManager
     }
 
     /**
+     * URL do webhook a ser REGISTRADA na Evolution: a base + o segredo no caminho. O recebimento
+     * confere esse segredo, impedindo POSTs forjados na inbox. Null se não houver URL base.
+     */
+    public function registrationWebhookUrl(): ?string
+    {
+        $base = $this->webhookUrl();
+        if (blank($base)) {
+            return null;
+        }
+
+        return rtrim($base, '/').'/'.EvolutionSetting::current()->webhookSecret();
+    }
+
+    /**
      * Cria a instância na Evolution. Retorna o payload (inclui o token/apikey da instância e,
      * possivelmente, o primeiro QR em qrcode.base64). Tenta com o webhook embutido; se a versão do
      * servidor rejeitar esse formato, refaz a criação SEM webhook (o webhook é setado à parte depois).

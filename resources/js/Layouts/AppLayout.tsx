@@ -148,11 +148,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 }`}
             >
                 {/* Logo */}
-                <div className="flex h-16 items-center justify-between border-b px-4">
-                    <img src="/brand/logo.svg" alt="SindÂncora" className="h-10 w-auto" />
+                <div className="relative flex h-16 items-center justify-center border-b px-4">
+                    <img src="/brand/logo.svg" alt="SindÂncora" className="h-12 w-auto" />
                     <button
                         onClick={() => setSidebarOpen(false)}
-                        className="rounded p-1 text-gray-400 hover:text-gray-600 lg:hidden"
+                        className="absolute right-3 rounded p-1 text-gray-400 hover:text-gray-600 lg:hidden"
                     >
                         <X className="h-5 w-5" />
                     </button>
@@ -361,14 +361,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <main className="flex-1 p-6">{children}</main>
 
                 <footer className="border-t border-gray-100 bg-white px-6 py-4 text-center text-xs text-gray-400">
-                    powered by{' '}
                     <a
                         href="https://serratech.tec.br"
                         target="_blank"
                         rel="noreferrer"
-                        className="font-medium text-gray-500 hover:text-blue-600"
+                        className="inline-flex items-center gap-1.5 text-gray-400 transition hover:text-gray-600"
                     >
-                        serratech
+                        powered by
+                        <img src="/brand/serratech-full.svg" alt="Serratech" className="h-4 w-auto" />
                     </a>
                 </footer>
             </div>
