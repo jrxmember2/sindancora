@@ -41,6 +41,14 @@ class HandleInertiaRequests extends Middleware
                 'brand_name' => $tenant->getBrandName(),
                 'logo_url' => $tenant->getLogoUrl(),
                 'primary_color' => $tenant->getPrimaryColor(),
+                'storage' => (function () use ($tenant) {
+                    $usage = app(StorageService::class)->cachedUsageStats($tenant);
+
+                    return [
+                        'percentage_used' => $usage['percentage_used'],
+                        'is_near_limit' => $usage['is_near_limit'],
+                    ];
+                })(),
                 'plan' => $plan ? [
                     'id' => $plan->id,
                     'name' => $plan->name,

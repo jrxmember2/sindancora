@@ -15,6 +15,10 @@ export interface TenantData {
     brand_name: string;
     logo_url: string | null;
     primary_color: string;
+    storage: {
+        percentage_used: number;
+        is_near_limit: boolean;
+    };
     plan: {
         id: string;
         name: string;

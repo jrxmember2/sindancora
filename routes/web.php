@@ -503,6 +503,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('configuracoes/armazenamento', [DriveIntegrationController::class, 'show'])->name('settings.storage.show');
         Route::get('configuracoes/armazenamento/conectar', [DriveIntegrationController::class, 'connect'])->name('settings.storage.connect');
         Route::delete('configuracoes/armazenamento', [DriveIntegrationController::class, 'disconnect'])->name('settings.storage.disconnect');
+        Route::match(['put', 'patch'], 'configuracoes/armazenamento/limpeza', [DriveIntegrationController::class, 'updateCleanup'])->name('settings.storage.cleanup');
+        Route::post('configuracoes/armazenamento/liberar', [DriveIntegrationController::class, 'freeSpace'])->name('settings.storage.free');
     });
 
     // Configurações > Pagamentos (integração Asaas por tenant)

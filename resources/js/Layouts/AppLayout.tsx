@@ -44,8 +44,10 @@ import {
     ChevronDown,
     ChevronRight,
     HardDrive,
+    AlertTriangle,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
+import FreeSpaceModal from '@/Components/FreeSpaceModal';
 
 const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -105,6 +107,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
     const [adminOpen, setAdminOpen] = useState(false);
+    const [freeSpaceOpen, setFreeSpaceOpen] = useState(false);
 
     const unread = notifications?.unread_count ?? 0;
     const recent = notifications?.recent ?? [];
@@ -341,6 +344,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </div>
                 </header>
 
+                {/* Alerta de armazenamento (≥ 85%) — só para quem pode agir (settings:update) */}
+                {tenant?.storage?.is_near_limit && can('settings:update') && (
+                    <div className="px-6 pt-4">
+                        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                            <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-600" />
+                            <span className="min-w-0 flex-1">
+                                Seu armazenamento está em <strong>{Math.round(tenant.storage.percentage_used)}%</strong>.
+                                Libere espaço removendo a mídia mais antiga do WhatsApp.
+                            </span>
+                            <button
+                                onClick={() => setFreeSpaceOpen(true)}
+                                className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700"
+                            >
+                                Liberar espaço
+                            </button>
+                            <Link href="/configuracoes/armazenamento" className="text-xs font-medium text-red-700 underline hover:text-red-900">
+                                Gerenciar
+                            </Link>
+                        </div>
+                    </div>
+                )}
+
                 {/* Flash Messages */}
                 {(flash?.success || flash?.error) && (
                     <div className="px-6 pt-4">
@@ -356,6 +381,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         )}
                     </div>
                 )}
+
+                <FreeSpaceModal open={freeSpaceOpen} onClose={() => setFreeSpaceOpen(false)} />
 
                 {/* Page Content */}
                 <main className="flex-1 p-6">{children}</main>

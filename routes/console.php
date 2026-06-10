@@ -20,6 +20,9 @@ Schedule::command('announcements:publish-scheduled')->everyMinute()->withoutOver
 // Marca cobranças vencidas e notifica os moradores (uma vez por dia, de manhã)
 Schedule::command('charges:mark-overdue')->dailyAt('06:00')->withoutOverlapping();
 
+// Limpeza automática de mídia de WhatsApp por tenant (política por data/cota); antes do purge-trash
+Schedule::command('whatsapp:cleanup-media')->dailyAt('03:15')->withoutOverlapping();
+
 // Expurga a lixeira de arquivos (remoção definitiva após 30 dias)
 Schedule::command('storage:purge-trash')->dailyAt('03:30')->withoutOverlapping();
 

@@ -1,7 +1,9 @@
 import AppLayout from '@/Layouts/AppLayout';
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 import type { PageProps } from '@/types';
-import { HardDrive, Cloud, CheckCircle2, AlertTriangle, Link2, Unlink, ShieldAlert } from 'lucide-react';
+import FreeSpaceModal from '@/Components/FreeSpaceModal';
+import { HardDrive, Cloud, CheckCircle2, AlertTriangle, Link2, Unlink, ShieldAlert, Database, Trash2 } from 'lucide-react';
 
 interface Connection {
     status: 'connected' | 'disconnected' | 'error';
@@ -10,10 +12,24 @@ interface Connection {
     last_error: string | null;
 }
 
+interface PlanUsage {
+    used_gb: number;
+    quota_gb: number;
+    percentage_used: number;
+    is_near_limit: boolean;
+}
+
+interface Cleanup {
+    mode: 'off' | 'date' | 'quota';
+    retention_days: number | null;
+}
+
 interface Props {
     configured: boolean;
     connection: Connection | null;
     usage: { limit: string | null; usage: string | null } | null;
+    planUsage: PlanUsage;
+    cleanup: Cleanup;
 }
 
 function formatBytes(value: string | null): string | null {
@@ -24,11 +40,22 @@ function formatBytes(value: string | null): string | null {
     return gb >= 1 ? `${gb.toFixed(1)} GB` : `${(n / 1024 / 1024).toFixed(0)} MB`;
 }
 
-export default function Storage({ configured, connection, usage }: Props) {
+export default function Storage({ configured, connection, usage, planUsage, cleanup }: Props) {
     const { flash } = usePage<PageProps>().props;
+    const [freeOpen, setFreeOpen] = useState(false);
     const isConnected = connection?.status === 'connected';
     const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const driveStatus = params?.get('drive_status');
+
+    const cleanupForm = useForm<{ mode: Cleanup['mode']; retention_days: number }>({
+        mode: cleanup.mode,
+        retention_days: cleanup.retention_days ?? 90,
+    });
+
+    const saveCleanup = (e: React.FormEvent) => {
+        e.preventDefault();
+        cleanupForm.put(route('settings.storage.cleanup'), { preserveScroll: true });
+    };
 
     const disconnect = () => {
         if (confirm('Desconectar o Google Drive? A mídia já enviada deixará de ser acessível pelo painel.')) {
@@ -36,6 +63,7 @@ export default function Storage({ configured, connection, usage }: Props) {
         }
     };
 
+    const pct = Math.round(planUsage.percentage_used);
     const limit = formatBytes(usage?.limit ?? null);
     const used = formatBytes(usage?.usage ?? null);
 
@@ -45,9 +73,9 @@ export default function Storage({ configured, connection, usage }: Props) {
 
             <div className="mx-auto max-w-3xl space-y-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Armazenamento externo</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">Armazenamento</h1>
                     <p className="mt-1 text-sm text-gray-500">
-                        Conecte o Google Drive da sua conta para guardar a mídia do WhatsApp sem consumir a cota do seu plano.
+                        Uso do plano, limpeza de mídia do WhatsApp e conexão com o Google Drive.
                     </p>
                 </div>
 
@@ -68,6 +96,89 @@ export default function Storage({ configured, connection, usage }: Props) {
                     <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{flash.error}</div>
                 )}
 
+                {/* Uso do plano */}
+                <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+                            <Database className="h-5 w-5 text-blue-600" /> Uso do armazenamento
+                        </h2>
+                        <button
+                            onClick={() => setFreeOpen(true)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                        >
+                            <Trash2 className="h-4 w-4" /> Liberar espaço
+                        </button>
+                    </div>
+                    <div className="mt-4">
+                        <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+                            <div
+                                className={`h-full rounded-full ${planUsage.is_near_limit ? 'bg-red-500' : 'bg-blue-500'}`}
+                                style={{ width: `${Math.min(pct, 100)}%` }}
+                            />
+                        </div>
+                        <div className="mt-2 flex items-center justify-between text-sm">
+                            <span className={planUsage.is_near_limit ? 'font-medium text-red-600' : 'text-gray-600'}>
+                                {pct}% utilizado
+                            </span>
+                            <span className="text-gray-500">{planUsage.used_gb} GB de {planUsage.quota_gb} GB</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Limpeza automática de mídia do WhatsApp */}
+                <form onSubmit={saveCleanup} className="space-y-4 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+                    <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
+                        <Trash2 className="h-5 w-5 text-gray-500" /> Limpeza automática de mídia do WhatsApp
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                        Apaga automaticamente a mídia mais antiga do atendimento (só do sistema, não do celular).
+                        Não afeta a mídia que estiver no seu Google Drive.
+                    </p>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">Modo</label>
+                            <select
+                                value={cleanupForm.data.mode}
+                                onChange={(e) => cleanupForm.setData('mode', e.target.value as Cleanup['mode'])}
+                                className="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                            >
+                                <option value="off">Desativada (só avisa aos 85%)</option>
+                                <option value="date">Por data (apagar mais antigas que X dias)</option>
+                                <option value="quota">Por cota (apagar ao atingir 85%)</option>
+                            </select>
+                        </div>
+
+                        {cleanupForm.data.mode === 'date' && (
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">Manter por (dias)</label>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={3650}
+                                    value={cleanupForm.data.retention_days}
+                                    onChange={(e) => cleanupForm.setData('retention_days', Number(e.target.value))}
+                                    className="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
+                                {cleanupForm.errors.retention_days && (
+                                    <p className="mt-1 text-xs text-red-600">{cleanupForm.errors.retention_days}</p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="border-t border-gray-100 pt-4">
+                        <button
+                            type="submit"
+                            disabled={cleanupForm.processing}
+                            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            Salvar política
+                        </button>
+                    </div>
+                </form>
+
+                {/* Google Drive */}
                 <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
                     <div className="flex items-start gap-4">
                         <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
@@ -148,9 +259,11 @@ export default function Storage({ configured, connection, usage }: Props) {
                 </div>
 
                 <p className="flex items-center gap-1.5 text-xs text-gray-400">
-                    <HardDrive className="h-3.5 w-3.5" /> Vale apenas para a mídia do atendimento (inbox). Demais anexos seguem no armazenamento da plataforma.
+                    <HardDrive className="h-3.5 w-3.5" /> A limpeza e o Drive valem apenas para a mídia do atendimento (inbox). Demais anexos seguem no armazenamento da plataforma.
                 </p>
             </div>
+
+            <FreeSpaceModal open={freeOpen} onClose={() => setFreeOpen(false)} />
         </AppLayout>
     );
 }

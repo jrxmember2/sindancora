@@ -9,6 +9,7 @@ use App\Models\TenantDriveSetting;
 use App\Models\TenantStorageAddon;
 use App\Services\Google\GoogleDriveService;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -312,6 +313,22 @@ class StorageService
             'is_near_limit' => $quota > 0 && ($used / $quota) > 0.85,
             'is_at_limit' => $quota > 0 && ($used / $quota) >= 1.0,
         ];
+    }
+
+    /** Uso de armazenamento cacheado por 5 min — evita o SUM em todo request (banner de cota). */
+    public function cachedUsageStats(Tenant $tenant): array
+    {
+        return Cache::remember(
+            "tenant:{$tenant->id}:storage-usage",
+            300,
+            fn () => $this->getUsageStats($tenant),
+        );
+    }
+
+    /** Invalida o cache de uso (após liberar espaço / expurgar mídia). */
+    public function forgetUsageCache(Tenant $tenant): void
+    {
+        Cache::forget("tenant:{$tenant->id}:storage-usage");
     }
 
     private function getPlanStorageGb(Tenant $tenant): int

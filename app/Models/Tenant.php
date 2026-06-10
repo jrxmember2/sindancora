@@ -92,6 +92,24 @@ class Tenant extends Model
         return (bool) $this->driveSetting?->isActive();
     }
 
+    /**
+     * Política de limpeza automática de mídia de WhatsApp do tenant (em tenants.settings).
+     * mode: off (só avisa aos 85%) | date (apaga mídia mais antiga que N dias) | quota (apaga ao 85%).
+     *
+     * @return array{mode: string, retention_days: int|null}
+     */
+    public function whatsappCleanupPolicy(): array
+    {
+        $policy = $this->getSettings('whatsapp_media_cleanup', []);
+        $mode = in_array($policy['mode'] ?? null, ['date', 'quota'], true) ? $policy['mode'] : 'off';
+        $days = (int) ($policy['retention_days'] ?? 0);
+
+        return [
+            'mode' => $mode,
+            'retention_days' => $days > 0 ? $days : null,
+        ];
+    }
+
     public function whatsappConnections(): HasMany
     {
         return $this->hasMany(WhatsappConnection::class);

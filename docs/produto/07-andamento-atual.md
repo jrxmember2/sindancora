@@ -666,8 +666,9 @@ do morador, telas em `Pages/Portaria`.
 
 Sugestões de continuidade (a definir com o usuário):
 
-- **Hardening do WhatsApp** — auth do webhook ✅ e Drive externo ✅ entregues (10/06). Resta:
-  **expurgo de mídia antiga** do WhatsApp (command agendado).
+- **Hardening do WhatsApp — CONCLUÍDO (10/06).** Auth do webhook ✅, Drive externo ✅ e **limpeza de
+  mídia** ✅ (alerta aos 85% + botão "Liberar espaço" 25/50/100% + política por data/cota por tenant +
+  job `whatsapp:cleanup-media`). Ver `docs/tecnico/whatsapp-drive-externo.md`.
 - **Logo do tenant não persiste** — o upload em *Configurações → Dados do tenant* (ainda usado no
   cabeçalho dos relatórios PDF) não reflete após refresh; investigar a fundo. O header do painel já
   foi desacoplado disso (usa a logo fixa do SindÂncora + nome do tenant).

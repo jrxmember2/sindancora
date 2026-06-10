@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Services\Google\GoogleDriveService;
+use App\Services\StorageService;
+use App\Services\Whatsapp\WhatsappMediaCleanupService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
@@ -18,18 +21,22 @@ use Inertia\Response;
  */
 class DriveIntegrationController extends Controller
 {
-    public function __construct(private readonly GoogleDriveService $drive) {}
+    public function __construct(
+        private readonly GoogleDriveService $drive,
+        private readonly StorageService $storage,
+        private readonly WhatsappMediaCleanupService $cleanup,
+    ) {}
 
     public function show(): Response
     {
         $tenant = app('tenant');
         $setting = $tenant->driveSetting;
 
-        $usage = null;
+        $driveUsage = null;
         if ($setting?->isActive()) {
             $about = $this->drive->about($setting);
             if ($about) {
-                $usage = ['limit' => $about['limit'] ?? null, 'usage' => $about['usage'] ?? null];
+                $driveUsage = ['limit' => $about['limit'] ?? null, 'usage' => $about['usage'] ?? null];
             }
         }
 
@@ -41,8 +48,45 @@ class DriveIntegrationController extends Controller
                 'connected_at' => $setting->connected_at?->toIso8601String(),
                 'last_error' => $setting->last_error,
             ] : null,
-            'usage' => $usage,
+            'usage' => $driveUsage,
+            'planUsage' => $this->storage->getUsageStats($tenant),
+            'cleanup' => $tenant->whatsappCleanupPolicy(),
         ]);
+    }
+
+    /** Salva a política de limpeza automática de mídia de WhatsApp (em tenants.settings). */
+    public function updateCleanup(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'mode' => 'required|in:off,date,quota',
+            'retention_days' => 'nullable|integer|min:1|max:3650',
+        ]);
+
+        $tenant = app('tenant');
+        $settings = $tenant->settings ?? [];
+
+        data_set($settings, 'whatsapp_media_cleanup', [
+            'mode' => $data['mode'],
+            'retention_days' => $data['mode'] === 'date' ? ($data['retention_days'] ?? 90) : null,
+        ]);
+
+        $tenant->update(['settings' => $settings]);
+
+        return back()->with('success', 'Política de limpeza salva.');
+    }
+
+    /** Libera espaço apagando a mídia mais antiga do WhatsApp (25%/50%/100% do volume na plataforma). */
+    public function freeSpace(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'fraction' => 'required|numeric|in:0.25,0.5,1',
+        ]);
+
+        $freed = $this->cleanup->freeFraction(app('tenant'), (float) $data['fraction']);
+
+        return back()->with('success', $freed > 0
+            ? "Espaço liberado: {$freed} MB de mídia do WhatsApp foram removidos do sistema."
+            : 'Não havia mídia do WhatsApp na plataforma para remover.');
     }
 
     /** Inicia o consentimento OAuth; o tenant/usuário/retorno viajam num `state` assinado. */

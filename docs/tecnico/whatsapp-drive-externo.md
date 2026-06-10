@@ -72,6 +72,23 @@ tenant/setor já validado antes.
    central; setar `GOOGLE_DRIVE_CLIENT_ID/SECRET/REDIRECT_URI` no env.
 3. Sem novo seed. Worker de fila e webhook da Evolution já ativos.
 
+## Limpeza de mídia do WhatsApp (10/06/2026)
+
+Complementa o Drive: para quem **não** conecta o Drive, a mídia enche a cota. Mecanismos (só mídia na
+plataforma — `storage_provider != google_drive`; a do Drive fica intacta):
+
+- **Alerta aos 85%:** `HandleInertiaRequests` compartilha `tenant.storage` (`percentage_used`,
+  `is_near_limit`) via `StorageService::cachedUsageStats` (cache de 5 min). O `AppLayout` mostra um
+  banner vermelho + botão **Liberar espaço** → `Components/FreeSpaceModal` (25%/50%/100% da mídia mais
+  antiga; avisa que não apaga do celular) → `POST settings.storage.free`.
+- **Política do gestor** (em `tenants.settings.whatsapp_media_cleanup` = `{mode, retention_days}`,
+  helper `Tenant::whatsappCleanupPolicy()`): `off` (só avisa), `date` (apaga > N dias) ou `quota`
+  (apaga ao atingir 85%). Editável em `/configuracoes/armazenamento` (`PUT settings.storage.cleanup`).
+- **Serviço** `WhatsappMediaCleanupService` (`freeFraction`, `purgeOlderThan`, `purgeToTarget`) usa
+  `StorageService::delete(.., immediate:false)` → lixeira de 30 dias; a cota é aliviada na hora
+  (`getUsedBytes` ignora `deleted_at`) e o `storage:purge-trash` remove do disco depois.
+- **Job** `whatsapp:cleanup-media` (agendado 03:15, antes do purge-trash) aplica a política por tenant.
+
 ## Verificação manual
 
 Conectar em `/configuracoes/armazenamento` → consentir → voltar `connected`; receber/enviar mídia na
