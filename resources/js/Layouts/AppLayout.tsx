@@ -41,6 +41,8 @@ import {
     Hammer,
     QrCode,
     ShipWheel,
+    ChevronDown,
+    ChevronRight,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -100,6 +102,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const { auth, tenant, flash, notifications } = usePage<PageProps>().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
+    const [adminOpen, setAdminOpen] = useState(false);
 
     const unread = notifications?.unread_count ?? 0;
     const recent = notifications?.recent ?? [];
@@ -188,8 +191,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </ul>
                     {visibleAdminNav.length > 0 && (
                     <div className="mt-4 px-2">
-                        <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Administração</p>
-                        <ul className="space-y-1">
+                        <button
+                            onClick={() => setAdminOpen((o) => !o)}
+                            className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                            aria-expanded={adminOpen}
+                        >
+                            <span>Administração</span>
+                            {adminOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </button>
+                        {adminOpen && (
+                        <ul className="mt-1 space-y-1">
                             {visibleAdminNav.map((item) => {
                                 const Icon = item.icon;
                                 const isActive = window.location.pathname.startsWith(item.href);
@@ -210,13 +221,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 );
                             })}
                         </ul>
+                        )}
                     </div>
                     )}
                 </nav>
 
                 {/* User Menu */}
                 <div className="border-t p-4">
-                    <div className="flex items-center gap-3">
+                    <Link
+                        href="/perfil"
+                        className="flex items-center gap-3 rounded-lg border border-gray-200 p-2 transition-colors hover:border-blue-300 hover:bg-gray-50"
+                        title="Ver meu perfil"
+                    >
                         {auth.user?.avatar_url ? (
                             <img src={auth.user.avatar_url} alt={auth.user.name} className="h-9 w-9 rounded-full object-cover" />
                         ) : (
@@ -228,15 +244,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             <p className="truncate text-sm font-medium text-gray-900">{auth.user?.name}</p>
                             <p className="truncate text-xs text-gray-500">{auth.user?.email}</p>
                         </div>
-                    </div>
+                    </Link>
                     <div className="mt-3 space-y-1">
-                        <Link
-                            href="/perfil"
-                            className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-100"
-                        >
-                            <UserRound className="h-4 w-4" />
-                            Meu perfil
-                        </Link>
                         {can('settings:payments') && (
                             <Link
                                 href="/configuracoes/pagamentos"
@@ -270,17 +279,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <Menu className="h-5 w-5" />
                     </button>
 
-                    <div className="flex min-w-0 items-center gap-2.5">
-                        <img src="/brand/logo.svg" alt="SindÂncora" className="h-9 w-auto flex-shrink-0" />
-                        {tenant && (
-                            <span
-                                className="hidden min-w-0 truncate border-l border-gray-200 pl-2.5 text-sm font-semibold text-gray-700 sm:block"
-                                title={brandName}
-                            >
+                    {tenant && (
+                        <div className="flex min-w-0 items-center">
+                            <span className="min-w-0 truncate text-sm font-semibold text-gray-700" title={brandName}>
                                 {brandName}
                             </span>
-                        )}
-                    </div>
+                        </div>
+                    )}
 
                     <div className="flex-1" />
 
