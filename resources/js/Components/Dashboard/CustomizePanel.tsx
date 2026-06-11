@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp, Eye, EyeOff, X } from 'lucide-react';
+import { Eye, EyeOff, GripVertical, X } from 'lucide-react';
 import { color, moduleColor } from '@/lib/dashboardTheme';
 import type { WidgetMeta } from './types';
 
 /**
- * Drawer de personalização: ocultar/mostrar e reordenar widgets. O drag-and-drop
- * visual fica para a fase 2 — aqui usamos setas para reordenar, já persistido.
+ * Drawer de personalização: ocultar/mostrar e reordenar widgets por arrastar e
+ * soltar (HTML5 drag-and-drop nativo, sem dependência extra). A ordem é salva
+ * em `widget_order` no backend.
  */
 export default function CustomizePanel({
     open,
@@ -24,6 +25,8 @@ export default function CustomizePanel({
 }) {
     const [items, setItems] = useState<WidgetMeta[]>([]);
     const [hiddenSet, setHiddenSet] = useState<Set<string>>(new Set());
+    const [dragKey, setDragKey] = useState<string | null>(null);
+    const [overKey, setOverKey] = useState<string | null>(null);
 
     useEffect(() => {
         if (!open) return;
@@ -36,18 +39,25 @@ export default function CustomizePanel({
         setHiddenSet(new Set(hidden));
     }, [open, meta, hidden, order]);
 
-    const move = (idx: number, dir: -1 | 1) => {
-        const next = [...items];
-        const target = idx + dir;
-        if (target < 0 || target >= next.length) return;
-        [next[idx], next[target]] = [next[target], next[idx]];
-        setItems(next);
+    const reorder = (fromKey: string, toKey: string) => {
+        if (fromKey === toKey) return;
+        setItems((prev) => {
+            const from = prev.findIndex((i) => i.key === fromKey);
+            const to = prev.findIndex((i) => i.key === toKey);
+            if (from === -1 || to === -1) return prev;
+            const next = [...prev];
+            const [moved] = next.splice(from, 1);
+            next.splice(to, 0, moved);
+            return next;
+        });
     };
 
     const toggle = (key: string) => {
-        const next = new Set(hiddenSet);
-        next.has(key) ? next.delete(key) : next.add(key);
-        setHiddenSet(next);
+        setHiddenSet((prev) => {
+            const next = new Set(prev);
+            next.has(key) ? next.delete(key) : next.add(key);
+            return next;
+        });
     };
 
     const save = () => onSave([...hiddenSet], items.map((i) => i.key));
@@ -61,7 +71,7 @@ export default function CustomizePanel({
                 <div className="flex items-center justify-between border-b px-5 py-4">
                     <div>
                         <h2 className="text-base font-semibold text-gray-900">Personalizar dashboard</h2>
-                        <p className="text-xs text-gray-500">Mostre, oculte e reordene seus indicadores.</p>
+                        <p className="text-xs text-gray-500">Arraste para reordenar · clique no olho para ocultar.</p>
                     </div>
                     <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100">
                         <X className="h-5 w-5" />
@@ -70,28 +80,49 @@ export default function CustomizePanel({
 
                 <div className="flex-1 overflow-y-auto p-4">
                     <ul className="space-y-2">
-                        {items.map((item, idx) => {
+                        {items.map((item) => {
                             const isHidden = hiddenSet.has(item.key);
                             const mc = color(moduleColor(item.module));
+                            const isDragging = dragKey === item.key;
+                            const isOver = overKey === item.key && dragKey !== item.key;
                             return (
                                 <li
                                     key={item.key}
-                                    className={`flex items-center gap-3 rounded-xl border p-3 transition ${
+                                    draggable
+                                    onDragStart={(e) => {
+                                        setDragKey(item.key);
+                                        e.dataTransfer.effectAllowed = 'move';
+                                    }}
+                                    onDragEnter={() => setOverKey(item.key)}
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        if (dragKey) reorder(dragKey, item.key);
+                                    }}
+                                    onDragEnd={() => {
+                                        setDragKey(null);
+                                        setOverKey(null);
+                                    }}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        setDragKey(null);
+                                        setOverKey(null);
+                                    }}
+                                    className={`flex items-center gap-2 rounded-xl border p-3 transition ${
                                         isHidden ? 'border-gray-100 bg-gray-50 opacity-60' : 'border-gray-200 bg-white'
+                                    } ${isDragging ? 'opacity-40 ring-2 ring-blue-300' : ''} ${
+                                        isOver ? 'border-blue-300 ring-1 ring-blue-200' : ''
                                     }`}
                                 >
+                                    <span
+                                        className="flex-shrink-0 cursor-grab touch-none text-gray-300 transition hover:text-gray-500 active:cursor-grabbing"
+                                        title="Arraste para reordenar"
+                                    >
+                                        <GripVertical className="h-5 w-5" />
+                                    </span>
                                     <span className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${mc.solid}`} />
                                     <div className="min-w-0 flex-1">
                                         <p className="truncate text-sm font-medium text-gray-800">{item.name}</p>
                                         <p className="truncate text-xs text-gray-400">{item.description}</p>
-                                    </div>
-                                    <div className="flex flex-shrink-0 flex-col">
-                                        <button onClick={() => move(idx, -1)} className="rounded p-0.5 text-gray-300 hover:text-gray-600" title="Subir">
-                                            <ArrowUp className="h-3.5 w-3.5" />
-                                        </button>
-                                        <button onClick={() => move(idx, 1)} className="rounded p-0.5 text-gray-300 hover:text-gray-600" title="Descer">
-                                            <ArrowDown className="h-3.5 w-3.5" />
-                                        </button>
                                     </div>
                                     <button
                                         onClick={() => toggle(item.key)}
