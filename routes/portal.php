@@ -5,7 +5,10 @@ use App\Http\Controllers\Portal\AssemblyController;
 use App\Http\Controllers\Portal\ChargeController;
 use App\Http\Controllers\Portal\DashboardController;
 use App\Http\Controllers\Portal\DocumentController;
+use App\Http\Controllers\Portal\LostFoundController;
 use App\Http\Controllers\Portal\OccurrenceController;
+use App\Http\Controllers\Portal\ParcelController;
+use App\Http\Controllers\Portal\PollController;
 use App\Http\Controllers\Portal\ReservationController;
 use App\Http\Controllers\Portal\UnitController;
 use App\Http\Controllers\Portal\VisitorAuthorizationController;
@@ -63,6 +66,24 @@ Route::middleware(['auth', 'verified', 'resident'])
             Route::post('visitantes', [VisitorAuthorizationController::class, 'store'])->name('visitors.store');
             Route::get('visitantes/{authorization}', [VisitorAuthorizationController::class, 'show'])->name('visitors.show');
             Route::post('visitantes/{authorization}/revogar', [VisitorAuthorizationController::class, 'revoke'])->name('visitors.revoke');
+
+            // Encomendas da minha unidade
+            Route::get('encomendas', [ParcelController::class, 'index'])->name('parcels.index');
+            Route::post('encomendas/{parcel}/retirada', [ParcelController::class, 'confirmPickup'])->name('parcels.pickup');
+        });
+
+        // Enquetes rápidas
+        Route::middleware('module:polls')->group(function () {
+            Route::get('enquetes', [PollController::class, 'index'])->name('polls.index');
+            Route::get('enquetes/{poll}', [PollController::class, 'show'])->name('polls.show');
+            Route::post('enquetes/{poll}/votar', [PollController::class, 'vote'])->name('polls.vote');
+        });
+
+        // Achados & Perdidos
+        Route::middleware('module:lost_found')->group(function () {
+            Route::get('achados-perdidos', [LostFoundController::class, 'index'])->name('lost-found.index');
+            Route::get('achados-perdidos/criar', [LostFoundController::class, 'create'])->name('lost-found.create');
+            Route::post('achados-perdidos', [LostFoundController::class, 'store'])->name('lost-found.store');
         });
 
         // Minha unidade

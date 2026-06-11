@@ -14,6 +14,9 @@ import {
     Wallet,
     Vote,
     DoorOpen,
+    Package,
+    ListChecks,
+    PackageSearch,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
@@ -25,7 +28,10 @@ const nav = [
     { name: 'Reservas', href: '/portal/reservas', icon: CalendarRange, module: 'reservations', match: (p: string) => p.startsWith('/portal/reservas') },
     { name: 'Documentos', href: '/portal/documentos', icon: FileText, module: 'documents', match: (p: string) => p.startsWith('/portal/documentos') },
     { name: 'Assembleias', href: '/portal/assembleias', icon: Vote, module: 'assemblies', match: (p: string) => p.startsWith('/portal/assembleias') },
+    { name: 'Enquetes', href: '/portal/enquetes', icon: ListChecks, module: 'polls', match: (p: string) => p.startsWith('/portal/enquetes') },
+    { name: 'Achados & Perdidos', href: '/portal/achados-perdidos', icon: PackageSearch, module: 'lost_found', match: (p: string) => p.startsWith('/portal/achados-perdidos') },
     { name: 'Visitantes', href: '/portal/visitantes', icon: DoorOpen, module: 'gatehouse', match: (p: string) => p.startsWith('/portal/visitantes') },
+    { name: 'Encomendas', href: '/portal/encomendas', icon: Package, module: 'gatehouse', match: (p: string) => p.startsWith('/portal/encomendas') },
     { name: 'Minha unidade', href: '/portal/minha-unidade', icon: Building2, match: (p: string) => p.startsWith('/portal/minha-unidade') },
 ];
 

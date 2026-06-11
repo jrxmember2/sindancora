@@ -18,6 +18,12 @@ class NotificationPreferenceRegistry
             'description' => 'Novos comunicados enviados ao painel ou portal.',
             'channels' => ['database', 'broadcast', 'whatsapp'],
         ],
+        'poll_opened' => [
+            'group' => 'Comunicacao',
+            'label' => 'Enquetes abertas',
+            'description' => 'Aviso ao morador quando uma enquete do condominio e aberta para votacao.',
+            'channels' => ['database', 'broadcast', 'whatsapp'],
+        ],
         'occurrence_updated' => [
             'group' => 'Ocorrencias',
             'label' => 'Atualizacoes de ocorrencias',
@@ -41,6 +47,12 @@ class NotificationPreferenceRegistry
             'label' => 'Visitante chegou',
             'description' => 'Aviso ao morador quando uma autorizacao de visitante e utilizada.',
             'channels' => ['database', 'broadcast'],
+        ],
+        'parcel_arrived' => [
+            'group' => 'Portaria',
+            'label' => 'Encomenda recebida',
+            'description' => 'Aviso ao morador quando uma encomenda chega na portaria.',
+            'channels' => ['database', 'broadcast', 'whatsapp'],
         ],
         'charge_overdue' => [
             'group' => 'Financeiro',

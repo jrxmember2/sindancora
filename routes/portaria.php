@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Portaria\ParcelController;
 use App\Http\Controllers\Portaria\PortariaController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,4 +23,9 @@ Route::middleware(['auth', 'verified', 'gatehouse'])
 
         // Histórico de acessos
         Route::get('visitas', [PortariaController::class, 'log'])->name('log');
+
+        // Encomendas/correspondências
+        Route::get('encomendas', [ParcelController::class, 'index'])->name('parcels.index');
+        Route::post('encomendas', [ParcelController::class, 'store'])->name('parcels.store');
+        Route::post('encomendas/{parcel}/retirada', [ParcelController::class, 'markPickedUp'])->name('parcels.pickup');
     });

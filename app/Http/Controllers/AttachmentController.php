@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
+use App\Models\LostFoundItem;
 use App\Models\Occurrence;
+use App\Models\Parcel;
 use App\Models\PersonUnitLink;
 use App\Models\QuotationProposal;
 use App\Models\StorageObject;
@@ -71,6 +73,8 @@ class AttachmentController extends Controller
             'quotation_proposal' => $user->hasPermission('quotations:read') && $this->planAllows('quotations'),
             'work' => $user->hasPermission('works:read') && $this->planAllows('works'),
             'public_submission' => $user->hasPermission('public_links:read') && $this->planAllows('public_links'),
+            'parcel' => $user->hasPermission('gatehouse:read') || $user->isGatehouse() || $this->residentOwnsParcel($user, $object->entity_id),
+            'lost_found' => $user->hasPermission('lost_found:read') || $this->residentSeesLostFound($user, $object->entity_id),
             default => false,
         };
     }
@@ -91,8 +95,36 @@ class AttachmentController extends Controller
             'quotation_proposal' => $this->canManageQuotationProposal($user, $object->entity_id),
             'work' => $this->canManageWork($user, $object->entity_id),
             'public_submission' => $user->hasPermission('public_links:manage') && $this->planAllows('public_links'),
+            'parcel' => $user->hasPermission('gatehouse:manage') || $user->isGatehouse(),
+            'lost_found' => $user->hasPermission('lost_found:manage'),
             default => false,
         };
+    }
+
+    private function residentSeesLostFound(User $user, ?string $itemId): bool
+    {
+        if (! $user->person_id || ! $itemId) {
+            return false;
+        }
+
+        $item = LostFoundItem::find($itemId);
+
+        return $item !== null && $this->residentCondominiumIds($user)->contains($item->condominium_id);
+    }
+
+    private function residentOwnsParcel(User $user, ?string $parcelId): bool
+    {
+        if (! $user->person_id || ! $parcelId) {
+            return false;
+        }
+
+        $parcel = Parcel::find($parcelId);
+
+        return $parcel !== null
+            && PersonUnitLink::where('person_id', $user->person_id)
+                ->where('unit_id', $parcel->unit_id)
+                ->whereNull('end_date')
+                ->exists();
     }
 
     private function canManageWork(User $user, ?string $workId): bool

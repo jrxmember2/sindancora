@@ -1,10 +1,11 @@
 import { Link, usePage } from '@inertiajs/react';
-import { DoorOpen, QrCode, History, LogOut } from 'lucide-react';
+import { DoorOpen, QrCode, History, LogOut, Package } from 'lucide-react';
 import type { PageProps } from '@/types';
 
 const nav = [
     { name: 'Portaria', href: '/portaria', icon: DoorOpen, match: (p: string) => p === '/portaria' },
     { name: 'Validar QR', href: '/portaria/validar', icon: QrCode, match: (p: string) => p.startsWith('/portaria/validar') },
+    { name: 'Encomendas', href: '/portaria/encomendas', icon: Package, match: (p: string) => p.startsWith('/portaria/encomendas') },
     { name: 'Histórico', href: '/portaria/visitas', icon: History, match: (p: string) => p.startsWith('/portaria/visitas') },
 ];
 

@@ -22,11 +22,14 @@ use App\Http\Controllers\Panel\EmployeeController;
 use App\Http\Controllers\Panel\ExpenseController;
 use App\Http\Controllers\Panel\GatehouseController;
 use App\Http\Controllers\Panel\InboxController;
+use App\Http\Controllers\Panel\LostFoundController;
 use App\Http\Controllers\Panel\MailSettingController;
 use App\Http\Controllers\Panel\NotificationController;
 use App\Http\Controllers\Panel\MaintenanceController;
 use App\Http\Controllers\Panel\OccurrenceController;
 use App\Http\Controllers\Panel\OccurrenceSlaController;
+use App\Http\Controllers\Panel\ParcelController;
+use App\Http\Controllers\Panel\PollController;
 use App\Http\Controllers\Panel\QuotationController;
 use App\Http\Controllers\Panel\SupplierController;
 use App\Http\Controllers\Panel\PaymentSettingController;
@@ -562,6 +565,44 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('permission:gatehouse:manage')->group(function () {
         Route::post('visitantes/autorizacoes', [GatehouseController::class, 'storeAuthorization'])->name('gatehouse.authorizations.store');
         Route::delete('visitantes/autorizacoes/{authorization}', [GatehouseController::class, 'revokeAuthorization'])->name('gatehouse.authorizations.revoke');
+    });
+
+    // Encomendas — acompanhamento/baixa pelo gestor (o registro fica na área da portaria).
+    Route::middleware('module:gatehouse')->group(function () {
+        Route::middleware('permission:gatehouse:read')->group(function () {
+            Route::get('encomendas', [ParcelController::class, 'index'])->name('parcels.index');
+        });
+        Route::middleware('permission:gatehouse:manage')->group(function () {
+            Route::post('encomendas/{parcel}/retirada', [ParcelController::class, 'markPickedUp'])->name('parcels.pickup');
+        });
+    });
+
+    // Enquetes rápidas
+    Route::middleware('module:polls')->group(function () {
+        Route::middleware('permission:polls:manage')->group(function () {
+            Route::get('enquetes/criar', [PollController::class, 'create'])->name('polls.create');
+            Route::post('enquetes', [PollController::class, 'store'])->name('polls.store');
+            Route::post('enquetes/{poll}/abrir', [PollController::class, 'open'])->name('polls.open');
+            Route::post('enquetes/{poll}/encerrar', [PollController::class, 'close'])->name('polls.close');
+            Route::delete('enquetes/{poll}', [PollController::class, 'destroy'])->name('polls.destroy');
+        });
+        Route::middleware('permission:polls:read')->group(function () {
+            Route::get('enquetes', [PollController::class, 'index'])->name('polls.index');
+            Route::get('enquetes/{poll}', [PollController::class, 'show'])->name('polls.show');
+        });
+    });
+
+    // Achados & Perdidos
+    Route::middleware('module:lost_found')->group(function () {
+        Route::middleware('permission:lost_found:manage')->group(function () {
+            Route::get('achados-perdidos/criar', [LostFoundController::class, 'create'])->name('lost-found.create');
+            Route::post('achados-perdidos', [LostFoundController::class, 'store'])->name('lost-found.store');
+            Route::post('achados-perdidos/{item}/resolver', [LostFoundController::class, 'resolve'])->name('lost-found.resolve');
+            Route::delete('achados-perdidos/{item}', [LostFoundController::class, 'destroy'])->name('lost-found.destroy');
+        });
+        Route::middleware('permission:lost_found:read')->group(function () {
+            Route::get('achados-perdidos', [LostFoundController::class, 'index'])->name('lost-found.index');
+        });
     });
 
     // Assistente de IA

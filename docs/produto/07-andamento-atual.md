@@ -1,6 +1,6 @@
 # 07 — Andamento atual / handoff
 
-> Atualizado em 10/06/2026.
+> Atualizado em 11/06/2026.
 > Objetivo: dar contexto rápido para Codex/Claude ou outro agente continuar o Sindâncora sem
 > redescobrir o estado do projeto.
 
@@ -609,6 +609,22 @@ php artisan db:seed --force   # se quiser refletir public_links em planos/papéi
 php artisan optimize:clear
 ```
 
+### Ciclo "Módulos operacionais" — E1 Encomendas · E2 Enquetes · E3 Achados & Perdidos (concluído)
+
+Implementado em 11/06/2026. Doc técnica: `docs/tecnico/modulos-operacionais.md`.
+
+- **E1 Encomendas:** montado no domínio gatehouse (porteiro registra em `/portaria/encomendas`, gestor
+  acompanha em `/encomendas`, morador em `/portal/encomendas`); notificação `ParcelArrived`. Reusa o
+  módulo `gatehouse` (sem módulo novo) porque o porteiro não é papel de painel.
+- **E2 Enquetes:** módulo novo `polls` (1 voto por pessoa); `Poll/PollOption/PollVote` + `PollService`;
+  painel `/enquetes`, portal `/portal/enquetes`; notificação `PollOpened`.
+- **E3 Achados & Perdidos:** módulo novo `lost_found`; `LostFoundItem` (foto); painel
+  `/achados-perdidos`, portal `/portal/achados-perdidos` (morador reporta).
+
+Cada módulo novo (polls, lost_found) é registrado por migration (permissões + papéis + habilita em
+todos os planos), no padrão do `register_public_links_*`. Validado: `php -l`, `route:list`,
+`npm run build` verde. **Deploy:** `migrate --force` + `optimize:clear`.
+
 ### Auth do webhook da Evolution (concluído)
 
 Implementado em 10/06/2026. Fecha o gap de segurança: `POST /api/webhooks/evolution` era público
@@ -667,8 +683,13 @@ do morador, telas em `Pages/Portaria`.
 Sugestões de continuidade (a definir com o usuário):
 
 - **Hardening do WhatsApp — CONCLUÍDO (10/06).** Auth do webhook ✅, Drive externo ✅ e **limpeza de
-  mídia** ✅ (alerta aos 85% + botão "Liberar espaço" 25/50/100% + política por data/cota por tenant +
-  job `whatsapp:cleanup-media`). Ver `docs/tecnico/whatsapp-drive-externo.md`.
+  mídia** ✅. Ver `docs/tecnico/whatsapp-drive-externo.md`.
+- **Ciclo Módulos operacionais — CONCLUÍDO (11/06):** Encomendas ✅, Enquetes ✅, Achados & Perdidos ✅.
+  Restam do mesmo tema (não feitos): **Multas/advertências regimentais** e **Mural/classificados**.
+- **Temas maiores mapeados (não iniciados):** App/PWA + push do morador; Conformidade & segurança
+  (2FA + LGPD: exportação/portabilidade/anonimização); Financeiro avançado (régua de cobrança +
+  prestação de contas/balancete).
+- **Bug aberto:** logo do tenant não persiste nos relatórios PDF (*Configurações → Dados do tenant*).
 - **Logo do tenant não persiste** — o upload em *Configurações → Dados do tenant* (ainda usado no
   cabeçalho dos relatórios PDF) não reflete após refresh; investigar a fundo. O header do painel já
   foi desacoplado disso (usa a logo fixa do SindÂncora + nome do tenant).

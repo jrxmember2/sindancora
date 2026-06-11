@@ -45,6 +45,9 @@ import {
     ChevronRight,
     HardDrive,
     AlertTriangle,
+    Package,
+    ListChecks,
+    PackageSearch,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 import FreeSpaceModal from '@/Components/FreeSpaceModal';
@@ -68,7 +71,10 @@ const navigation = [
     { name: 'Obras', href: '/obras', icon: Hammer, permission: 'works:read', module: 'works' },
     { name: 'Relatórios', href: '/relatorios', icon: BarChart3, permission: 'reports:read', module: 'reports' },
     { name: 'Assembleias', href: '/assembleias', icon: Vote, permission: 'assemblies:read', module: 'assemblies' },
+    { name: 'Enquetes', href: '/enquetes', icon: ListChecks, permission: 'polls:read', module: 'polls' },
+    { name: 'Achados & Perdidos', href: '/achados-perdidos', icon: PackageSearch, permission: 'lost_found:read', module: 'lost_found' },
     { name: 'Portaria', href: '/visitantes', icon: DoorOpen, permission: 'gatehouse:read', module: 'gatehouse' },
+    { name: 'Encomendas', href: '/encomendas', icon: Package, permission: 'gatehouse:read', module: 'gatehouse' },
     { name: 'Links públicos', href: '/links-publicos', icon: QrCode, permission: 'public_links:read', module: 'public_links' },
     { name: 'Atendimento', href: '/inbox', icon: MessagesSquare, permission: 'inbox:use', module: 'whatsapp' },
     { name: 'Setores', href: '/setores', icon: Headset, permission: 'sectors:manage', module: 'whatsapp' },
