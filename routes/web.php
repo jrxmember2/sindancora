@@ -108,8 +108,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Painel administrativo — bloqueado para moradores "puros" (redirecionados ao portal).
     Route::middleware('panel')->group(function () {
-    // Dashboard
+    // Dashboard modular (metadados + widgets não-lazy na página; lazy/refresh via JSON)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/widgets/{key}', [DashboardController::class, 'widget'])->name('dashboard.widget');
+    Route::put('/dashboard/preferences', [DashboardController::class, 'preferences'])->name('dashboard.preferences');
 
     // Cronograma consolidado
     Route::middleware('permission:schedule:read')->group(function () {

@@ -26,6 +26,41 @@
 
 ## Última entrega implementada
 
+### Dashboard Modular (home do painel)
+
+Implementado em 11/06/2026. Doc técnica: `docs/tecnico/dashboard-modular.md`.
+
+Substitui a home trivial (4 KPIs de plano) por um **dashboard modular SaaS**: cada módulo
+registra seus widgets (KPIs, gráficos, rankings, timelines, alertas, atalhos) com gating por
+permissão + módulo do plano + escopo de condomínio, filtros globais e personalização
+persistida por usuário.
+
+- **Backend (registry-driven, sem catálogo em banco):** `app/Dashboard/` (`WidgetType`,
+  `WidgetSize`, `WidgetDefinition`, `DashboardContext`, `WidgetRegistry`,
+  `Contracts/WidgetDataResolver`, `Concerns/ScopesDashboard`, `Resolvers/BaseResolver` +
+  23 resolvers em `Resolvers/{General,Financial,Occurrences,Reservations,Documents,Operations,Shortcuts}`).
+- `app/Providers/DashboardServiceProvider.php` (registra os widgets; em `bootstrap/providers.php`).
+- `app/Services/Dashboard/DashboardService.php` (filtros/escopo, lazy + `Cache::remember` 120s,
+  preferências, opções de filtro, cabeçalho).
+- `app/Support/Money.php` (formatação BRL reutilizável).
+- Persistência: migration `2026_07_01_000001_create_user_dashboard_preferences_table.php` +
+  model `UserDashboardPreference` (ocultos + ordem por usuário/tenant).
+- `Panel/DashboardController` (index/widget/preferences) + 3 rotas (`dashboard`,
+  `dashboard.widget`, `dashboard.preferences`).
+- **Frontend (ApexCharts):** `resources/js/lib/{format,dashboardTheme}.ts` e
+  `resources/js/Components/Dashboard/*` (Header, Filters, Grid via `WidgetCard`, `WidgetRenderer`
+  + renderers de cada tipo, estados skeleton/empty/error, `CustomizePanel`), página
+  `Pages/Dashboard/Index.tsx` reescrita.
+- Widgets com **dados reais**: Geral (condomínios/unidades/moradores/novos cadastros/storage),
+  Financeiro (em aberto, recebido no mês, inadimplência, saldo, status, evolução 12m,
+  receitas×despesas 12m, ranking, contas a vencer), Ocorrências (abertas, por status, SLA em
+  risco), Reservas (pendentes, próximas), Documentos (recentes), Manutenção (próximas), Obras
+  (em andamento) e Atalhos rápidos. Drag-and-drop e sensores ficam para fase 2.
+
+Validações: `php -l` (todos), `WidgetRegistry` instancia os 23 resolvers sem falha,
+`php artisan route:list --name=dashboard` (3 rotas), `npm run build` (`tsc && vite build`) verde.
+**Deploy:** `migrate --force` (cria `user_dashboard_preferences`) + `optimize:clear`. Sem seed novo.
+
 ### X3. Links públicos + QR por condomínio
 
 Implementado em 09/06/2026. Doc técnica: `docs/tecnico/links-publicos.md`. **Fecha o roadmap da

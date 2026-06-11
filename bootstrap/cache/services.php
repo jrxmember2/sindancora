@@ -42,6 +42,7 @@
     38 => 'Termwind\\Laravel\\TermwindServiceProvider',
     39 => 'Tighten\\Ziggy\\ZiggyServiceProvider',
     40 => 'App\\Providers\\AppServiceProvider',
+    41 => 'App\\Providers\\DashboardServiceProvider',
   ),
   'eager' => 
   array (
@@ -69,6 +70,7 @@
     21 => 'Termwind\\Laravel\\TermwindServiceProvider',
     22 => 'Tighten\\Ziggy\\ZiggyServiceProvider',
     23 => 'App\\Providers\\AppServiceProvider',
+    24 => 'App\\Providers\\DashboardServiceProvider',
   ),
   'deferred' => 
   array (
