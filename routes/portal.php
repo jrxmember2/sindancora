@@ -3,7 +3,9 @@
 use App\Http\Controllers\Portal\AnnouncementController;
 use App\Http\Controllers\Portal\AssemblyController;
 use App\Http\Controllers\Portal\ChargeController;
+use App\Http\Controllers\Portal\CommunityPostController;
 use App\Http\Controllers\Portal\DashboardController;
+use App\Http\Controllers\Portal\DisciplinaryRecordController;
 use App\Http\Controllers\Portal\DocumentController;
 use App\Http\Controllers\Portal\LostFoundController;
 use App\Http\Controllers\Portal\OccurrenceController;
@@ -84,6 +86,20 @@ Route::middleware(['auth', 'verified', 'resident'])
             Route::get('achados-perdidos', [LostFoundController::class, 'index'])->name('lost-found.index');
             Route::get('achados-perdidos/criar', [LostFoundController::class, 'create'])->name('lost-found.create');
             Route::post('achados-perdidos', [LostFoundController::class, 'store'])->name('lost-found.store');
+        });
+
+        // Multas e advertencias regimentais
+        Route::middleware('module:disciplinary')->group(function () {
+            Route::get('multas-advertencias', [DisciplinaryRecordController::class, 'index'])->name('disciplinary.index');
+            Route::get('multas-advertencias/{record}', [DisciplinaryRecordController::class, 'show'])->name('disciplinary.show');
+            Route::post('multas-advertencias/{record}/ciencia', [DisciplinaryRecordController::class, 'acknowledge'])->name('disciplinary.acknowledge');
+        });
+
+        // Mural e classificados
+        Route::middleware('module:community_board')->group(function () {
+            Route::get('mural', [CommunityPostController::class, 'index'])->name('community-board.index');
+            Route::get('mural/criar', [CommunityPostController::class, 'create'])->name('community-board.create');
+            Route::post('mural', [CommunityPostController::class, 'store'])->name('community-board.store');
         });
 
         // Minha unidade

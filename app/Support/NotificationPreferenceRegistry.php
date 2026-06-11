@@ -54,6 +54,18 @@ class NotificationPreferenceRegistry
             'description' => 'Aviso ao morador quando uma encomenda chega na portaria.',
             'channels' => ['database', 'broadcast', 'whatsapp'],
         ],
+        'disciplinary_record_issued' => [
+            'group' => 'Operacao',
+            'label' => 'Multas e advertencias',
+            'description' => 'Aviso ao morador quando uma multa ou advertencia regimental e emitida.',
+            'channels' => ['database', 'broadcast', 'whatsapp'],
+        ],
+        'community_post_approved' => [
+            'group' => 'Comunicacao',
+            'label' => 'Classificados aprovados',
+            'description' => 'Aviso ao morador quando um classificado enviado ao mural e publicado.',
+            'channels' => ['database', 'broadcast'],
+        ],
         'charge_overdue' => [
             'group' => 'Financeiro',
             'label' => 'Cobrancas vencidas',

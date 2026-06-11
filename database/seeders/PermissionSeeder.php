@@ -158,6 +158,22 @@ class PermissionSeeder extends Seeder
             // Links publicos + QR por condominio (auto-cadastro e ocorrencia com moderacao)
             ['module' => 'public_links', 'action' => 'read',   'description' => 'Ver links publicos e fila de moderacao'],
             ['module' => 'public_links', 'action' => 'manage', 'description' => 'Configurar links publicos e aprovar/reprovar envios'],
+
+            // Enquetes
+            ['module' => 'polls', 'action' => 'read', 'description' => 'Ver enquetes e resultados'],
+            ['module' => 'polls', 'action' => 'manage', 'description' => 'Criar, abrir, encerrar e excluir enquetes'],
+
+            // Achados e perdidos
+            ['module' => 'lost_found', 'action' => 'read', 'description' => 'Ver itens de achados e perdidos'],
+            ['module' => 'lost_found', 'action' => 'manage', 'description' => 'Cadastrar, resolver e excluir itens de achados e perdidos'],
+
+            // Multas e advertencias regimentais
+            ['module' => 'disciplinary', 'action' => 'read', 'description' => 'Ver multas e advertencias regimentais'],
+            ['module' => 'disciplinary', 'action' => 'manage', 'description' => 'Registrar, cancelar e gerar cobrancas de multas regimentais'],
+
+            // Mural e classificados
+            ['module' => 'community_board', 'action' => 'read', 'description' => 'Ver mural e classificados'],
+            ['module' => 'community_board', 'action' => 'manage', 'description' => 'Publicar, moderar e arquivar mural e classificados'],
         ];
 
         foreach ($permissions as $perm) {

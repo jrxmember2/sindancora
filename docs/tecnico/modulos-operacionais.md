@@ -1,69 +1,118 @@
-# Módulos operacionais — Encomendas, Enquetes, Achados & Perdidos
+# Modulos operacionais - Encomendas, Enquetes, Achados & Perdidos, Regimento e Mural
 
-> Implementado em 11/06/2026. Ciclo "Módulos operacionais" (E1–E3).
+> Implementado em 11/06/2026. Ciclo "Modulos operacionais" (E1-E5).
 
-Três módulos leves que ampliam o uso diário, reaproveitando os padrões do projeto (escopo por
-condomínio, portal do morador, notificações com preferências, anexos via `HasAttachments`,
-gating por permissão+módulo de plano).
+Modulos leves que ampliam o uso diario, reaproveitando os padroes do projeto: escopo por
+condominio, portal do morador, notificacoes com preferencias, anexos via `HasAttachments` e
+gating por permissao + modulo de plano.
 
-## E1 — Encomendas / Correspondências
+## E1 - Encomendas / Correspondencias
 
-Montado sobre o domínio **gatehouse** (porteiro só acessa `/portaria`, não o painel), reusando o
-módulo `gatehouse` e as permissões `gatehouse:read|manage` — sem módulo novo.
+Montado sobre o dominio **gatehouse**. Porteiro acessa `/portaria`, nao o painel. Reusa o modulo
+`gatehouse` e as permissoes `gatehouse:read|manage`, sem modulo novo.
 
 - Tabela `parcels`; model `App\Models\Parcel` (`HasAttachments`, `ATTACHMENT_ENTITY='parcel'`,
   `markPickedUp()`).
-- **Porteiro** (`/portaria/encomendas`, `Portaria\ParcelController`): registra a chegada (condomínio/
-  unidade/descrição/transportadora/foto), notifica o morador e dá baixa. Item na nav da Portaria.
-- **Gestor** (`/encomendas`, `Panel\ParcelController`): acompanha por condomínio/status e dá baixa
-  (`module:gatehouse` + `permission:gatehouse:read|manage`).
-- **Morador** (`/portal/encomendas`, `Portal\ParcelController`): vê as encomendas da unidade e confirma
+- **Porteiro** (`/portaria/encomendas`, `Portaria\ParcelController`): registra chegada
+  (condominio/unidade/descricao/transportadora/foto), notifica o morador e da baixa.
+- **Gestor** (`/encomendas`, `Panel\ParcelController`): acompanha por condominio/status e da baixa.
+- **Morador** (`/portal/encomendas`, `Portal\ParcelController`): ve encomendas da unidade e confirma
   retirada.
-- Notificação `ParcelArrived` (database/broadcast/whatsapp) aos `User` dos `Person` da unidade; evento
-  `parcel_arrived`. Foto servida pelo `AttachmentController` (caso `parcel`).
+- Notificacao `ParcelArrived` (database/broadcast/whatsapp) aos usuarios das pessoas da unidade;
+  evento `parcel_arrived`.
 
-## E2 — Enquetes rápidas
+## E2 - Enquetes rapidas
 
-Consulta leve aos moradores, **1 voto por pessoa** (diferente da Assembleia, que é por unidade).
-Módulo novo `polls` (permissões `polls:read|manage`), habilitado em todos os planos.
+Consulta leve aos moradores, com 1 voto por pessoa. Modulo novo `polls` (`polls:read|manage`),
+habilitado em todos os planos.
 
-- Tabelas `polls`, `poll_options`, `poll_votes` (único `poll_id+person_id`); models
-  `Poll`/`PollOption`/`PollVote`. `App\Services\PollService` (`castVote`, `results`) — versão
-  simplificada do `AssemblyService`.
-- **Gestor** (`/enquetes`, `Panel\PollController`): CRUD + abrir/encerrar + resultados.
-- **Morador** (`/portal/enquetes`, `Portal\PollController`): lista, vota e vê o resultado em %.
-- Notificação `PollOpened` aos moradores do condomínio ao abrir; evento `poll_opened`.
-- Estados: `draft → open → closed`; opção de enquete anônima e data de encerramento.
+- Tabelas `polls`, `poll_options`, `poll_votes` (unico `poll_id+person_id`).
+- Models `Poll`, `PollOption`, `PollVote` e `App\Services\PollService`.
+- **Gestor** (`/enquetes`, `Panel\PollController`): cria, abre, encerra, remove e consulta resultados.
+- **Morador** (`/portal/enquetes`, `Portal\PollController`): lista, vota e ve resultado.
+- Notificacao `PollOpened`; evento `poll_opened`.
+- Estados: `draft -> open -> closed`.
 
-## E3 — Achados & Perdidos
+## E3 - Achados & Perdidos
 
-Módulo novo `lost_found` (permissões `lost_found:read|manage`), todos os planos.
+Modulo novo `lost_found` (`lost_found:read|manage`), habilitado em todos os planos.
 
-- Tabela `lost_found_items`; model `LostFoundItem` (`HasAttachments`, `ATTACHMENT_ENTITY='lost_found'`,
-  tipos `found|lost`, status `open|resolved`).
+- Tabela `lost_found_items`; model `LostFoundItem` (`HasAttachments`,
+  `ATTACHMENT_ENTITY='lost_found'`).
+- Tipos `found|lost`; status `open|resolved`.
 - **Gestor** (`/achados-perdidos`, `Panel\LostFoundController`): CRUD + resolver, com foto.
-- **Morador** (`/portal/achados-perdidos`, `Portal\LostFoundController`): vê os itens dos seus
-  condomínios e **reporta** um item (entra em aberto para curadoria do gestor).
-- Foto servida pelo `AttachmentController` (caso `lost_found`; morador vê itens do seu condomínio).
+- **Morador** (`/portal/achados-perdidos`, `Portal\LostFoundController`): ve itens dos seus
+  condominios e reporta item.
 
-## Permissões / módulos / papéis
+## E4 - Multas e advertencias regimentais
 
-Cada módulo é registrado por uma migration no padrão de
-`..._register_public_links_permissions_and_module.php`: insere as permissões, vincula aos papéis
-padrão (admin/síndico/subsíndico = manage; conselheiro = read) e habilita o módulo em todos os planos.
-Encomendas reusa `gatehouse` (sem migration de permissão).
+Modulo novo `disciplinary` (`disciplinary:read|manage`), habilitado em todos os planos. Registra
+advertencias e multas por unidade, preservando historico regimental e ciencia do morador.
+
+- Tabela `disciplinary_records`; model `DisciplinaryRecord` (`HasAttachments`,
+  `ATTACHMENT_ENTITY='disciplinary_record'`).
+- Tipos `warning|fine`; status `issued|acknowledged|cancelled`.
+- **Gestor** (`/multas-advertencias`, `Panel\DisciplinaryRecordController`): lista, emite, consulta,
+  cancela e, em multas, pode gerar cobranca vinculada quando o plano tem `financial` e o usuario tem
+  `charges:create`.
+- **Morador** (`/portal/multas-advertencias`, `Portal\DisciplinaryRecordController`): consulta
+  registros das suas unidades e registra ciencia.
+- Notificacao `DisciplinaryRecordIssued` (database/broadcast/whatsapp); evento
+  `disciplinary_record_issued`.
+- Anexos/evidencias passam pelo `AttachmentController` e respeitam o escopo da unidade.
+
+## E5 - Mural e classificados
+
+Modulo novo `community_board` (`community_board:read|manage`), habilitado em todos os planos. Une
+publicacoes de mural feitas pela gestao e classificados enviados por moradores com moderacao.
+
+- Tabela `community_posts`; model `CommunityPost` (`HasAttachments`,
+  `ATTACHMENT_ENTITY='community_post'`).
+- Tipos `notice|classified`; status `pending|published|rejected|archived`.
+- **Gestor** (`/mural`, `Panel\CommunityPostController`): publica diretamente, aprova/rejeita
+  classificados pendentes, arquiva e remove publicacoes.
+- **Morador** (`/portal/mural`, `Portal\CommunityPostController`): ve publicacoes publicadas dos seus
+  condominios e envia classificados para moderacao.
+- Notificacao `CommunityPostApproved` ao autor quando um classificado e publicado; evento
+  `community_post_approved`.
+- Publicacoes publicadas respeitam `expires_at`; expiradas deixam de aparecer no portal.
+
+## Permissoes / modulos / papeis
+
+Cada modulo novo e registrado por migration no padrao de `register_*_permissions_and_module`: insere
+permissoes, vincula aos papeis padrao e habilita o modulo em todos os planos. Regra atual:
+
+- `admin`, `sindico` e `subsindico`: `read` + `manage`.
+- `conselheiro`: `read`.
+- `morador`: acessa pelo portal via modulo do plano, sem permissao de painel.
+
+O cadastro de planos no super admin tambem conhece `public_links`, `polls`, `lost_found`,
+`disciplinary` e `community_board`, evitando perda desses modulos ao editar planos.
 
 ## Deploy
 
-`php artisan migrate --force` (cria tabelas + registra permissões/módulos `polls` e `lost_found`) +
-`php artisan optimize:clear`. Sem env nova; worker/scheduler já ativos (notificações em fila). Em
-ambientes já existentes, `db:seed --force` é opcional (as migrations já refletem em planos/papéis).
+```bash
+php artisan migrate --force
+php artisan optimize:clear
+```
 
-## Verificação
+`php artisan db:seed --force` e opcional em ambientes existentes; as migrations ja refletem os novos
+modulos em planos e papeis padrao. Em rebuild/reset, os seeders tambem contem as permissoes e modulos.
 
-- `php -l` em todos os PHP; `php artisan route:list --name=parcels|polls|lost-found` (painel+portal);
-  `npm run build` (tsc+vite) verde.
-- E1: porteiro registra → morador notificado e vê em `/portal/encomendas` → baixa nos dois lados.
-- E2: criar/abrir enquete → votar pelo portal (bloqueia 2º voto) → encerrar → resultado %.
-- E3: registrar item com foto, resolver; morador reporta item perdido pelo portal.
-- Plano sem o módulo (Admin > Planos) esconde menu e bloqueia rota (`module:`).
+## Verificacao
+
+- `php -l` nos PHP alterados.
+- `php artisan route:list --name=parcels --except-vendor`
+- `php artisan route:list --name=polls --except-vendor`
+- `php artisan route:list --name=lost-found --except-vendor`
+- `php artisan route:list --name=disciplinary --except-vendor`
+- `php artisan route:list --name=community-board --except-vendor`
+- `npm run build`
+
+Fluxos principais:
+
+- E1: porteiro registra -> morador notificado e ve em `/portal/encomendas` -> baixa nos dois lados.
+- E2: gestor abre enquete -> morador vota -> segundo voto da mesma pessoa bloqueado -> resultado.
+- E3: gestor registra/resolver item; morador reporta item perdido pelo portal.
+- E4: gestor emite advertencia/multa -> morador consulta e registra ciencia; multa pode gerar cobranca.
+- E5: morador envia classificado -> gestor aprova/rejeita -> classificado publicado aparece no portal.

@@ -15,8 +15,10 @@ use App\Http\Controllers\Panel\CampaignController;
 use App\Http\Controllers\Panel\CategoryController;
 use App\Http\Controllers\Panel\ChargeController;
 use App\Http\Controllers\Panel\CommonAreaController;
+use App\Http\Controllers\Panel\CommunityPostController;
 use App\Http\Controllers\Panel\CondominiumController;
 use App\Http\Controllers\Panel\DashboardController;
+use App\Http\Controllers\Panel\DisciplinaryRecordController;
 use App\Http\Controllers\Panel\DocumentController;
 use App\Http\Controllers\Panel\EmployeeController;
 use App\Http\Controllers\Panel\ExpenseController;
@@ -602,6 +604,35 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
         Route::middleware('permission:lost_found:read')->group(function () {
             Route::get('achados-perdidos', [LostFoundController::class, 'index'])->name('lost-found.index');
+        });
+    });
+
+    // Multas e advertencias regimentais
+    Route::middleware('module:disciplinary')->prefix('multas-advertencias')->name('disciplinary.')->group(function () {
+        Route::middleware('permission:disciplinary:manage')->group(function () {
+            Route::get('criar', [DisciplinaryRecordController::class, 'create'])->name('create');
+            Route::post('/', [DisciplinaryRecordController::class, 'store'])->name('store');
+            Route::post('{record}/cobranca', [DisciplinaryRecordController::class, 'generateCharge'])->name('charge');
+            Route::post('{record}/cancelar', [DisciplinaryRecordController::class, 'cancel'])->name('cancel');
+        });
+        Route::middleware('permission:disciplinary:read')->group(function () {
+            Route::get('/', [DisciplinaryRecordController::class, 'index'])->name('index');
+            Route::get('{record}', [DisciplinaryRecordController::class, 'show'])->name('show');
+        });
+    });
+
+    // Mural e classificados
+    Route::middleware('module:community_board')->prefix('mural')->name('community-board.')->group(function () {
+        Route::middleware('permission:community_board:manage')->group(function () {
+            Route::get('criar', [CommunityPostController::class, 'create'])->name('create');
+            Route::post('/', [CommunityPostController::class, 'store'])->name('store');
+            Route::post('{post}/aprovar', [CommunityPostController::class, 'approve'])->name('approve');
+            Route::post('{post}/rejeitar', [CommunityPostController::class, 'reject'])->name('reject');
+            Route::post('{post}/arquivar', [CommunityPostController::class, 'archive'])->name('archive');
+            Route::delete('{post}', [CommunityPostController::class, 'destroy'])->name('destroy');
+        });
+        Route::middleware('permission:community_board:read')->group(function () {
+            Route::get('/', [CommunityPostController::class, 'index'])->name('index');
         });
     });
 

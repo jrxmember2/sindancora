@@ -33,6 +33,11 @@ class CheckPermission
         'quotations' => 'quotations',
         'works' => 'works',
         'schedule' => 'schedule',
+        'public_links' => 'public_links',
+        'polls' => 'polls',
+        'lost_found' => 'lost_found',
+        'disciplinary' => 'disciplinary',
+        'community_board' => 'community_board',
     ];
 
     private const PLAN_MODULE_BY_PERMISSION = [

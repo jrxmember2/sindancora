@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
+use App\Models\CommunityPost;
+use App\Models\DisciplinaryRecord;
 use App\Models\LostFoundItem;
 use App\Models\Occurrence;
 use App\Models\Parcel;
@@ -75,6 +77,8 @@ class AttachmentController extends Controller
             'public_submission' => $user->hasPermission('public_links:read') && $this->planAllows('public_links'),
             'parcel' => $user->hasPermission('gatehouse:read') || $user->isGatehouse() || $this->residentOwnsParcel($user, $object->entity_id),
             'lost_found' => $user->hasPermission('lost_found:read') || $this->residentSeesLostFound($user, $object->entity_id),
+            'disciplinary_record' => $user->hasPermission('disciplinary:read') || $this->residentSeesDisciplinaryRecord($user, $object->entity_id),
+            'community_post' => $user->hasPermission('community_board:read') || $this->residentSeesCommunityPost($user, $object->entity_id),
             default => false,
         };
     }
@@ -97,8 +101,47 @@ class AttachmentController extends Controller
             'public_submission' => $user->hasPermission('public_links:manage') && $this->planAllows('public_links'),
             'parcel' => $user->hasPermission('gatehouse:manage') || $user->isGatehouse(),
             'lost_found' => $user->hasPermission('lost_found:manage'),
+            'disciplinary_record' => $user->hasPermission('disciplinary:manage'),
+            'community_post' => $user->hasPermission('community_board:manage'),
             default => false,
         };
+    }
+
+    private function residentSeesDisciplinaryRecord(User $user, ?string $recordId): bool
+    {
+        if (! $user->person_id || ! $recordId) {
+            return false;
+        }
+
+        $record = DisciplinaryRecord::find($recordId);
+
+        return $record !== null
+            && $record->status !== 'cancelled'
+            && PersonUnitLink::where('person_id', $user->person_id)
+                ->where('unit_id', $record->unit_id)
+                ->whereNull('end_date')
+                ->exists();
+    }
+
+    private function residentSeesCommunityPost(User $user, ?string $postId): bool
+    {
+        if (! $user->person_id || ! $postId) {
+            return false;
+        }
+
+        $post = CommunityPost::find($postId);
+
+        if (! $post) {
+            return false;
+        }
+
+        if ($post->author_user_id === $user->id) {
+            return true;
+        }
+
+        return $post->status === 'published'
+            && $this->residentCondominiumIds($user)->contains($post->condominium_id)
+            && ($post->expires_at === null || $post->expires_at->gte(now()->startOfDay()));
     }
 
     private function residentSeesLostFound(User $user, ?string $itemId): bool

@@ -625,6 +625,24 @@ Cada módulo novo (polls, lost_found) é registrado por migration (permissões +
 todos os planos), no padrão do `register_public_links_*`. Validado: `php -l`, `route:list`,
 `npm run build` verde. **Deploy:** `migrate --force` + `optimize:clear`.
 
+### Ciclo "Módulos operacionais" — E4 Multas/advertências regimentais · E5 Mural/classificados (concluído)
+
+Implementado em 11/06/2026. Doc técnica: `docs/tecnico/modulos-operacionais.md`.
+
+- **E4 Multas/advertências regimentais:** módulo novo `disciplinary`; painel
+  `/multas-advertencias`, portal `/portal/multas-advertencias`; registros por unidade/pessoa, tipos
+  `warning|fine`, status `issued|acknowledged|cancelled`, anexos/evidências, ciência do morador e
+  notificação `DisciplinaryRecordIssued`. Multa pode gerar cobrança vinculada quando o plano tem
+  `financial` e o usuário possui `charges:create`.
+- **E5 Mural/classificados:** módulo novo `community_board`; painel `/mural`, portal `/portal/mural`;
+  publicações de mural pela gestão, classificados de moradores com moderação, status
+  `pending|published|rejected|archived`, anexos/imagens, expiração opcional e notificação
+  `CommunityPostApproved` ao autor aprovado.
+
+Cada módulo novo é registrado por migration (permissões + papéis + habilita em todos os planos), no
+padrão do `register_public_links_*`. Validado: `php -l`, `route:list`, `npm run build` verde.
+**Deploy:** `migrate --force` + `optimize:clear`.
+
 ### Auth do webhook da Evolution (concluído)
 
 Implementado em 10/06/2026. Fecha o gap de segurança: `POST /api/webhooks/evolution` era público
@@ -684,8 +702,8 @@ Sugestões de continuidade (a definir com o usuário):
 
 - **Hardening do WhatsApp — CONCLUÍDO (10/06).** Auth do webhook ✅, Drive externo ✅ e **limpeza de
   mídia** ✅. Ver `docs/tecnico/whatsapp-drive-externo.md`.
-- **Ciclo Módulos operacionais — CONCLUÍDO (11/06):** Encomendas ✅, Enquetes ✅, Achados & Perdidos ✅.
-  Restam do mesmo tema (não feitos): **Multas/advertências regimentais** e **Mural/classificados**.
+- **Ciclo Módulos operacionais — CONCLUÍDO (11/06):** Encomendas ✅, Enquetes ✅, Achados & Perdidos ✅,
+  Multas/advertências regimentais ✅ e Mural/classificados ✅.
 - **Temas maiores mapeados (não iniciados):** App/PWA + push do morador; Conformidade & segurança
   (2FA + LGPD: exportação/portabilidade/anonimização); Financeiro avançado (régua de cobrança +
   prestação de contas/balancete).

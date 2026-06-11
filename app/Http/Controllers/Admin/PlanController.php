@@ -53,6 +53,11 @@ class PlanController extends Controller
         'quotations' => 'Orçamentos/Cotações',
         'works' => 'Obras/Reformas',
         'schedule' => 'Cronograma consolidado',
+        'public_links' => 'Links publicos',
+        'polls' => 'Enquetes',
+        'lost_found' => 'Achados e perdidos',
+        'disciplinary' => 'Multas e advertencias',
+        'community_board' => 'Mural e classificados',
         'white_label' => 'White-label',
     ];
 
