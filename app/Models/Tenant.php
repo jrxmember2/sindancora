@@ -192,17 +192,24 @@ class Tenant extends Model
 
     public function logoObject(): ?StorageObject
     {
-        $objectId = $this->getLogoStorageObjectId();
+        // Logos ativas (não removidas) do tenant. Não filtra por entity_id: a query já é
+        // escopada por tenant + tipo, e o entity_id é redundante (e fonte de bug quando difere).
+        $query = StorageObject::where('tenant_id', $this->id)
+            ->where('entity_type', self::LOGO_ENTITY)
+            ->whereNull('deleted_at');
 
-        if (! $objectId) {
-            return null;
+        // Preferência: o objeto referenciado em settings.brand.logo_storage_object_id.
+        $objectId = $this->getLogoStorageObjectId();
+        if ($objectId) {
+            $object = (clone $query)->find($objectId);
+            if ($object) {
+                return $object;
+            }
         }
 
-        return StorageObject::where('tenant_id', $this->id)
-            ->where('entity_type', self::LOGO_ENTITY)
-            ->where('entity_id', $this->id)
-            ->whereNull('deleted_at')
-            ->find($objectId);
+        // Fallback: id ausente/defasado em settings → usa a logo ativa mais recente do tenant.
+        // Isso evita que o logo "suma" do painel/PDF quando a referência em settings se perde.
+        return $query->latest('created_at')->first();
     }
 
     public function getReportProfile(): array
