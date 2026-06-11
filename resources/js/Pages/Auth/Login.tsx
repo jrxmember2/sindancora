@@ -91,9 +91,10 @@ export default function Login({ status, canResetPassword }: { status?: string; c
                     <div className="pointer-events-none absolute right-0 top-0 h-72 w-72 rounded-full bg-blue-100/60 blur-3xl" />
 
                     <div className="relative w-full max-w-sm animate-fade-up">
-                        {/* logo acima do título */}
-                        <div className="mb-6 flex justify-center">
-                            <img src="/brand/logo.svg" alt="SindÂncora" className="h-24 w-auto drop-shadow-sm" />
+                        {/* logo + marca acima do título */}
+                        <div className="mb-6 flex items-center justify-center gap-3">
+                            <img src="/brand/logo.svg" alt="SindÂncora" className="h-16 w-auto drop-shadow-sm" />
+                            <span className="text-3xl font-bold tracking-tight text-slate-900">SindÂncora</span>
                         </div>
 
                         <div className="text-center">

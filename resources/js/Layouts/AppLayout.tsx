@@ -152,7 +152,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             >
                 {/* Logo */}
                 <div className="relative flex h-16 items-center justify-center border-b px-4">
-                    <img src="/brand/logo.svg" alt="SindÂncora" className="h-12 w-auto" />
+                    <div className="flex items-center gap-2">
+                        <img src="/brand/logo.svg" alt="SindÂncora" className="h-10 w-auto" />
+                        <span className="text-xl font-bold tracking-tight text-gray-900">SindÂncora</span>
+                    </div>
                     <button
                         onClick={() => setSidebarOpen(false)}
                         className="absolute right-3 rounded p-1 text-gray-400 hover:text-gray-600 lg:hidden"
