@@ -53,8 +53,11 @@ RUN mkdir -p \
 # Copiar código da aplicação (inclui public/build/ já buildado)
 COPY . .
 
-# Instalar dependências PHP de produção
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-ansi
+# Instalar dependências PHP de produção.
+# Retry contra falhas transitórias de rede (HTTP 5xx/504 da API do GitHub ao baixar zipballs).
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-ansi --prefer-dist \
+    || { echo 'composer install falhou — tentativa 2 em 15s...'; sleep 15; composer install --no-dev --optimize-autoloader --no-interaction --no-ansi --prefer-dist; } \
+    || { echo 'composer install falhou — tentativa 3 em 30s...'; sleep 30; composer install --no-dev --optimize-autoloader --no-interaction --no-ansi --prefer-dist; }
 
 # Permissões
 RUN chown -R www-data:www-data /var/www/html \
