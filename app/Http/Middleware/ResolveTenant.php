@@ -23,35 +23,72 @@ class ResolveTenant
         // resolvido dentro do controller a partir do payload, não pelo host.
         // O callback do OAuth do Google Drive chega num domínio central fixo (redirect_uri único) e
         // resolve o tenant pelo `state` assinado, não pelo host.
-        if ($this->isSuperAdminDomain($host) || $request->is('admin', 'admin/*', 'up', 'api/webhooks/*', 'oauth/google-drive/*')) {
+        // O site público (planos/checkout/cadastro) roda no domínio apex, sem tenant.
+        if ($this->isSuperAdminDomain($host)
+            || $request->is('admin', 'admin/*', 'up', 'api/webhooks/*', 'oauth/google-drive/*')
+            || $request->is('planos', 'planos/*', 'checkout', 'checkout/*', 'cadastro')) {
             return $next($request);
         }
 
         $tenant = $this->resolveTenantByDomain($host);
 
         if (! $tenant) {
-            abort(404, 'Tenant não encontrado para este domínio.');
+            return $this->deny($request, 404, 'TENANT_NOT_FOUND', 'Tenant não encontrado para este domínio.');
         }
 
         if ($tenant->isSuspended()) {
-            abort(402, 'Conta suspensa. Entre em contato com o suporte.');
+            // Contrato do app móvel/API: 402 + code TENANT_SUSPENDED dispara a tela "Assinatura em atraso".
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return $this->deny($request, 402, 'TENANT_SUSPENDED', 'Conta suspensa por inadimplência.');
+            }
+
+            // Web: a tela de bloqueio (e o logout) precisam ser acessíveis mesmo suspenso. O tenant
+            // é resolvido para a tela mostrar a fatura; o resto da aplicação redireciona para lá.
+            $this->bindTenant($tenant);
+
+            if ($request->is('assinatura-em-atraso', 'logout')) {
+                return $next($request);
+            }
+
+            return redirect('/assinatura-em-atraso');
         }
 
         if (! $tenant->isActive()) {
-            abort(503, 'Conta inativa.');
+            return $this->deny($request, 503, 'TENANT_INACTIVE', 'Conta inativa.');
         }
 
+        $this->bindTenant($tenant);
+
+        return $next($request);
+    }
+
+    /** Vincula o tenant ao container e configura o RLS do PostgreSQL. */
+    private function bindTenant(Tenant $tenant): void
+    {
         app()->instance('tenant', $tenant);
         app()->instance('tenant_id', $tenant->id);
 
-        // Configura o tenant_id na sessão do PostgreSQL para RLS
         try {
             DB::statement("SET app.current_tenant_id = '{$tenant->id}'");
         } catch (\Exception) {
             // Silencia se o banco não suportar (MySQL, SQLite em testes)
         }
+    }
 
-        return $next($request);
+    /**
+     * Nega o acesso: JSON estruturado para API/app (envelope {success, error{code}})
+     * e abort tradicional (página de erro) para web.
+     */
+    private function deny(Request $request, int $status, string $code, string $message): Response
+    {
+        if ($request->is('api/*') || $request->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => $code, 'message' => $message],
+            ], $status);
+        }
+
+        abort($status, $message);
     }
 
     private function extractHost(Request $request): string

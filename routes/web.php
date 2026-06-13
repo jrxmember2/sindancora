@@ -1,8 +1,11 @@
 <?php
 
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\BillingBlockController;
+use App\Http\Controllers\FirstAccessController;
 use App\Http\Controllers\OAuth\GoogleDriveCallbackController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\Public\CheckoutController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicIntakeController;
 use App\Http\Controllers\Panel\DriveIntegrationController;
@@ -59,11 +62,21 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// Onboarding público (cadastro de novo tenant)
-Route::middleware('guest')->group(function () {
-    Route::get('/cadastro', [OnboardingController::class, 'create'])->name('onboarding.create');
-    Route::post('/cadastro', [OnboardingController::class, 'store'])->name('onboarding.store');
-});
+// Onboarding antigo: criava o tenant na hora, sem pagamento. Agora o caminho oficial é o checkout
+// (planos → Asaas → provisionamento via webhook). Mantido como redirect para não quebrar links.
+Route::get('/cadastro', fn () => redirect()->route('checkout.plans'))->name('onboarding.create');
+
+// Site público de contratação (domínio apex, sem tenant — liberado no ResolveTenant).
+Route::get('/planos', [CheckoutController::class, 'plans'])->name('checkout.plans');
+Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('checkout.store');
+Route::get('/checkout/{signup}/pendente', [CheckoutController::class, 'pending'])->name('checkout.pending');
+Route::get('/checkout/{signup}/status', [CheckoutController::class, 'status'])->name('checkout.status');
+
+// Primeiro acesso por link mágico (assinado) enviado no e-mail de boas-vindas — domínio do tenant.
+Route::get('/primeiro-acesso/{user}', [FirstAccessController::class, 'login'])->name('first-access.login');
+
+// Tela de bloqueio do tenant suspenso (acessível mesmo bloqueado; ver ResolveTenant).
+Route::get('/assinatura-em-atraso', [BillingBlockController::class, 'show'])->name('billing.suspended');
 
 // Intake público por link/QR do condomínio (sem login). Tenant resolvido pelo domínio;
 // o token é escopado ao tenant. Tudo entra como envio pendente de moderação.

@@ -40,6 +40,20 @@ return [
         'production' => env('ASAAS_PRODUCTION_URL', 'https://api.asaas.com/v3'),
     ],
 
+    // Conta Asaas ÚNICA da plataforma (Sindâncora cobrando os tenants — billing SaaS).
+    // Distinta do bloco 'asaas' acima, que é a integração por-tenant (tenant cobrando moradores,
+    // via TenantPaymentSetting). Nunca commitar a chave. Em dev, apontar para o sandbox.
+    'asaas_billing' => [
+        'enabled' => (bool) env('ASAAS_BILLING_ENABLED', false),
+        'environment' => env('ASAAS_BILLING_ENV', 'sandbox'), // sandbox | production
+        'api_key' => env('ASAAS_API_KEY'),
+        'webhook_token' => env('ASAAS_WEBHOOK_TOKEN'),
+        // Base URL explícita (sobrepõe sandbox/production se definida).
+        'base_url' => env('ASAAS_BASE_URL'),
+        'sandbox' => env('ASAAS_SANDBOX_URL', 'https://sandbox.asaas.com/api/v3'),
+        'production' => env('ASAAS_PRODUCTION_URL', 'https://api.asaas.com/v3'),
+    ],
+
     'anthropic' => [
         'key' => env('ANTHROPIC_API_KEY'),
         'model' => env('ANTHROPIC_MODEL', 'claude-opus-4-8'),

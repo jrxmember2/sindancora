@@ -76,6 +76,17 @@ class Tenant extends Model
         return $this->hasOne(TenantPaymentSetting::class)->where('provider', 'asaas');
     }
 
+    /** Assinatura SaaS (plataforma → tenant) — billing do Sindâncora, não a cobrança de moradores. */
+    public function billingSubscription(): HasOne
+    {
+        return $this->hasOne(BillingSubscription::class);
+    }
+
+    public function billingTimeline(): HasMany
+    {
+        return $this->hasMany(BillingTimelineEntry::class)->latest();
+    }
+
     public function whatsappSetting(): HasOne
     {
         return $this->hasOne(TenantWhatsappSetting::class);

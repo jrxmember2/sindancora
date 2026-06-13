@@ -1,6 +1,10 @@
 <?php
 
 use App\Http\Controllers\Admin\AiSettingController;
+use App\Http\Controllers\Admin\Billing\BillingDashboardController;
+use App\Http\Controllers\Admin\Billing\PaymentController as BillingPaymentController;
+use App\Http\Controllers\Admin\Billing\SettingController as BillingSettingController;
+use App\Http\Controllers\Admin\Billing\SubscriptionController as BillingSubscriptionController;
 use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EvolutionSettingController;
@@ -38,6 +42,24 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'super_admin'])->gro
         Route::match(['put', 'patch'], '/', [EvolutionSettingController::class, 'update'])->name('update');
         Route::post('/testar', [EvolutionSettingController::class, 'test'])->name('test');
         Route::post('/resync-webhooks', [EvolutionSettingController::class, 'resyncWebhooks'])->name('webhooks.resync');
+    });
+
+    // Módulo Financeiro (billing SaaS): dashboard, assinaturas, pagamentos/NFS-e e configurações.
+    Route::prefix('financeiro')->name('billing.')->group(function () {
+        Route::get('/', [BillingDashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('/assinaturas', [BillingSubscriptionController::class, 'index'])->name('subscriptions.index');
+        Route::get('/assinaturas/{subscription}', [BillingSubscriptionController::class, 'show'])->name('subscriptions.show');
+        Route::post('/assinaturas/{subscription}/desbloquear', [BillingSubscriptionController::class, 'grantGrace'])->name('subscriptions.grace');
+        Route::post('/assinaturas/{subscription}/revogar-carencia', [BillingSubscriptionController::class, 'revokeGrace'])->name('subscriptions.revoke-grace');
+        Route::post('/assinaturas/{subscription}/bloquear', [BillingSubscriptionController::class, 'suspend'])->name('subscriptions.suspend');
+        Route::post('/assinaturas/{subscription}/cancelar', [BillingSubscriptionController::class, 'cancel'])->name('subscriptions.cancel');
+
+        Route::get('/pagamentos', [BillingPaymentController::class, 'index'])->name('payments.index');
+
+        Route::get('/configuracoes', [BillingSettingController::class, 'edit'])->name('settings.edit');
+        Route::match(['put', 'patch'], '/configuracoes', [BillingSettingController::class, 'update'])->name('settings.update');
+        Route::post('/configuracoes/testar', [BillingSettingController::class, 'testConnection'])->name('settings.test');
     });
 
     Route::prefix('ia')->name('ai.')->group(function () {

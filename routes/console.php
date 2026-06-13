@@ -43,3 +43,10 @@ Schedule::command('occurrences:notify-sla')->dailyAt('08:00')->withoutOverlappin
 
 // Alerta de ferias de funcionarios proximas do prazo limite ou atrasadas
 Schedule::command('employees:notify-vacations')->dailyAt('08:15')->withoutOverlapping();
+
+// Régua de cobrança SaaS (plataforma → tenant): lembretes, atrasos, bloqueio em D+15 e
+// desbloqueio por confiança. Uma vez por dia, de manhã.
+Schedule::command('billing:run-dunning')->dailyAt('06:30')->withoutOverlapping();
+
+// Reconciliação dos pagamentos SaaS com o Asaas (fonte da verdade), corrige divergências.
+Schedule::command('billing:reconcile')->dailyAt('05:30')->withoutOverlapping();

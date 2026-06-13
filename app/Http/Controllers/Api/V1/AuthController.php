@@ -88,16 +88,114 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'is_super_admin' => $user->is_super_admin,
-                ],
+                ...$this->sessionData($user),
                 'access_token' => $token,
                 'token_type' => 'Bearer',
+                'expires_at' => $this->tokenExpiresAt(),
             ],
         ]);
+    }
+
+    #[OA\Post(
+        path: '/v1/auth/refresh',
+        operationId: 'authRefresh',
+        summary: 'Rotacionar token: revoga o atual e emite um novo',
+        security: [['bearerAuth' => []]],
+        tags: ['Auth'],
+        responses: [
+            new OA\Response(response: 200, description: 'Novo token emitido', content: new OA\JsonContent(ref: '#/components/schemas/SuccessResponse')),
+            new OA\Response(response: 401, description: 'Token inválido ou expirado'),
+        ],
+    )]
+    public function refresh(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Rotação: revoga o token usado nesta chamada e emite um novo.
+        $request->user()->currentAccessToken()->delete();
+        $token = $user->createToken('api')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+                'expires_at' => $this->tokenExpiresAt(),
+            ],
+        ]);
+    }
+
+    #[OA\Get(
+        path: '/v1/session',
+        operationId: 'session',
+        summary: 'Sessão completa: usuário, tenant (status), permissões e módulos do plano',
+        security: [['bearerAuth' => []]],
+        tags: ['Auth'],
+        responses: [
+            new OA\Response(response: 200, description: 'Dados da sessão', content: new OA\JsonContent(ref: '#/components/schemas/SuccessResponse')),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ],
+    )]
+    public function session(Request $request): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->sessionData($request->user()),
+        ]);
+    }
+
+    /**
+     * Payload de sessão compartilhado entre login e /session — espelho do que o
+     * painel recebe via HandleInertiaRequests (permissões + módulos do plano),
+     * para o app aplicar o mesmo gating de menu/telas.
+     *
+     * @return array<string, mixed>
+     */
+    private function sessionData(User $user): array
+    {
+        $tenant = $user->tenant;
+        $plan = $tenant?->activePlan();
+
+        return [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'avatar_url' => $user->avatar_url,
+                'is_super_admin' => $user->is_super_admin,
+                'can_access_panel' => $user->is_super_admin || $user->canAccessPanel(),
+                'permissions' => $user->permissionNames(),
+            ],
+            'tenant' => $tenant ? [
+                'id' => $tenant->id,
+                'name' => $tenant->name,
+                'slug' => $tenant->slug,
+                // Hoje: active | suspended. Estados de carência (grace_*) serão
+                // adicionados quando a régua de cobrança existir no backend.
+                'status' => $tenant->status,
+                'brand_name' => $tenant->getBrandName(),
+                'logo_url' => $tenant->getLogoUrl(),
+                'primary_color' => $tenant->getPrimaryColor(),
+                'plan' => $plan ? [
+                    'name' => $plan->name,
+                    'display_name' => $plan->display_name,
+                    'modules' => $plan->modules()
+                        ->where('enabled', true)
+                        ->pluck('module')
+                        ->values()
+                        ->all(),
+                ] : null,
+            ] : null,
+        ];
+    }
+
+    /** Expiração do token conforme config sanctum.expiration (minutos); null = não expira. */
+    private function tokenExpiresAt(): ?string
+    {
+        $minutes = config('sanctum.expiration');
+
+        return $minutes ? now()->addMinutes((int) $minutes)->toIso8601String() : null;
     }
 
     #[OA\Post(

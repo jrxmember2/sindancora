@@ -18,6 +18,693 @@
         }
     ],
     "paths": {
+        "/v1/app/announcements": {
+            "get": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Listar comunicados (filtros: search, status, condominium_id)",
+                "operationId": "appAnnouncementsIndex",
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Criar comunicado (action: draft|publish; anexos opcionais)",
+                "operationId": "appAnnouncementsStore",
+                "responses": {
+                    "201": {
+                        "description": "Comunicado criado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/announcements/{id}": {
+            "get": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Detalhe do comunicado com anexos",
+                "operationId": "appAnnouncementsShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comunicado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/announcements/{id}/publish": {
+            "post": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Publicar comunicado (rascunho ou agendado)",
+                "operationId": "appAnnouncementsPublish",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comunicado publicado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/dashboard": {
+            "get": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Dashboard do app: widgets visíveis (meta) e dados dos não-lazy",
+                "operationId": "appDashboard",
+                "responses": {
+                    "200": {
+                        "description": "Widgets e dados",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/dashboard/widgets/{key}": {
+            "get": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Dados de um widget específico (lazy/refresh)",
+                "operationId": "appDashboardWidget",
+                "parameters": [
+                    {
+                        "name": "key",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payload do widget"
+                    },
+                    "403": {
+                        "description": "Widget não visível para o usuário"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/devices": {
+            "post": {
+                "tags": [
+                    "Dispositivos"
+                ],
+                "summary": "Registrar/atualizar dispositivo para notificações push",
+                "operationId": "deviceRegister",
+                "responses": {
+                    "200": {
+                        "description": "Dispositivo registrado"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Dispositivos"
+                ],
+                "summary": "Remover registro do dispositivo (logout/troca de instância)",
+                "operationId": "deviceUnregister",
+                "responses": {
+                    "200": {
+                        "description": "Dispositivo removido"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/charges": {
+            "get": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Listar cobranças com KPIs (filtros: condominium_id, status, reference_month, search)",
+                "operationId": "appChargesIndex",
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada + KPIs"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/charges/{id}": {
+            "get": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Detalhe da cobrança",
+                "operationId": "appChargesShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cobrança"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/expenses": {
+            "get": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Listar contas a pagar (filtros: condominium_id, status, from, to)",
+                "operationId": "appExpensesIndex",
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/gatehouse/visits": {
+            "get": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Visitantes: presentes e histórico paginado (filtro: condominium_id)",
+                "operationId": "appGatehouseVisits",
+                "responses": {
+                    "200": {
+                        "description": "Presentes + histórico"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/gatehouse/validate-token": {
+            "post": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Validar QR/token de autorização de visitante",
+                "operationId": "appGatehouseValidate",
+                "responses": {
+                    "200": {
+                        "description": "Resultado da validação"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/gatehouse/check-in": {
+            "post": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Registrar entrada: autorizado (authorization_id) ou avulso (dados do visitante)",
+                "operationId": "appGatehouseCheckIn",
+                "responses": {
+                    "201": {
+                        "description": "Entrada registrada"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/gatehouse/visits/{visit}/check-out": {
+            "post": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Registrar saída do visitante",
+                "operationId": "appGatehouseCheckOut",
+                "parameters": [
+                    {
+                        "name": "visit",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Saída registrada"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/parcels": {
+            "get": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Listar encomendas (filtros: condominium_id, status)",
+                "operationId": "appParcelsIndex",
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/occurrences": {
+            "get": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Listar ocorrências (filtros: search, status, category, priority, condominium_id, sla=overdue)",
+                "operationId": "appOccurrencesIndex",
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Abrir ocorrência (fotos/anexos opcionais no campo attachments[])",
+                "operationId": "appOccurrencesStore",
+                "responses": {
+                    "201": {
+                        "description": "Ocorrência criada"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/occurrences/{id}": {
+            "get": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Detalhe da ocorrência com histórico e anexos",
+                "operationId": "appOccurrencesShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ocorrência"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/occurrences/{id}/comments": {
+            "post": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Comentar na ocorrência",
+                "operationId": "appOccurrencesComment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Comentário criado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/occurrences/{id}/status": {
+            "post": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Mudar status (encerrar exige occurrences:close)",
+                "operationId": "appOccurrencesStatus",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Status atualizado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/occurrences/{id}/assign": {
+            "post": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Atribuir responsável",
+                "operationId": "appOccurrencesAssign",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Responsável atualizado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/reservations": {
+            "get": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Listar reservas (filtros: status, common_area_id, condominium_id)",
+                "operationId": "appReservationsIndex",
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/reservations/{id}": {
+            "get": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Detalhe da reserva",
+                "operationId": "appReservationsShow",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reserva"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/reservations/{id}/approve": {
+            "post": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Aprovar reserva pendente",
+                "operationId": "appReservationsApprove",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reserva aprovada"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/reservations/{id}/reject": {
+            "post": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Rejeitar reserva pendente (reason opcional)",
+                "operationId": "appReservationsReject",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reserva rejeitada"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/reservations/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Cancelar reserva (reason opcional)",
+                "operationId": "appReservationsCancel",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reserva cancelada"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/app/schedule": {
+            "get": {
+                "tags": [
+                    "App"
+                ],
+                "summary": "Cronograma consolidado do mês (filtros: month=YYYY-MM, condominium_id, source)",
+                "operationId": "appSchedule",
+                "responses": {
+                    "200": {
+                        "description": "Calendário, eventos e resumo"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/auth/login": {
             "post": {
                 "tags": [
@@ -69,6 +756,64 @@
                         "description": "Muitas tentativas — aguarde antes de tentar novamente"
                     }
                 }
+            }
+        },
+        "/v1/auth/refresh": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Rotacionar token: revoga o atual e emite um novo",
+                "operationId": "authRefresh",
+                "responses": {
+                    "200": {
+                        "description": "Novo token emitido",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token inválido ou expirado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/v1/session": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Sessão completa: usuário, tenant (status), permissões e módulos do plano",
+                "operationId": "session",
+                "responses": {
+                    "200": {
+                        "description": "Dados da sessão",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/v1/auth/logout": {
@@ -438,6 +1183,33 @@
                 ]
             }
         },
+        "/v1/instance-info": {
+            "get": {
+                "tags": [
+                    "Instância"
+                ],
+                "summary": "Descoberta de instância: identidade do sistema, versão da API e branding do tenant",
+                "operationId": "instanceInfo",
+                "responses": {
+                    "200": {
+                        "description": "Instância válida",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Tenant não encontrado para este domínio"
+                    },
+                    "402": {
+                        "description": "Conta suspensa"
+                    }
+                }
+            }
+        },
         "/v1/persons": {
             "get": {
                 "tags": [
@@ -736,6 +1508,18 @@
         {
             "name": "Cobranças",
             "description": "Cobranças financeiras"
+        },
+        {
+            "name": "App",
+            "description": "Endpoints do aplicativo móvel do tenant"
+        },
+        {
+            "name": "Dispositivos",
+            "description": "Dispositivos"
+        },
+        {
+            "name": "Instância",
+            "description": "Instância"
         }
     ],
     "security": [

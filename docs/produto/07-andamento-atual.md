@@ -26,6 +26,64 @@
 
 ## Última entrega implementada
 
+### Módulo Financeiro (billing SaaS) + Asaas — ciclo comercial automatizado
+
+Implementado em 12/06/2026. Doc técnica: `docs/tecnico/billing-saas-asaas.md`.
+
+Ciclo comercial completo da **plataforma cobrando os tenants** (conta Asaas única do Sindâncora),
+**distinto** da integração existente tenant→morador (`App\Services\Payments\*`, `tenant_payment_settings`,
+`POST /api/webhooks/asaas`). O novo webhook é `POST /api/webhooks/asaas/saas`.
+
+- **Checkout público:** `GET /planos` + `POST /checkout` cria customer + subscription no Asaas e grava
+  `pending_signups` (nenhum tenant antes de pagar); tela `/checkout/{id}/pendente` (PIX/QR, fatura, boleto)
+  com polling de status. `/cadastro` antigo virou redirect para `/planos`.
+- **Webhook seguro/idempotente:** valida `asaas-access-token`, persiste evento bruto em `payment_events`
+  (idempotência por `asaas_event_id`), processa em fila (`ProcessAsaasBillingWebhook`).
+- **Provisionamento automático:** na 1ª cobrança compensada, `ProvisionTenantFromSignup` →
+  `ProvisioningService` reusa `TenantService::create()`, cria `billing_subscriptions`, gera 1º acesso
+  (link mágico assinado **+** senha temporária de fallback) e envia boas-vindas. Retry + alerta aos
+  super admins em falha (`TenantProvisioningFailed`).
+- **Financeiro no super admin** (`/admin/financeiro`): dashboard (MRR, ativas, inadimplentes, bloqueados,
+  receita do mês, churn), assinaturas, pagamentos/NFS-e, linha do tempo por tenant, configurações.
+- **Régua + bloqueio** (`billing:run-dunning`, diário): D-3/D+3/D+7/D+12 (e-mails) e D+15 → `suspended`,
+  prazos configuráveis. Tela `/assinatura-em-atraso` acessível mesmo bloqueado (`ResolveTenant` ajustado);
+  pagamento reativa automaticamente. Reconciliação diária `billing:reconcile`.
+- **Desbloqueio manual** (motivo + prazo → `grace_manual`) e **por confiança** (automático → `grace_trust`,
+  critérios configuráveis), ambos auditados.
+- **NFS-e via Asaas** (`/invoices`): agendamento na confirmação do pagamento, tela de config fiscal,
+  vínculo `payment ↔ invoice` + links de PDF/XML no painel.
+
+Migrations: `2026_07_10_000001_create_billing_tables.php`, `2026_07_10_000002_create_billing_settings_table.php`.
+Validado: `php -l` (todos), `route:list` (rotas `admin.billing.*`, `checkout.*`, webhook), `npm run build`
+verde, `tests/Feature/Billing/*` (12 testes, 26 asserts) passando.
+**Deploy:** setar `ASAAS_*` no ambiente + registrar webhook no Asaas; `migrate --force` + `optimize:clear`.
+Scheduler precisa rodar (`billing:run-dunning`, `billing:reconcile`).
+
+### Etapa 0 do App Android — API do app móvel (backend)
+
+Implementado em 12/06/2026. Doc técnica: `docs/tecnico/api-app.md`. Primeira etapa da iniciativa
+do **app Android nativo do tenant (síndico)** — app Kotlin/Compose em repo próprio
+(`C:\Users\JUNIOR\sindancora-android`, ainda não criado); app do morador é fase futura.
+
+- `GET /api/v1/instance-info` (descoberta de instância pelo app, público, tenant por host).
+- `config/sanctum.php` novo: tokens expiram em 7 dias; `POST /api/v1/auth/refresh` (rotação);
+  login enriquecido (permissões, módulos do plano, `tenant.status`, `expires_at`,
+  `can_access_panel`); `GET /api/v1/session`.
+- `ResolveTenant` responde JSON estruturado em `api/*`: 402 `TENANT_SUSPENDED` (tela de bloqueio
+  do app), 404 `TENANT_NOT_FOUND`, 503 `TENANT_INACTIVE`. Carência (`TENANT_GRACE_*`) reservada
+  para quando a régua de cobrança existir.
+- Tabela `user_devices` + `POST/DELETE /api/v1/devices` (push FCM na Etapa 3).
+- ~25 endpoints `/api/v1/app/*` (Sanctum + mesmo gating `permission:` do painel), reusando os
+  services existentes: dashboard (WidgetRegistry), comunicados, ocorrências (c/ fotos),
+  reservas (aprovar/rejeitar/cancelar), cronograma, cobranças+KPIs, contas a pagar,
+  portaria (QR/check-in/out) e encomendas.
+- Refatoração segura: `Panel\ScheduleController` → lógica movida para
+  `app/Services/ScheduleEventBuilder.php` (payload idêntico; painel virou delegador).
+
+Validado: `php -l` (todos), `route:list --path=api/v1` (54 rotas), rota `schedule.index` do painel
+intacta, `l5-swagger:generate` OK. **Deploy:** `migrate --force` (user_devices) + `optimize:clear`.
+Próximo: Etapa 1 (fundação do app Android).
+
 ### Dashboard Modular (home do painel)
 
 Implementado em 11/06/2026. Doc técnica: `docs/tecnico/dashboard-modular.md`.

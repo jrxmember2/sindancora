@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import {
-    LayoutDashboard, Building2, LogOut, Menu, X, Shield, Package, MessageCircle, Sparkles, UserRound,
+    LayoutDashboard, Building2, LogOut, Menu, X, Shield, Package, MessageCircle, Sparkles, UserRound, CreditCard,
 } from 'lucide-react';
 import type { PageProps } from '@/types';
 
 const navigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Tenants', href: '/admin/tenants', icon: Building2 },
+    { name: 'Financeiro', href: '/admin/financeiro', icon: CreditCard },
     { name: 'Planos', href: '/admin/planos', icon: Package },
     { name: 'WhatsApp', href: '/admin/whatsapp', icon: MessageCircle },
     { name: 'IA', href: '/admin/ia', icon: Sparkles },

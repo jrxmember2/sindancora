@@ -55,6 +55,26 @@ composer run dev
 
 > Altere a senha imediatamente após o primeiro acesso.
 
+## Billing SaaS + Asaas (plataforma → tenant)
+
+O ciclo comercial (checkout → provisionamento → régua de cobrança → NFS-e) usa uma conta Asaas
+**única da plataforma**, configurada por ambiente. Variáveis:
+
+```env
+ASAAS_BILLING_ENABLED=true
+ASAAS_BILLING_ENV=sandbox      # sandbox | production
+ASAAS_API_KEY=                 # chave da conta Asaas da plataforma (nunca commitar)
+ASAAS_WEBHOOK_TOKEN=           # header asaas-access-token do webhook
+```
+
+Registre o webhook no painel do Asaas apontando para `https://SEU_DOMINIO/api/webhooks/asaas/saas`
+(eventos `PAYMENT_*` e de assinatura), com o mesmo `ASAAS_WEBHOOK_TOKEN`. Em desenvolvimento use o
+**sandbox** do Asaas. A configuração fiscal da NFS-e fica em **Super Admin → Financeiro →
+Configurações**. Detalhes completos em `docs/tecnico/billing-saas-asaas.md`.
+
+> A emissão da NFS-e depende do emissor habilitado/configurado na própria conta Asaas (dados da
+> empresa e prefeitura).
+
 ## Deploy com Docker (produção)
 
 ```bash
