@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\PublicSubmission;
+use App\Notifications\Channels\FcmChannel;
 use App\Notifications\Concerns\BroadcastsNotification;
 use App\Notifications\Concerns\RespectsNotificationPreferences;
 use Illuminate\Bus\Queueable;
@@ -25,7 +26,17 @@ class PublicSubmissionReceived extends Notification implements ShouldQueue
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return $this->preferredChannels($notifiable, 'public_submission_received', ['database', 'broadcast']);
+        return $this->preferredChannels($notifiable, 'public_submission_received', ['database', 'broadcast', FcmChannel::class]);
+    }
+
+    /** @return array<string, string> */
+    public function toFcm(object $notifiable): array
+    {
+        return [
+            'title' => 'Novo envio público — '.$this->typeLabel(),
+            'body' => ($this->submission->name ?? 'Solicitante').' • '.($this->submission->condominium?->name ?? '—'),
+            'type' => 'public_submission',
+        ];
     }
 
     private function typeLabel(): string

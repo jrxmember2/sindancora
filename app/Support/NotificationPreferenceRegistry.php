@@ -9,6 +9,7 @@ class NotificationPreferenceRegistry
         'broadcast' => 'Tempo real',
         'mail' => 'E-mail',
         'whatsapp' => 'WhatsApp',
+        'fcm' => 'App (push)',
     ];
 
     public const EVENTS = [
@@ -28,19 +29,19 @@ class NotificationPreferenceRegistry
             'group' => 'Ocorrencias',
             'label' => 'Atualizacoes de ocorrencias',
             'description' => 'Abertura, resposta ou mudanca relevante em ocorrencias.',
-            'channels' => ['database', 'broadcast', 'whatsapp'],
+            'channels' => ['database', 'broadcast', 'whatsapp', 'fcm'],
         ],
         'occurrence_sla_due' => [
             'group' => 'Ocorrencias',
             'label' => 'SLA de chamados',
             'description' => 'Chamados proximos do prazo ou atrasados.',
-            'channels' => ['database', 'broadcast', 'mail'],
+            'channels' => ['database', 'broadcast', 'mail', 'fcm'],
         ],
         'reservation_updated' => [
             'group' => 'Reservas',
             'label' => 'Reservas',
             'description' => 'Criacao, aprovacao, recusa ou cancelamento de reservas.',
-            'channels' => ['database', 'broadcast', 'whatsapp'],
+            'channels' => ['database', 'broadcast', 'whatsapp', 'fcm'],
         ],
         'visitor_arrived' => [
             'group' => 'Portaria',
@@ -76,7 +77,7 @@ class NotificationPreferenceRegistry
             'group' => 'Financeiro',
             'label' => 'Contas a pagar',
             'description' => 'Contas a pagar proximas do vencimento ou vencidas.',
-            'channels' => ['database', 'broadcast', 'mail'],
+            'channels' => ['database', 'broadcast', 'mail', 'fcm'],
         ],
         'document_expiring' => [
             'group' => 'Documentos',
@@ -100,7 +101,7 @@ class NotificationPreferenceRegistry
             'group' => 'Operacao',
             'label' => 'Envios de links publicos',
             'description' => 'Novo auto-cadastro de morador ou ocorrencia recebida por link/QR, aguardando moderacao.',
-            'channels' => ['database', 'broadcast', 'mail'],
+            'channels' => ['database', 'broadcast', 'mail', 'fcm'],
         ],
     ];
 

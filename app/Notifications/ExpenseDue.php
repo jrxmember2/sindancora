@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Expense;
+use App\Notifications\Channels\FcmChannel;
 use App\Notifications\Concerns\BroadcastsNotification;
 use App\Notifications\Concerns\RespectsNotificationPreferences;
 use Illuminate\Bus\Queueable;
@@ -24,7 +25,20 @@ class ExpenseDue extends Notification implements ShouldQueue
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return $this->preferredChannels($notifiable, 'expense_due', ['database', 'mail', 'broadcast']);
+        return $this->preferredChannels($notifiable, 'expense_due', ['database', 'mail', 'broadcast', FcmChannel::class]);
+    }
+
+    /** @return array<string, string> */
+    public function toFcm(object $notifiable): array
+    {
+        $value = number_format((float) $this->expense->amount, 2, ',', '.');
+
+        return [
+            'title' => 'Conta a pagar '.$this->situation(),
+            'body' => $this->expense->description." • R$ {$value}",
+            'route' => 'finance',
+            'type' => 'expense',
+        ];
     }
 
     private function situation(): string

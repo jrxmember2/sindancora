@@ -2,6 +2,7 @@
 
 namespace App\Notifications\Concerns;
 
+use App\Notifications\Channels\FcmChannel;
 use App\Notifications\Channels\WhatsAppChannel;
 
 trait RespectsNotificationPreferences
@@ -24,6 +25,10 @@ trait RespectsNotificationPreferences
 
     private function channelKey(string $channel): string
     {
-        return $channel === WhatsAppChannel::class ? 'whatsapp' : $channel;
+        return match ($channel) {
+            WhatsAppChannel::class => 'whatsapp',
+            FcmChannel::class => 'fcm',
+            default => $channel,
+        };
     }
 }

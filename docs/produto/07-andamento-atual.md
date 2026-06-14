@@ -26,6 +26,26 @@
 
 ## Última entrega implementada
 
+### Etapa 3 do App Android — Push (FCM), lado backend
+
+Implementado em 13/06/2026. Acompanha a Etapa 3 do app Android (repo `C:\Users\JUNIOR\sindancora-android`).
+Este backend agora **envia** push para os dispositivos registrados (`user_devices`) via **FCM HTTP v1**:
+
+- `App\Services\Push\FcmClient`: cliente FCM sem dependência externa — assina o JWT da **conta de
+  serviço** do Firebase com OpenSSL (RS256), troca por access token (cacheado ~55 min) e envia
+  mensagens **data-only** (o app monta a notificação e faz o deep-link por `data.route`).
+- `App\Notifications\Channels\FcmChannel`: canal de notificação; lê `toFcm()` da notificação (ou
+  deriva de `toArray()`), envia a todos os devices do usuário e **remove tokens mortos** (UNREGISTERED).
+- Canal `fcm` ("App (push)") registrado no `NotificationPreferenceRegistry` (vira opção em `/perfil`)
+  e mapeado no `RespectsNotificationPreferences`. Plugado no `via()` das notificações do gestor:
+  ocorrências (atualização + SLA), reservas, contas a pagar e envios de links públicos.
+- Config: `config/services.fcm` (`FCM_PROJECT_ID` + `FCM_CREDENTIALS_FILE` ou `FCM_CREDENTIALS_JSON`).
+  Sem credenciais, o canal é **no-op** (não afeta os demais canais).
+
+Validado: `php -l` (todos) + Pint. **Deploy:** setar as `FCM_*` no ambiente (conta de serviço do
+Firebase). Sem migration nova (a tabela `user_devices` e os endpoints `/api/v1/devices` já existiam
+da Etapa 0). Os endpoints de registro/baixa de device já eram consumidos pelo app.
+
 ### Módulo Financeiro (billing SaaS) + Asaas — ciclo comercial automatizado
 
 Implementado em 12/06/2026. Doc técnica: `docs/tecnico/billing-saas-asaas.md`.

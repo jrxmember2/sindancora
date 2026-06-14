@@ -54,6 +54,15 @@ return [
         'production' => env('ASAAS_PRODUCTION_URL', 'https://api.asaas.com/v3'),
     ],
 
+    // Push do app móvel (Firebase Cloud Messaging, HTTP v1). Autentica via conta de serviço do
+    // Firebase. Sem as credenciais, o canal de push é no-op (não quebra os outros canais).
+    'fcm' => [
+        'project_id' => env('FCM_PROJECT_ID'),
+        // Caminho para o JSON da conta de serviço, OU o JSON inline (uma das duas).
+        'credentials_file' => env('FCM_CREDENTIALS_FILE'),
+        'credentials_json' => env('FCM_CREDENTIALS_JSON'),
+    ],
+
     'anthropic' => [
         'key' => env('ANTHROPIC_API_KEY'),
         'model' => env('ANTHROPIC_MODEL', 'claude-opus-4-8'),

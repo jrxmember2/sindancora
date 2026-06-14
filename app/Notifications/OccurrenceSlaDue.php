@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Occurrence;
+use App\Notifications\Channels\FcmChannel;
 use App\Notifications\Concerns\BroadcastsNotification;
 use App\Notifications\Concerns\RespectsNotificationPreferences;
 use Illuminate\Bus\Queueable;
@@ -25,7 +26,18 @@ class OccurrenceSlaDue extends Notification implements ShouldQueue
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return $this->preferredChannels($notifiable, 'occurrence_sla_due', ['database', 'mail', 'broadcast']);
+        return $this->preferredChannels($notifiable, 'occurrence_sla_due', ['database', 'mail', 'broadcast', FcmChannel::class]);
+    }
+
+    /** @return array<string, string> */
+    public function toFcm(object $notifiable): array
+    {
+        return [
+            'title' => 'Chamado '.$this->situation(),
+            'body' => $this->occurrence->title,
+            'route' => 'occurrences/'.$this->occurrence->id,
+            'type' => 'occurrence',
+        ];
     }
 
     private function situation(): string
